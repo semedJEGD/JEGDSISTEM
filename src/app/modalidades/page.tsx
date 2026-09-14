@@ -75,20 +75,20 @@ export default function ModalidadesPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
         <button
           onClick={() => setFiltroTipo('TODOS')}
-          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all border ${
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
             filtroTipo === 'TODOS'
               ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
           }`}
         >
-          Todas as modalidades ({modalidades.length})
+          Todas ({modalidades.length})
         </button>
         <button
           onClick={() => setFiltroTipo('COLETIVA')}
-          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all border ${
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
             filtroTipo === 'COLETIVA'
               ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
@@ -98,7 +98,7 @@ export default function ModalidadesPage() {
         </button>
         <button
           onClick={() => setFiltroTipo('INDIVIDUAL')}
-          className={`px-6 py-3 rounded-2xl text-sm font-bold transition-all border ${
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
             filtroTipo === 'INDIVIDUAL'
               ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
@@ -109,7 +109,7 @@ export default function ModalidadesPage() {
       </div>
 
       {/* Grid de Cards das Modalidades */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {modalidadesFiltradas.map((mod) => (
           <div
             key={mod.id}

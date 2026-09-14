@@ -26,86 +26,86 @@ export default function RegulamentoPage() {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 w-full max-w-full">
       
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-3.5">
+      <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-3.5">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/25 text-[#087A5B] text-xs font-black tracking-wide">
           <Sparkles className="w-4 h-4 text-[#00A878]" />
           <span>DOCUMENTOS & NORMAS OFICIAIS</span>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
+        <h1 className="text-2xl sm:text-5xl font-black text-[#17221D] tracking-tight break-words">
           Regulamento Geral • JEGD 2026
         </h1>
-        <p className="text-base sm:text-lg text-[#374151] leading-relaxed font-normal">
+        <p className="text-xs sm:text-base text-[#374151] leading-relaxed font-normal">
           Secretaria Municipal de Educação (SEMED) • Coordenação de Desporto Escolar de Gonçalves Dias - MA
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         
         {/* Regulamento em Artigos */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
           
           {/* Box de Faixas Etárias Oficiais */}
-          <div className="bg-white border border-[#00A878]/30 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-            <h2 className="text-xl sm:text-2xl font-black text-[#17221D] flex items-center gap-2">
-              <Award className="w-6 h-6 text-[#00A878]" />
-              <span>Categorias & Anos de Nascimento Permitidos</span>
+          <div className="bg-white border border-[#00A878]/30 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs space-y-4">
+            <h2 className="text-lg sm:text-2xl font-black text-[#17221D] flex items-center gap-2">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6 text-[#00A878] shrink-0" />
+              <span>Categorias & Anos de Nascimento</span>
             </h2>
-            <p className="text-sm text-[#4B5563] leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed font-medium">
               O sistema calcula automaticamente a elegibilidade de cada aluno com base na data de nascimento e no ano de referência (2026):
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 space-y-1">
-                <span className="text-xs font-black text-[#087A5B] uppercase tracking-wider">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-2">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-1">
+                <span className="text-[10px] sm:text-xs font-black text-[#087A5B] uppercase tracking-wider">
                   Categoria Mirim
                 </span>
-                <p className="text-3xl font-black text-[#17221D]">9 a 11 anos</p>
-                <p className="text-sm text-[#17221D] font-bold">
+                <p className="text-2xl sm:text-3xl font-black text-[#17221D]">9 a 11 anos</p>
+                <p className="text-xs sm:text-sm text-[#17221D] font-bold">
                   Nascidos entre: <span className="text-[#087A5B]">01/01/2015 e 31/12/2017</span>
                 </p>
-                <p className="text-xs text-[#4B5563] mt-1">
+                <p className="text-[11px] sm:text-xs text-[#4B5563] mt-1">
                   Atletismo, Xadrez, Futsal, Queimada e Futebol.
                 </p>
               </div>
 
-              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 space-y-1">
-                <span className="text-xs font-black text-[#00A878] uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-1">
+                <span className="text-[10px] sm:text-xs font-black text-[#00A878] uppercase tracking-wider">
                   Categoria Infantil
                 </span>
-                <p className="text-3xl font-black text-[#17221D]">12 a 14 anos</p>
-                <p className="text-sm text-[#17221D] font-bold">
+                <p className="text-2xl sm:text-3xl font-black text-[#17221D]">12 a 14 anos</p>
+                <p className="text-xs sm:text-sm text-[#17221D] font-bold">
                   Nascidos entre: <span className="text-[#087A5B]">01/01/2012 e 31/12/2014</span>
                 </p>
-                <p className="text-xs text-[#4B5563] mt-1">
+                <p className="text-[11px] sm:text-xs text-[#4B5563] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>
 
-              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 space-y-1">
-                <span className="text-xs font-black text-amber-800 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-1">
+                <span className="text-[10px] sm:text-xs font-black text-amber-800 uppercase tracking-wider">
                   Categoria Infanto
                 </span>
-                <p className="text-3xl font-black text-[#17221D]">15 a 17 anos</p>
-                <p className="text-sm text-[#17221D] font-bold">
+                <p className="text-2xl sm:text-3xl font-black text-[#17221D]">15 a 17 anos</p>
+                <p className="text-xs sm:text-sm text-[#17221D] font-bold">
                   Nascidos entre: <span className="text-[#087A5B]">01/01/2009 e 31/12/2011</span>
                 </p>
-                <p className="text-xs text-[#4B5563] mt-1">
+                <p className="text-[11px] sm:text-xs text-[#4B5563] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>
 
-              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 space-y-1">
-                <span className="text-xs font-black text-teal-800 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-1">
+                <span className="text-[10px] sm:text-xs font-black text-teal-800 uppercase tracking-wider">
                   Categoria Junior
                 </span>
-                <p className="text-3xl font-black text-[#17221D]">18 a 20 anos</p>
-                <p className="text-sm text-[#17221D] font-bold">
+                <p className="text-2xl sm:text-3xl font-black text-[#17221D]">18 a 20 anos</p>
+                <p className="text-xs sm:text-sm text-[#17221D] font-bold">
                   Nascidos entre: <span className="text-[#087A5B]">01/01/2006 e 31/12/2008</span>
                 </p>
-                <p className="text-xs text-[#4B5563] mt-1">
+                <p className="text-[11px] sm:text-xs text-[#4B5563] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>

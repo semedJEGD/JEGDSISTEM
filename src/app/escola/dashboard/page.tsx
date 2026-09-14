@@ -100,29 +100,29 @@ export default function EscolaDashboardPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Cabeçalho de Boas-Vindas da Escola */}
-      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] font-black text-2xl shadow-2xs shrink-0">
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
+          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] font-black text-xl sm:text-2xl shadow-2xs shrink-0">
               {escola.sigla.slice(0, 2)}
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">{escola.nome}</h1>
-                <span className="text-xs px-3 py-1 rounded-full bg-[#EDF7F2] border border-[#00A878]/20 text-[#087A5B] font-black">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">{escola.nome}</h1>
+                <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[#EDF7F2] border border-[#00A878]/20 text-[#087A5B] font-black shrink-0">
                   Rede {escola.rede}
                 </span>
               </div>
-              <p className="text-sm text-[#4B5563] mt-1 font-medium">
+              <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium break-words">
                 INEP: <strong className="text-[#17221D]">{escola.inep}</strong> • Bairro: <strong className="text-[#17221D]">{escola.bairro}</strong> • Responsável: <strong className="text-[#17221D]">{escola.responsavelNome}</strong>
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
             <Link
               href="/escola/atletas"
-              className="px-6 py-3.5 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-sm font-black shadow-md shadow-[#00A878]/20 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 shrink-0"
+              className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 text-center shrink-0"
             >
               <Sparkles className="w-4 h-4" />
               <span>+ Cadastrar Aluno & Formar Equipe</span>
@@ -130,7 +130,7 @@ export default function EscolaDashboardPage() {
 
             <Link
               href="/escola/inscricoes"
-              className="px-5 py-3.5 rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-sm font-bold border border-[#E2EAE5] flex items-center gap-2 transition-all shrink-0"
+              className="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center justify-center gap-2 transition-all text-center shrink-0"
             >
               <Trophy className="w-4 h-4 text-[#00A878]" />
               <span>Ver Equipes & Súmulas</span>
@@ -288,11 +288,11 @@ export default function EscolaDashboardPage() {
                   </div>
 
                   {/* Ações de Impressão e Gestão */}
-                  <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto justify-end">
                     <button
                       onClick={() => handleGerarFichaPdf(insc)}
                       disabled={gerandoPdfId === insc.id}
-                      className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center gap-2 transition-colors disabled:opacity-50 shadow-2xs"
+                      className="px-3.5 py-2.5 rounded-xl sm:rounded-2xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-2xs"
                       title="Baixar Ficha Oficial de Inscrição em PDF"
                     >
                       <Printer className="w-4 h-4 text-[#00A878]" />
@@ -302,7 +302,7 @@ export default function EscolaDashboardPage() {
                     <button
                       onClick={() => handleGerarCrachasPdf(insc)}
                       disabled={gerandoPdfId === insc.id}
-                      className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center gap-2 transition-colors disabled:opacity-50 shadow-2xs"
+                      className="px-3.5 py-2.5 rounded-xl sm:rounded-2xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-2xs"
                       title="Baixar Crachás Oficiais com Foto e QR Code em PDF"
                     >
                       <Download className="w-4 h-4 text-[#00A878]" />
@@ -311,7 +311,7 @@ export default function EscolaDashboardPage() {
 
                     <Link
                       href={`/escola/inscricoes`}
-                      className="px-4 py-2.5 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold transition-all shadow-2xs"
+                      className="px-4 py-2.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold transition-all shadow-2xs text-center"
                     >
                       Editar Equipe
                     </Link>

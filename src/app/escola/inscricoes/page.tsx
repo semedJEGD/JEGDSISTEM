@@ -243,40 +243,40 @@ export default function EscolaInscricoesPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/escola/dashboard"
-            className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all"
+            className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Inscrição de Equipes & Atletas</h1>
-            <p className="text-sm text-[#4B5563] mt-1 font-medium">
-              Escola: <strong className="text-[#17221D]">{escola.nome}</strong> ({escola.sigla}) • Gonçalves Dias - MA
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Inscrição de Equipes & Atletas</h1>
+            <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 font-medium truncate">
+              Escola: <strong className="text-[#17221D]">{escola.nome}</strong> ({escola.sigla})
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         
         {/* Formulário / Wizard */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs">
-            <h2 className="text-xl font-black text-[#17221D] mb-1 flex items-center gap-2">
+          <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs">
+            <h2 className="text-lg sm:text-xl font-black text-[#17221D] mb-1 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#00A878]" />
               <span>Montar Nova Inscrição de Equipe</span>
             </h2>
-            <p className="text-sm text-[#4B5563] mb-6 font-medium">
+            <p className="text-xs sm:text-sm text-[#4B5563] mb-5 sm:mb-6 font-medium">
               Selecione a modalidade, categoria e convoque os atletas elegíveis conforme a Matriz Oficial do JEGDS 2026.
             </p>
 
-            <form onSubmit={handleSubmeterInscricao} className="space-y-6">
+            <form onSubmit={handleSubmeterInscricao} className="space-y-5 sm:space-y-6">
               
               {/* Seleção de Modalidade */}
               <div>
                 <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2.5">
                   1. Selecione a Modalidade Esportiva (8 Oficiais)
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                   {modalidades.map((mod) => {
                     const sel = modalidadeSelCodigo === mod.codigo;
                     return (
@@ -288,14 +288,14 @@ export default function EscolaInscricoesPage() {
                           setAtletasSelecionadosIds([]);
                           setProvasPorAtleta({});
                         }}
-                        className={`p-3.5 rounded-2xl border text-left transition-all ${
+                        className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left transition-all ${
                           sel
                             ? 'bg-[#E8F7F1] border-[#00A878] text-[#087A5B] font-bold shadow-sm'
                             : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#4B5563] hover:bg-white hover:border-[#00A878]/50'
                         }`}
                       >
-                        <p className="text-sm font-black truncate">{mod.nome}</p>
-                        <p className="text-xs text-[#00A878] font-bold mt-0.5">
+                        <p className="text-xs sm:text-sm font-black truncate">{mod.nome}</p>
+                        <p className="text-[10px] sm:text-xs text-[#00A878] font-bold mt-0.5">
                           Máx: {mod.maxAtletas}
                         </p>
                       </button>

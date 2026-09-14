@@ -103,10 +103,10 @@ export default function ValidarCrachaPage() {
       </div>
 
       {/* Formulário de Busca / Leitura de QR */}
-      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs">
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs">
         <form onSubmit={handleValidar} className="space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2.5">
+            <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
               Cole o Código QR ou digite o ID / Matrícula / Nome do Atleta
             </label>
             <div className="relative">
@@ -115,35 +115,34 @@ export default function ValidarCrachaPage() {
                 value={codigoBusca}
                 onChange={(e) => setCodigoBusca(e.target.value)}
                 placeholder="Ex: atl-01, 20260012 ou cole o payload do QR Code..."
-                className="w-full px-4 py-4 pl-12 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm sm:text-base font-semibold focus:border-[#00A878] focus:bg-white transition-all outline-none"
+                className="w-full px-3.5 sm:px-4 py-3 sm:py-4 pl-10 sm:pl-12 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-base font-semibold focus:border-[#00A878] focus:bg-white transition-all outline-none"
               />
-              <Search className="w-5 h-5 text-[#4B5563] absolute left-4 top-4" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#4B5563] absolute left-3.5 sm:left-4 top-3.5 sm:top-4" />
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-[#4B5563]">
-              <span>Exemplos:</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-[#4B5563]">
+              <span className="font-bold">Exemplos:</span>
               <button
                 type="button"
                 onClick={() => handleCarregarExemplo('atl-01')}
-                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold"
+                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold bg-[#E8F7F1] px-2 py-0.5 rounded-md"
               >
-                Gabriel Henrique (atl-01)
+                Gabriel (atl-01)
               </button>
-              <span>•</span>
               <button
                 type="button"
                 onClick={() => handleCarregarExemplo('atl-02')}
-                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold"
+                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold bg-[#E8F7F1] px-2 py-0.5 rounded-md"
               >
-                Lucas Gabriel (atl-02)
+                Lucas (atl-02)
               </button>
             </div>
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all active:scale-98"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all active:scale-98 text-center"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Verificar Autenticidade</span>
@@ -156,8 +155,8 @@ export default function ValidarCrachaPage() {
       {buscou && (
         <div>
           {atletaEncontrado ? (
-            <div className="bg-white border-2 border-[#00A878] rounded-3xl p-6 sm:p-8 shadow-md space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#00A878] text-white text-xs font-black px-6 py-1.5 rounded-bl-2xl uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+            <div className="bg-white border-2 border-[#00A878] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-md space-y-6 relative overflow-hidden">
+              <div className="sm:absolute top-0 right-0 bg-[#00A878] text-white text-[11px] sm:text-xs font-black px-4 sm:px-6 py-1.5 rounded-xl sm:rounded-bl-2xl uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs mb-3 sm:mb-0">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Credencial Válida & Regular</span>
               </div>

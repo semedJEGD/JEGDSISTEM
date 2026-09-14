@@ -97,14 +97,14 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-[#F7F9F8]">
+    <div className="min-h-[85vh] flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12 bg-[#F7F9F8] w-full">
       <div className="max-w-lg w-full">
         
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-10 shadow-sm relative overflow-hidden">
           
           {/* Logo & Título Institucional */}
-          <div className="text-center mb-8">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-4 shadow-2xs shrink-0">
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-2xs shrink-0">
               <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD" 
@@ -112,49 +112,49 @@ function LoginContent() {
               />
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Acesso ao Sistema</h1>
-            <p className="text-sm text-[#4B5563] mt-1.5 font-medium">
+            <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium">
               JEGDS 2026 • Jogos Escolares de Gonçalves Dias
             </p>
           </div>
 
           {/* Abas Unificadas: Professor / Escola vs Coordenação SEMED */}
-          <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#F7F9F8] rounded-2xl mb-8 border border-[#E2EAE5]">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-[#F7F9F8] rounded-2xl mb-6 sm:mb-8 border border-[#E2EAE5]">
             <button
               type="button"
               onClick={() => { setTipoAcesso('ESCOLA'); setErro(''); }}
-              className={`py-3 px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-2 transition-all ${
+              className={`py-2.5 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                 tipoAcesso === 'ESCOLA'
                   ? 'bg-[#00A878] text-white shadow-sm'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
-              <School className="w-4 h-4" />
-              <span>Professor / Escola</span>
+              <School className="w-4 h-4 shrink-0" />
+              <span className="truncate">Escola / Professor</span>
             </button>
             <button
               type="button"
               onClick={() => { setTipoAcesso('ADMIN'); setErro(''); }}
-              className={`py-3 px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-2 transition-all ${
+              className={`py-2.5 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                 tipoAcesso === 'ADMIN'
                   ? 'bg-[#087A5B] text-white shadow-sm'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Coordenação SEMED</span>
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span className="truncate">Coordenação SEMED</span>
             </button>
           </div>
 
           {erro && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold rounded-2xl p-3.5 sm:p-4 mb-6 flex items-start gap-2.5">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <span>{erro}</span>
+              <span className="break-words">{erro}</span>
             </div>
           )}
 
           {/* FORMULÁRIO 1: PROFESSOR / ESCOLA */}
           {tipoAcesso === 'ESCOLA' && (
-            <form onSubmit={handleLoginEscola} className="space-y-5">
+            <form onSubmit={handleLoginEscola} className="space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                   1. Selecione a sua Escola

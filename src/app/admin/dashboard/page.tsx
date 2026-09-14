@@ -240,34 +240,34 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 w-full max-w-full">
       
       {/* Header Coordenadores SEMED */}
-      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#00A878]/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
 
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] shadow-2xs shrink-0">
-              <ShieldCheck className="w-8 h-8 stroke-[2.2]" />
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
+          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] shadow-2xs shrink-0">
+              <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.2]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Painel da Coordenação SEMED</h1>
-                <span className="text-xs px-3 py-1 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-black">
-                  2 Coordenadores Fixos
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Painel da Coordenação SEMED</h1>
+                <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-black shrink-0">
+                  2 Coordenadores
                 </span>
               </div>
-              <p className="text-sm text-[#4B5563] mt-1 font-medium">
+              <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium break-words">
                 Conferência de lotes por escola, impressão oficial de delegações e monitoramento de inconsistências.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full lg:w-auto">
             <button
               onClick={() => setModalAvisoAberto(true)}
-              className="px-5 py-3 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center gap-2 transition-all shrink-0"
+              className="w-full lg:w-auto px-5 py-3 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all shrink-0"
             >
               <Bell className="w-4 h-4" />
               <span>Publicar Comunicado</span>
@@ -277,45 +277,45 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Estatísticas Gerais */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs">
-          <span className="text-xs font-black uppercase tracking-wider text-[#4B5563]">Escolas da Rede</span>
-          <p className="text-3xl sm:text-4xl font-black text-[#17221D] mt-1.5">{escolas.length}</p>
-          <p className="text-xs text-[#4B5563] mt-1 font-medium">Gonçalves Dias - MA</p>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Escolas</span>
+          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{escolas.length}</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Gonçalves Dias</p>
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs">
-          <span className="text-xs font-black uppercase tracking-wider text-[#4B5563]">Total de Alunos</span>
-          <p className="text-3xl sm:text-4xl font-black text-[#17221D] mt-1.5">{atletas.length}</p>
-          <p className="text-xs text-[#4B5563] mt-1 font-medium">Cadastrados</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Alunos</span>
+          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{atletas.length}</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Cadastrados</p>
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs">
-          <span className="text-xs font-black uppercase tracking-wider text-[#4B5563]">Inscrições</span>
-          <p className="text-3xl sm:text-4xl font-black text-[#17221D] mt-1.5">{inscricoes.length}</p>
-          <p className="text-xs text-[#4B5563] mt-1 font-medium">Equipes enviadas</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Inscrições</span>
+          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{inscricoes.length}</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Equipes enviadas</p>
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs">
-          <span className="text-xs font-black uppercase tracking-wider text-[#087A5B]">Conferidos</span>
-          <p className="text-3xl sm:text-4xl font-black text-[#00A878] mt-1.5">
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#087A5B]">Conferidos</span>
+          <p className="text-2xl sm:text-4xl font-black text-[#00A878] mt-1">
             {atletas.filter(a => a.conferidoPeloCoordenador).length}
           </p>
-          <p className="text-xs text-[#4B5563] mt-1 font-medium">Alunos homologados</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Homologados</p>
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 col-span-2 lg:col-span-1 shadow-xs">
-          <span className="text-xs font-black uppercase tracking-wider text-red-600">Alertas</span>
-          <p className="text-3xl sm:text-4xl font-black text-red-600 mt-1.5">{alertasInconsistencia.length}</p>
-          <p className="text-xs text-[#4B5563] mt-1 font-medium">Inconsistências</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 col-span-2 lg:col-span-1 shadow-xs">
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-red-600">Alertas</span>
+          <p className="text-2xl sm:text-4xl font-black text-red-600 mt-1">{alertasInconsistencia.length}</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Inconsistências</p>
         </div>
       </div>
 
       {/* Navegação por Abas */}
-      <div className="flex items-center gap-2.5 border-b border-[#E2EAE5] pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'ESCOLAS_LOTE'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
@@ -326,46 +326,46 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'HOMOLOGACAO'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Homologação de Equipes ({inscricoes.length})
+          Homologação ({inscricoes.length})
         </button>
 
         <button
           onClick={() => setAbaAtiva('ALERTAS')}
-          className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'ALERTAS'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Alertas de Inconsistência ({alertasInconsistencia.length})
+          Alertas ({alertasInconsistencia.length})
         </button>
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'LISTAS_CHAMADA'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Súmulas & Listas de Chamada WxO
+          Súmulas & Listas
         </button>
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'AVISOS'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Mural de Comunicados ({comunicados.length})
+          Comunicados ({comunicados.length})
         </button>
       </div>
 

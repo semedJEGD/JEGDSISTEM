@@ -278,16 +278,16 @@ export default function HomePage() {
           <p className="text-[#374151] text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed font-medium">
             Acesse o sistema agora mesmo, registre os seus alunos-atletas e assegure a vaga da sua delegação no maior evento esportivo da nossa cidade!
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full">
             <Link
               href="/escola/login"
-              className="px-8 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-xs hover:shadow-md transition-all active:scale-98"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-xs hover:shadow-md transition-all active:scale-98 text-center"
             >
               Entrar no Painel da Escola
             </Link>
             <Link
               href="/regulamento"
-              className="px-8 py-3.5 rounded-xl bg-white hover:bg-[#F7F9F8] text-[#17221D] font-bold text-sm border border-[#E2EAE5] transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white hover:bg-[#F7F9F8] text-[#17221D] font-bold text-sm border border-[#E2EAE5] transition-all text-center"
             >
               Consultar Regulamento Geral
             </Link>
