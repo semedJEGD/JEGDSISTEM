@@ -355,12 +355,15 @@ export class JegdPdfGenerator {
   }
 
   /**
-   * Gera o Lote Completo da Delegação Escolar para Conferência e Impressão Manual no Evento
+   * Gera Relatório Oficial em PDF do Lote (Geral ou Filtrado por Modalidade/Categoria/Naipe)
    */
   public static async gerarLoteCompletoEscola(
     escola: Escola,
     atletas: Atleta[],
-    inscricoes: InscricaoEquipe[] = []
+    inscricoes: InscricaoEquipe[] = [],
+    filtroModalidade?: string,
+    filtroCategoria?: string,
+    filtroSexo?: string
   ): Promise<void> {
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -371,52 +374,73 @@ export class JegdPdfGenerator {
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 14;
 
-    // Topo Oficial
-    doc.setFillColor(15, 23, 42);
+    // Filtros aplicados
+    let atletasFiltrados = [...atletas];
+    if (filtroModalidade && filtroModalidade !== 'TODAS') {
+      atletasFiltrados = atletasFiltrados.filter(a => 
+        a.modalidadesInscritas?.some(m => m.modalidadeNome.toLowerCase().includes(filtroModalidade.toLowerCase()) || m.modalidadeCodigo === filtroModalidade)
+      );
+    }
+    if (filtroCategoria && filtroCategoria !== 'TODAS') {
+      atletasFiltrados = atletasFiltrados.filter(a => a.categoriaCalculada === filtroCategoria);
+    }
+    if (filtroSexo && filtroSexo !== 'TODOS') {
+      atletasFiltrados = atletasFiltrados.filter(a => a.sexo === filtroSexo);
+    }
+
+    // Cabeçalho Oficial
+    doc.setFillColor(15, 23, 42); // slate-900
     doc.rect(margin, 10, pageWidth - margin * 2, 28, 'F');
 
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('JEGDS 2026 • LOTE OFICIAL DE INSCRIÇÕES DA ESCOLA', pageWidth / 2, 19, { align: 'center' });
+    doc.text('JEGDS 2026 - JOGOS ESCOLARES DE GONÇALVES DIAS', pageWidth / 2, 18, { align: 'center' });
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) • GONÇALVES DIAS - MA', pageWidth / 2, 25, { align: 'center' });
-    doc.text(`DELEGAÇÃO: ${escola.nome.toUpperCase()} (${escola.sigla}) • TOTAL DE ATLETAS: ${atletas.length}`, pageWidth / 2, 31, { align: 'center' });
+    doc.text('SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) • PREFEITURA DE GONÇALVES DIAS - MA', pageWidth / 2, 24, { align: 'center' });
+    
+    let subtituloFiltro = 'RELATÓRIO OFICIAL DE DELEGAÇÃO ESCOLAR EM LOTE';
+    if (filtroModalidade && filtroModalidade !== 'TODAS') subtituloFiltro += ` • MODALIDADE: ${filtroModalidade.toUpperCase()}`;
+    if (filtroCategoria && filtroCategoria !== 'TODAS') subtituloFiltro += ` • CAT: ${filtroCategoria}`;
+    if (filtroSexo && filtroSexo !== 'TODOS') subtituloFiltro += ` • NAIPE: ${filtroSexo}`;
+    doc.text(subtituloFiltro, pageWidth / 2, 30, { align: 'center' });
 
     // Informações da Escola
     doc.setDrawColor(203, 213, 225);
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(margin, 42, pageWidth - margin * 2, 22, 2, 2, 'FD');
+    doc.roundedRect(margin, 41, pageWidth - margin * 2, 26, 2, 2, 'FD');
 
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(9.5);
     doc.setFont('helvetica', 'bold');
-    doc.text(`INEP: ${escola.inep || 'N/A'} | Rede: ${escola.rede} | Bairro: ${escola.bairro || 'Centro'}`, margin + 4, 49);
-    doc.setFontSize(8.5);
+    doc.text(`UNIDADE ESCOLAR: ${escola.nome.toUpperCase()} (${escola.sigla})`, margin + 4, 47);
+
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Responsável / Direção: ${escola.responsavelNome} • Contato: ${escola.responsavelTelefone}`, margin + 4, 55);
-    doc.text(`Inscrições em Modalidades: ${inscricoes.map(i => `${i.modalidadeNome} (${i.categoria})`).join(', ') || 'Nenhuma equipe submetida'}`, margin + 4, 61);
+    doc.text(`INEP: ${escola.inep || 'N/A'} | Rede: ${escola.rede} | Responsável: ${escola.responsavelNome} (${escola.responsavelTelefone})`, margin + 4, 53);
+    doc.text(`Total de Atletas Listados: ${atletasFiltrados.length} | Modalidades: ${inscricoes.map(i => i.modalidadeNome).join(', ') || 'Geral'}`, margin + 4, 59);
 
     // Tabela de Atletas do Lote
     let currentY = 70;
     doc.setFillColor(30, 41, 59);
     doc.rect(margin, currentY, pageWidth - margin * 2, 7, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
 
     doc.text('Nº', margin + 3, currentY + 5);
-    doc.text('ESTUDANTE-ATLETA', margin + 12, currentY + 5);
-    doc.text('DATA NASC.', margin + 70, currentY + 5);
-    doc.text('CAT/SEXO', margin + 95, currentY + 5);
-    doc.text('DOCUMENTO', margin + 122, currentY + 5);
-    doc.text('CONFERÊNCIA MESA', margin + 152, currentY + 5);
+    doc.text('ESTUDANTE-ATLETA', margin + 10, currentY + 5);
+    doc.text('DATA NASC.', margin + 65, currentY + 5);
+    doc.text('CAT/SEXO', margin + 88, currentY + 5);
+    doc.text('DOCUMENTO', margin + 112, currentY + 5);
+    doc.text('MODALIDADE(S)', margin + 142, currentY + 5);
+    doc.text('CONFERÊNCIA', margin + 168, currentY + 5);
 
     currentY += 7;
 
-    atletas.forEach((atleta, index) => {
+    atletasFiltrados.forEach((atleta, index) => {
       if (currentY > 250) {
         doc.addPage();
         currentY = 20;
@@ -431,22 +455,25 @@ export class JegdPdfGenerator {
       doc.line(margin, currentY + 7, pageWidth - margin, currentY + 7);
 
       doc.setTextColor(30, 41, 59);
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
 
       const numStr = (index + 1).toString().padStart(2, '0');
       doc.text(numStr, margin + 3, currentY + 5);
-      doc.text(atleta.nomeCompleto.toUpperCase().slice(0, 26), margin + 12, currentY + 5);
-      doc.text(new Date(atleta.dataNascimento).toLocaleDateString('pt-BR'), margin + 70, currentY + 5);
+      doc.text(atleta.nomeCompleto.toUpperCase().slice(0, 26), margin + 10, currentY + 5);
+      doc.text(new Date(atleta.dataNascimento).toLocaleDateString('pt-BR'), margin + 65, currentY + 5);
       
-      const catInfo = atleta.categoriaCalculada || 'INFANTIL';
-      doc.text(`${catInfo.slice(0, 4)} (${atleta.sexo === 'MASCULINO' ? 'M' : 'F'})`, margin + 95, currentY + 5);
+      const catInfo = (atleta.categoriaCalculada || 'N/A').slice(0, 4);
+      doc.text(`${catInfo} (${atleta.sexo === 'MASCULINO' ? 'M' : 'F'})`, margin + 88, currentY + 5);
       
-      const docStr = `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
-      doc.text(docStr.slice(0, 16), margin + 122, currentY + 5);
+      const docStr = `${atleta.documentoTipo.slice(0, 3)}: ${atleta.documentoNumero}`;
+      doc.text(docStr.slice(0, 15), margin + 112, currentY + 5);
 
-      const statusConf = atleta.conferidoPeloCoordenador ? '[X] OK (HOMOLOGADO)' : '[  ] Pendente Mesa';
-      doc.text(statusConf, margin + 152, currentY + 5);
+      const modsStr = atleta.modalidadesInscritas?.map(m => m.modalidadeNome).join(', ') || 'N/A';
+      doc.text(modsStr.slice(0, 15), margin + 142, currentY + 5);
+
+      const statusConf = atleta.conferidoPeloCoordenador ? '[OK] HOMOLOGADO' : '[ ] PENDENTE';
+      doc.text(statusConf, margin + 168, currentY + 5);
 
       currentY += 7;
     });
@@ -459,14 +486,15 @@ export class JegdPdfGenerator {
 
     doc.setDrawColor(148, 163, 184);
     doc.line(margin + 5, currentY + 15, margin + 75, currentY + 15);
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
     doc.text('Professor Responsável da Escola', margin + 40, currentY + 20, { align: 'center' });
 
     doc.line(pageWidth - margin - 75, currentY + 15, pageWidth - margin - 5, currentY + 15);
-    doc.text('Coordenação SEMED / Arbitragem', pageWidth - margin - 40, currentY + 20, { align: 'center' });
+    doc.text('Coordenação SEMED / Homologação', pageWidth - margin - 40, currentY + 20, { align: 'center' });
 
-    doc.save(`Lote_Escola_JEGDS_${escola.sigla}.pdf`);
+    const nomeArquivo = `Lote_${escola.sigla.replace(/\s+/g, '_')}${filtroModalidade && filtroModalidade !== 'TODAS' ? `_${filtroModalidade}` : ''}${filtroCategoria && filtroCategoria !== 'TODAS' ? `_${filtroCategoria}` : ''}.pdf`;
+    doc.save(nomeArquivo);
   }
 
   private static desenharPlaceholderFoto(doc: jsPDF, x: number, y: number, w: number, h: number): void {
