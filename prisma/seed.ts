@@ -122,35 +122,53 @@ async function main() {
 
   // 3. Escolas de Gonçalves Dias - MA
   const senhaHashEscola = await bcrypt.hash('123456', 10);
-  const escola1 = await prisma.escola.upsert({
-    where: { loginEmail: 'uigd@semed.gd.gov.br' },
-    update: {},
-    create: {
-      nome: 'Unidade Integrada Gonçalves Dias',
-      sigla: 'UIGD',
-      inep: '21004512',
-      endereco: 'Rua Principal, 100 - Centro, Gonçalves Dias - MA',
-      bairro: 'Centro',
-      responsavelNome: 'Prof. Antônio Carlos Lima',
-      responsavelTelefone: '(99) 98112-2030',
-      loginEmail: 'uigd@semed.gd.gov.br',
-      senhaHash: senhaHashEscola
-    }
-  });
+  const escolasLista = [
+    { id: 'esc-aldenora-araujo', nome: 'Aldenora Araújo', sigla: 'ALDENORA ARAÚJO', inep: '21004501', loginEmail: 'aldenora@semed.gd.gov.br' },
+    { id: 'esc-anisio-gomes', nome: 'Anísio Gomes', sigla: 'ANÍSIO GOMES', inep: '21004502', loginEmail: 'anisiogomes@semed.gd.gov.br' },
+    { id: 'esc-anita-furtado', nome: 'Anita Furtado', sigla: 'ANITA FURTADO', inep: '21004503', loginEmail: 'anitafurtado@semed.gd.gov.br' },
+    { id: 'esc-antonio-goncalves-dias', nome: 'Antônio Gonçalves Dias', sigla: 'ANTÔNIO GD', inep: '21004504', loginEmail: 'antoniogd@semed.gd.gov.br' },
+    { id: 'esc-basilio-alves', nome: 'Basílio Alves', sigla: 'BASÍLIO ALVES', inep: '21004505', loginEmail: 'basilioalves@semed.gd.gov.br' },
+    { id: 'esc-emilio-murad', nome: 'Emílio Murad', sigla: 'EMÍLIO MURAD', inep: '21004506', loginEmail: 'emiliomurad@semed.gd.gov.br' },
+    { id: 'esc-jose-correa-lima', nome: 'José Corrêa Lima', sigla: 'JOSÉ CORRÊA', inep: '21004507', loginEmail: 'josecorrea@semed.gd.gov.br' },
+    { id: 'esc-jose-goncalves-dias', nome: 'José Gonçalves Dias', sigla: 'JOSÉ GD', inep: '21004508', loginEmail: 'josegd@semed.gd.gov.br' },
+    { id: 'esc-raimundo-reis', nome: 'Raimundo Reis', sigla: 'RAIMUNDO REIS', inep: '21004509', loginEmail: 'raimundoreis@semed.gd.gov.br' },
+    { id: 'esc-ce-sulamita-lucio', nome: 'C.E Sulamita Lúcio', sigla: 'C.E SULAMITA LÚCIO', inep: '21004510', loginEmail: 'sulamitalucio@educacao.ma.gov.br' },
+    { id: 'esc-ue-benta-vilanova', nome: 'U.E Benta Vilanova', sigla: 'U.E BENTA VILANOVA', inep: '21004511', loginEmail: 'bentavilanova@semed.gd.gov.br' },
+    { id: 'esc-cietec', nome: 'C.I.E.T.E.C', sigla: 'C.I.E.T.E.C', inep: '21004512', loginEmail: 'cietec@semed.gd.gov.br' }
+  ];
 
-  await prisma.usuario.upsert({
-    where: { email: 'uigd@semed.gd.gov.br' },
-    update: {},
-    create: {
-      nome: 'Diretoria UIGD',
-      email: 'uigd@semed.gd.gov.br',
-      senhaHash: senhaHashEscola,
-      papel: 'ESCOLA',
-      escolaId: escola1.id
-    }
-  });
+  for (const esc of escolasLista) {
+    await prisma.escola.upsert({
+      where: { loginEmail: esc.loginEmail },
+      update: {},
+      create: {
+        id: esc.id,
+        nome: esc.nome,
+        sigla: esc.sigla,
+        inep: esc.inep,
+        endereco: 'Gonçalves Dias - MA',
+        bairro: 'Centro',
+        responsavelNome: 'Direção / Coordenação',
+        responsavelTelefone: '(99) 98801-0000',
+        loginEmail: esc.loginEmail,
+        senhaHash: senhaHashEscola
+      }
+    });
 
-  console.log('✅ SEED EXECUTADO COM SUCESSO!');
+    await prisma.usuario.upsert({
+      where: { email: esc.loginEmail },
+      update: {},
+      create: {
+        nome: `Prof. Responsável - ${esc.sigla}`,
+        email: esc.loginEmail,
+        senhaHash: senhaHashEscola,
+        papel: 'PROFESSOR',
+        escolaId: esc.id
+      }
+    });
+  }
+
+  console.log('✅ SEED EXECUTADO COM SUCESSO COM AS 12 ESCOLAS DE GONÇALVES DIAS!');
 }
 
 main()
@@ -161,3 +179,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
