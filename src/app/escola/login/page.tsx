@@ -97,7 +97,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-76px)] flex items-center justify-center px-3 sm:px-4 py-8 sm:py-16 overflow-hidden w-full">
+    <div className="relative min-h-[calc(100vh-70px)] flex items-center justify-center px-3 py-4 sm:py-8 overflow-hidden w-full">
       
       {/* VÍDEO DE BACKGROUND EM LOOP */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -113,74 +113,74 @@ function LoginContent() {
         </video>
         
         {/* Camada de Sobreposição (Overlay) Institucional */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0b291e]/75 via-[#0d3326]/70 to-[#071d15]/85 backdrop-blur-[1.5px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b291e]/80 via-[#0d3326]/75 to-[#071d15]/90 backdrop-blur-[1px]" />
       </div>
 
-      {/* CARD DE LOGIN FLUTUANTE */}
-      <div className="relative z-10 max-w-lg w-full mx-auto">
-        <div className="bg-white/98 backdrop-blur-md border border-white/60 sm:border-[#E2EAE5] rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden transition-all duration-300">
+      {/* CARD DE LOGIN FLUTUANTE COMPACTO */}
+      <div className="relative z-10 max-w-[450px] w-full mx-auto my-auto">
+        <div className="bg-white/98 backdrop-blur-md border border-white/70 sm:border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden transition-all duration-300">
           
           {/* Logo & Título Institucional */}
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-sm shrink-0">
+          <div className="text-center mb-4 sm:mb-5">
+            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-2 shadow-xs shrink-0">
               <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD" 
-                className="w-full h-full object-contain p-1" 
+                className="w-full h-full object-contain p-0.5" 
               />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D] tracking-tight">Acesso ao Sistema</h1>
-            <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium">
+            <h1 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">Acesso ao Sistema</h1>
+            <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium">
               JEGDS 2026 • Jogos Escolares de Gonçalves Dias
             </p>
           </div>
 
           {/* Abas Unificadas: Professor / Escola vs Coordenação SEMED */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-[#F7F9F8] rounded-2xl mb-6 sm:mb-8 border border-[#E2EAE5]">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-[#F7F9F8] rounded-xl mb-4 sm:mb-5 border border-[#E2EAE5]">
             <button
               type="button"
               onClick={() => { setTipoAcesso('ESCOLA'); setErro(''); }}
-              className={`py-2.5 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+              className={`py-2 px-2 text-xs font-black rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 tipoAcesso === 'ESCOLA'
-                  ? 'bg-[#00A878] text-white shadow-sm'
+                  ? 'bg-[#00A878] text-white shadow-xs'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
-              <School className="w-4 h-4 shrink-0" />
+              <School className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Escola / Professor</span>
             </button>
             <button
               type="button"
               onClick={() => { setTipoAcesso('ADMIN'); setErro(''); }}
-              className={`py-2.5 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+              className={`py-2 px-2 text-xs font-black rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 tipoAcesso === 'ADMIN'
-                  ? 'bg-[#087A5B] text-white shadow-sm'
+                  ? 'bg-[#087A5B] text-white shadow-xs'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
-              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Coordenação SEMED</span>
             </button>
           </div>
 
           {erro && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold rounded-2xl p-3.5 sm:p-4 mb-6 flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl p-3 mb-4 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <span className="break-words">{erro}</span>
             </div>
           )}
 
           {/* FORMULÁRIO 1: PROFESSOR / ESCOLA */}
           {tipoAcesso === 'ESCOLA' && (
-            <form onSubmit={handleLoginEscola} className="space-y-4 sm:space-y-5">
+            <form onSubmit={handleLoginEscola} className="space-y-3 sm:space-y-3.5">
               <div>
-                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                   1. Selecione a sua Escola
                 </label>
                 <select
                   value={escolaSelecionadaId}
                   onChange={(e) => setEscolaSelecionadaId(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                 >
                   {escolas.map((esc) => (
                     <option key={esc.id} value={esc.id}>
@@ -191,7 +191,7 @@ function LoginContent() {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                   2. Nome do Professor / Responsável
                 </label>
                 <div className="relative">
@@ -201,15 +201,15 @@ function LoginContent() {
                     value={profNome}
                     onChange={(e) => setProfNome(e.target.value)}
                     placeholder="Ex: Prof. Marcos Silva"
-                    className="w-full px-4 py-3 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
-                  <User className="w-4 h-4 text-[#4B5563] absolute left-4 top-3.5" />
+                  <User className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                     3. WhatsApp
                   </label>
                   <div className="relative">
@@ -218,14 +218,14 @@ function LoginContent() {
                       value={profTelefone}
                       onChange={(e) => setProfTelefone(e.target.value)}
                       placeholder="(99) 98888-0000"
-                      className="w-full px-4 py-3 pl-10 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                      className="w-full px-3 py-2.5 pl-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
-                    <Phone className="w-4 h-4 text-[#4B5563] absolute left-3.5 top-3.5" />
+                    <Phone className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                     4. Senha
                   </label>
                   <div className="relative">
@@ -234,15 +234,15 @@ function LoginContent() {
                       value={profSenha}
                       onChange={(e) => setProfSenha(e.target.value)}
                       placeholder="Sua senha"
-                      className="w-full px-4 py-3 pl-10 pr-10 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                      className="w-full px-3 py-2.5 pl-8 pr-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
-                    <Lock className="w-4 h-4 text-[#4B5563] absolute left-3.5 top-3.5" />
+                    <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
                     <button
                       type="button"
                       onClick={() => setMostrarSenha(!mostrarSenha)}
-                      className="absolute right-3.5 top-3.5 text-[#4B5563] hover:text-[#17221D]"
+                      className="absolute right-2.5 top-3 text-[#4B5563] hover:text-[#17221D]"
                     >
-                      {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {mostrarSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -250,25 +250,25 @@ function LoginContent() {
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-base shadow-lg shadow-[#00A878]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
+                className="w-full py-3 px-5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
               >
                 <span>Entrar no Painel da Escola</span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
 
           {/* FORMULÁRIO 2: COORDENAÇÃO SEMED */}
           {tipoAcesso === 'ADMIN' && (
-            <form onSubmit={handleLoginAdmin} className="space-y-5">
+            <form onSubmit={handleLoginAdmin} className="space-y-3.5">
               <div>
-                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                   Coordenador Responsável
                 </label>
                 <select
                   value={adminCoordenador}
                   onChange={(e) => setAdminCoordenador(e.target.value as any)}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                 >
                   <option value="COORDENADOR_1">Coordenador Geral 1 (SEMED Desporto)</option>
                   <option value="COORDENADOR_2">Coordenador Geral 2 (SEMED Educação)</option>
@@ -276,7 +276,7 @@ function LoginContent() {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
                   Senha da Coordenação
                 </label>
                 <div className="relative">
@@ -286,21 +286,21 @@ function LoginContent() {
                     value={adminSenha}
                     onChange={(e) => setAdminSenha(e.target.value)}
                     placeholder="Digite a senha institucional"
-                    className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
-                  <Lock className="w-4 h-4 text-[#4B5563] absolute left-4 top-4" />
+                  <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
                 </div>
-                <p className="text-xs text-[#4B5563] mt-2 font-medium">
+                <p className="text-[11px] text-[#4B5563] mt-1 font-medium">
                   Senha padrão do comitê: <strong className="text-[#087A5B]">semed2026</strong>
                 </p>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-base shadow-lg shadow-[#087A5B]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
+                className="w-full py-3 px-5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-xs sm:text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
               >
                 <span>Acessar Painel da Coordenação</span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
