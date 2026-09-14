@@ -19,16 +19,20 @@ import {
   Phone,
   Calendar,
   ShieldCheck,
+  Trophy,
+  Sparkles,
+  Check,
   X
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
-import { Escola, Atleta, Genero, TipoDocumento } from '@/types/jegd';
-import { JegdsRulesService } from '@/services/jegds-rules';
+import { Escola, Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade } from '@/types/jegd';
+import { JegdsRulesService, PROVAS_ATLETISMO_POR_CATEGORIA } from '@/services/jegds-rules';
 
 export default function EscolaAtletasPage() {
   const router = useRouter();
   const [escola, setEscola] = useState<Escola | null>(null);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
+  const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [busca, setBusca] = useState('');
   const [filtroSexo, setFiltroSexo] = useState<string>('TODOS');
   const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
@@ -51,6 +55,10 @@ export default function EscolaAtletasPage() {
   const [consentimentoResponsavel, setConsentimentoResponsavel] = useState(true);
   const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
 
+  // Inscrição em Modalidade direta no cadastro do aluno
+  const [modalidadesEscolhidas, setModalidadesEscolhidas] = useState<ModalidadeCodigo[]>([]);
+  const [provasAtletismo, setProvasAtletismo] = useState<string[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -62,6 +70,7 @@ export default function EscolaAtletasPage() {
     }
     setEscola(atual);
     setAtletas(JegdStorage.getAtletas(atual.id));
+    setModalidades(JegdStorage.getModalidades());
   }, []);
 
   const handleAbrirModalNovo = () => {
@@ -78,6 +87,8 @@ export default function EscolaAtletasPage() {
     setTipoSanguineo('O+');
     setConsentimentoResponsavel(true);
     setFotoBase64(undefined);
+    setModalidadesEscolhidas([]);
+    setProvasAtletismo([]);
     setModalAberto(true);
   };
 
@@ -95,6 +106,12 @@ export default function EscolaAtletasPage() {
     setTipoSanguineo(atleta.tipoSanguineo || 'O+');
     setConsentimentoResponsavel(atleta.consentimentoResponsavel);
     setFotoBase64(atleta.documentos?.foto3x4);
+    
+    const modsInsc = atleta.modalidadesInscritas?.map(m => m.modalidadeCodigo) || [];
+    setModalidadesEscolhidas(modsInsc);
+    const atletismoInsc = atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
+    setProvasAtletismo(atletismoInsc?.provas || []);
+
     setModalAberto(true);
   };
 
@@ -113,7 +130,44 @@ export default function EscolaAtletasPage() {
     }
   };
 
-  const handleSalvarAtleta = (e: React.FormEvent) => {
+  const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
+
+  // Filtra as modalidades disponíveis estritamente pela matriz oficial para esta categoria e sexo
+  const modalidadesDisponiveis = modalidades.filter(mod => {
+    if (!catCalc.categoria) return false;
+    const res = JegdsRulesService.validarMatriz(mod.codigo, catCalc.categoria as CategoriaIdade, sexo);
+    return res.valido;
+  });
+
+  const toggleModalidade = (modCodigo: ModalidadeCodigo) => {
+    if (!catCalc.categoria) return;
+    const infoVagas = JegdStorage.getVagasOcupadas(modCodigo, catCalc.categoria as CategoriaIdade, sexo);
+    
+    if (modalidadesEscolhidas.includes(modCodigo)) {
+      setModalidadesEscolhidas(modalidadesEscolhidas.filter(c => c !== modCodigo));
+      if (modCodigo === 'atletismo') setProvasAtletismo([]);
+    } else {
+      if (infoVagas.esgotada) {
+        alert(`A modalidade selecionada atingiu o limite oficial (${infoVagas.total} vagas) e está esgotada.`);
+        return;
+      }
+      setModalidadesEscolhidas([...modalidadesEscolhidas, modCodigo]);
+    }
+  };
+
+  const toggleProva = (prova: string) => {
+    if (provasAtletismo.includes(prova)) {
+      setProvasAtletismo(provasAtletismo.filter(p => p !== prova));
+    } else {
+      if (provasAtletismo.length >= 2) {
+        alert('No Atletismo, cada atleta pode se inscrever em no máximo 2 provas.');
+        return;
+      }
+      setProvasAtletismo([...provasAtletismo, prova]);
+    }
+  };
+
+  const handleSalvarAtleta = (e: React.FormEvent, cadastrarOutro: boolean = false) => {
     e.preventDefault();
     if (!escola) return;
 
@@ -128,11 +182,9 @@ export default function EscolaAtletasPage() {
       return;
     }
 
-    const { categoria } = JegdsRulesService.calcularCategoria(dataNascimento);
-    if (!categoria) {
-      if (!confirm('Atenção: A data de nascimento deste aluno não se enquadra nas categorias oficiais do JEGDS 2026 (Mirim 9-11, Infantil 12-14, Infanto 15-17 ou Junior 18-20). Deseja salvar mesmo assim?')) {
-        return;
-      }
+    if (!catCalc.categoria) {
+      alert('A data de nascimento informada não se enquadra nas categorias oficiais do JEGDS 2026 (9 a 20 anos).');
+      return;
     }
 
     if (!consentimentoResponsavel) {
@@ -140,8 +192,27 @@ export default function EscolaAtletasPage() {
       return;
     }
 
+    if (modalidadesEscolhidas.includes('atletismo')) {
+      if (provasAtletismo.length === 0) {
+        alert('Selecione ao menos 1 prova de Atletismo para o atleta (máximo 2).');
+        return;
+      }
+    }
+
+    const currentUser = JegdStorage.getCurrentUser();
+    const atletaId = atletaEditando ? atletaEditando.id : `atl-${Date.now()}`;
+
+    const modalidadesMapeadas = modalidadesEscolhidas.map(mCod => {
+      const modObj = modalidades.find(m => m.codigo === mCod);
+      return {
+        modalidadeCodigo: mCod,
+        modalidadeNome: modObj?.nome || mCod,
+        provas: mCod === 'atletismo' ? provasAtletismo : undefined
+      };
+    });
+
     const atleta: Atleta = {
-      id: atletaEditando ? atletaEditando.id : `atl-${Date.now()}`,
+      id: atletaId,
       escolaId: escola.id,
       nomeCompleto,
       dataNascimento,
@@ -154,6 +225,11 @@ export default function EscolaAtletasPage() {
       telefoneContato,
       tipoSanguineo,
       consentimentoResponsavel,
+      cadastradoPor: currentUser?.nome || escola.responsavelNome,
+      categoriaCalculada: catCalc.categoria,
+      modalidadesInscritas: modalidadesMapeadas,
+      conferidoPeloCoordenador: atletaEditando?.conferidoPeloCoordenador || false,
+      observacaoCoordenador: atletaEditando?.observacaoCoordenador,
       documentos: {
         ...(atletaEditando?.documentos || {}),
         foto3x4: fotoBase64
@@ -163,8 +239,54 @@ export default function EscolaAtletasPage() {
     };
 
     JegdStorage.saveAtleta(atleta);
+
+    // Cria ou atualiza as inscrições em equipes correspondentes
+    modalidadesEscolhidas.forEach(modCod => {
+      const modObj = modalidades.find(m => m.codigo === modCod);
+      if (!modObj || !catCalc.categoria) return;
+
+      const inscricoesAtuais = JegdStorage.getInscricoes(escola.id);
+      let insc = inscricoesAtuais.find(
+        i => i.modalidadeCodigo === modCod && i.categoria === catCalc.categoria && i.sexo === sexo
+      );
+
+      if (!insc) {
+        insc = {
+          id: `insc-${Date.now()}-${modCod}`,
+          escolaId: escola.id,
+          modalidadeCodigo: modCod,
+          modalidadeNome: modObj.nome,
+          categoria: catCalc.categoria,
+          sexo: sexo,
+          atletaIds: [atletaId],
+          provasPorAtleta: modCod === 'atletismo' ? { [atletaId]: provasAtletismo } : undefined,
+          comissaoIds: [],
+          status: 'PENDENTE',
+          dataInscricao: new Date().toLocaleString('pt-BR'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        if (!insc.atletaIds.includes(atletaId)) {
+          insc.atletaIds.push(atletaId);
+        }
+        if (modCod === 'atletismo') {
+          insc.provasPorAtleta = {
+            ...(insc.provasPorAtleta || {}),
+            [atletaId]: provasAtletismo
+          };
+        }
+      }
+      JegdStorage.saveInscricao(insc);
+    });
+
     setAtletas(JegdStorage.getAtletas(escola.id));
-    setModalAberto(false);
+
+    if (cadastrarOutro) {
+      handleAbrirModalNovo();
+    } else {
+      setModalAberto(false);
+    }
   };
 
   const handleExcluirAtleta = (id: string, nome: string) => {
@@ -182,14 +304,13 @@ export default function EscolaAtletasPage() {
                       a.matricula.includes(busca) ||
                       a.documentoNumero.includes(busca);
     const bateSexo = filtroSexo === 'TODOS' || a.sexo === filtroSexo;
-    
-    const infoCat = JegdsRulesService.calcularCategoria(a.dataNascimento);
-    const bateCategoria = filtroCategoria === 'TODOS' || infoCat.categoria === filtroCategoria;
+    const catInfo = a.categoriaCalculada || JegdsRulesService.calcularCategoria(a.dataNascimento).categoria;
+    const bateCategoria = filtroCategoria === 'TODOS' || catInfo === filtroCategoria;
 
     return bateBusca && bateSexo && bateCategoria;
   });
 
-  const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
+  const provasPermitidas = catCalc.categoria ? PROVAS_ATLETISMO_POR_CATEGORIA[catCalc.categoria] || [] : [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -204,9 +325,9 @@ export default function EscolaAtletasPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-white">Banco de Estudantes-Atletas</h1>
+            <h1 className="text-2xl font-black text-white">Alunos-Atletas da Escola</h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Escola: <strong>{escola.nome}</strong> ({escola.sigla}) • Gonçalves Dias - MA
+              Escola: <strong>{escola.nome}</strong> ({escola.sigla}) • {escola.rede}
             </p>
           </div>
         </div>
@@ -216,7 +337,7 @@ export default function EscolaAtletasPage() {
           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all hover:scale-105"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Cadastrar Novo Atleta</span>
+          <span>Cadastrar Aluno (Um a Um)</span>
         </button>
       </div>
 
@@ -264,19 +385,22 @@ export default function EscolaAtletasPage() {
       {atletasFiltrados.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
           <Users className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-          <p className="text-base font-bold text-white">Nenhum atleta encontrado.</p>
+          <p className="text-base font-bold text-white">Nenhum atleta cadastrado ainda.</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Cadastre os alunos da sua escola para garantir as vagas nas modalidades do JEGDS 2026.
+          </p>
           <button
             onClick={handleAbrirModalNovo}
             className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs inline-flex items-center gap-2 mt-4"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Cadastrar Primeiro Atleta</span>
+            <span>Cadastrar Primeiro Aluno</span>
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {atletasFiltrados.map((atleta) => {
-            const catInfo = JegdsRulesService.calcularCategoria(atleta.dataNascimento);
+            const catInfo = atleta.categoriaCalculada || JegdsRulesService.calcularCategoria(atleta.dataNascimento).categoria;
 
             return (
               <div
@@ -306,9 +430,9 @@ export default function EscolaAtletasPage() {
                       <span className="text-xs font-semibold text-emerald-400">
                         {atleta.sexo}
                       </span>
-                      {catInfo.categoria ? (
+                      {catInfo ? (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                          {catInfo.categoria} ({catInfo.idade} anos)
+                          {catInfo}
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">
@@ -322,29 +446,49 @@ export default function EscolaAtletasPage() {
                     </h3>
                     
                     <p className="text-xs text-slate-400 mt-1">
-                      Matrícula: <strong className="text-slate-200">{atleta.matricula}</strong>
+                      Doc: <strong className="text-slate-200">{atleta.documentoTipo} {atleta.documentoNumero}</strong>
                     </p>
                     <p className="text-xs text-slate-400">
-                      Turma: <strong className="text-slate-200">{atleta.serieTurma}</strong>
+                      Nasc: <strong className="text-slate-200">{new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</strong>
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 space-y-1">
-                  <p className="flex items-center justify-between">
-                    <span>Nascimento:</span>
-                    <strong className="text-slate-200">{new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</strong>
-                  </p>
-                  <p className="flex items-center justify-between">
-                    <span>Documento ({atleta.documentoTipo}):</span>
-                    <strong className="text-slate-200">{atleta.documentoNumero}</strong>
-                  </p>
-                  <p className="flex items-center justify-between">
-                    <span>Consentimento Pais:</span>
-                    <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Autorizado
+                {/* Modalidades Inscritas */}
+                <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-300">Modalidades:</span>
+                    <span className="text-[10px] text-emerald-400 font-bold">
+                      {atleta.modalidadesInscritas?.length || 0} vinculada(s)
                     </span>
-                  </p>
+                  </div>
+                  
+                  {atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {atleta.modalidadesInscritas.map((m, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-200 text-[10px] border border-slate-700 font-medium"
+                        >
+                          {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-slate-500 italic">Nenhuma modalidade vinculada</span>
+                  )}
+                </div>
+
+                {/* Status Conferência SEMED */}
+                <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                  <span>Conferência SEMED:</span>
+                  {atleta.conferidoPeloCoordenador ? (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Conferido
+                    </span>
+                  ) : (
+                    <span className="text-amber-400 font-medium">Aguardando mesa</span>
+                  )}
                 </div>
 
                 {/* Ações */}
@@ -371,7 +515,7 @@ export default function EscolaAtletasPage() {
         </div>
       )}
 
-      {/* Modal de Cadastro / Edição */}
+      {/* Modal de Cadastro / Edição 1 a 1 */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8">
@@ -379,10 +523,10 @@ export default function EscolaAtletasPage() {
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
               <div>
                 <h3 className="text-lg font-bold text-white">
-                  {atletaEditando ? 'Editar Cadastro do Atleta' : 'Novo Aluno-Atleta JEGDS 2026'}
+                  {atletaEditando ? 'Editar Cadastro do Aluno' : 'Cadastro de Aluno-Atleta (Passo a Passo)'}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Dados oficiais para credenciamento e validação pelo Comitê Organizador.
+                  Preencha os dados do estudante e selecione as modalidades e provas disponíveis.
                 </p>
               </div>
               <button
@@ -393,7 +537,7 @@ export default function EscolaAtletasPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSalvarAtleta} className="space-y-4">
+            <form onSubmit={(e) => handleSalvarAtleta(e, false)} className="space-y-4">
               
               {/* Foto Upload Box */}
               <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-slate-800/60 border border-slate-700">
@@ -433,7 +577,7 @@ export default function EscolaAtletasPage() {
                 </div>
               </div>
 
-              {/* Dados */}
+              {/* Dados Básicos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -508,65 +652,96 @@ export default function EscolaAtletasPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-emerald-500"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Matrícula Escolar
+              {/* SELEÇÃO DE MODALIDADES DISPONÍVEIS & VAGAS EM TEMPO REAL */}
+              <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Trophy className="w-4 h-4 text-emerald-400" />
+                    <span>Modalidades Válidas para este Aluno ({catCalc.categoria || 'Selecione a data'} - {sexo})</span>
                   </label>
-                  <input
-                    type="text"
-                    value={matricula}
-                    onChange={(e) => setMatricula(e.target.value)}
-                    placeholder="Ex: 2026-GD-100"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-emerald-500"
-                  />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Série / Turma
-                  </label>
-                  <input
-                    type="text"
-                    value={serieTurma}
-                    onChange={(e) => setSerieTurma(e.target.value)}
-                    placeholder="Ex: 8º Ano B"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-emerald-500"
-                  />
-                </div>
+                {modalidadesDisponiveis.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">
+                    Nenhuma modalidade oficial disponível para a combinação de idade e sexo deste aluno.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {modalidadesDisponiveis.map(mod => {
+                      const sel = modalidadesEscolhidas.includes(mod.codigo);
+                      const infoVagas = catCalc.categoria
+                        ? JegdStorage.getVagasOcupadas(mod.codigo, catCalc.categoria as CategoriaIdade, sexo)
+                        : { ocupadas: 0, total: mod.maxAtletas, disponiveis: mod.maxAtletas, esgotada: false };
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Telefone WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    value={telefoneContato}
-                    onChange={(e) => setTelefoneContato(e.target.value)}
-                    placeholder="(99) 98888-0000"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-emerald-500"
-                  />
-                </div>
+                      return (
+                        <div
+                          key={mod.id}
+                          onClick={() => toggleModalidade(mod.codigo)}
+                          className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                            sel
+                              ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                              : infoVagas.esgotada
+                              ? 'bg-red-500/5 border-red-500/30 opacity-60 cursor-not-allowed'
+                              : 'bg-slate-900 border-slate-700 hover:border-slate-600 text-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">{mod.nome}</span>
+                            {infoVagas.esgotada ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                                ESGOTADA
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-emerald-400">
+                                {infoVagas.ocupadas}/{infoVagas.total} vagas preenchidas
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            {infoVagas.disponiveis} vaga(s) restante(s) no JEGDS
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Tipo Sanguíneo
-                  </label>
-                  <select
-                    value={tipoSanguineo}
-                    onChange={(e) => setTipoSanguineo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-emerald-500"
-                  >
-                    <option value="O+">O+</option>
-                    <option value="A+">A+</option>
-                    <option value="B+">B+</option>
-                    <option value="AB+">AB+</option>
-                    <option value="O-">O-</option>
-                    <option value="A-">A-</option>
-                    <option value="B-">B-</option>
-                    <option value="AB-">AB-</option>
-                  </select>
-                </div>
+                {/* Se Atletismo selecionado, escolher até 2 provas */}
+                {modalidadesEscolhidas.includes('atletismo') && (
+                  <div className="mt-3 pt-3 border-t border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-300">
+                        Selecione até 2 Provas de Atletismo ({catCalc.categoria}):
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {provasAtletismo.length}/2 selecionadas
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {provasPermitidas.map(prova => {
+                        const ativa = provasAtletismo.includes(prova);
+                        return (
+                          <button
+                            type="button"
+                            key={prova}
+                            onClick={() => toggleProva(prova)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              ativa
+                                ? 'bg-amber-500 text-slate-950 shadow-sm'
+                                : 'bg-slate-900 text-slate-300 border border-slate-700 hover:border-slate-600'
+                            }`}
+                          >
+                            {prova}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* Consentimento LGPD */}
@@ -583,20 +758,31 @@ export default function EscolaAtletasPage() {
                 </label>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              {/* Footer de Ações */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300"
                 >
                   Cancelar
                 </button>
+
+                {!atletaEditando && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleSalvarAtleta(e, true)}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white text-xs font-bold"
+                  >
+                    Salvar e Cadastrar Próximo
+                  </button>
+                )}
+
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg"
                 >
-                  {atletaEditando ? 'Salvar Alterações' : 'Concluir Cadastro'}
+                  {atletaEditando ? 'Salvar Alterações' : 'Salvar e Finalizar'}
                 </button>
               </div>
 
@@ -608,3 +794,4 @@ export default function EscolaAtletasPage() {
     </div>
   );
 }
+

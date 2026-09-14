@@ -222,9 +222,12 @@ const STORAGE_KEYS = {
   INSCRICOES: 'jegds_inscricoes_v2',
   MODALIDADES: 'jegds_modalidades_v2',
   COMUNICADOS: 'jegds_comunicados_v2',
+  USUARIOS: 'jegds_usuarios_v2',
   CURRENT_AUTH_ESCOLA: 'jegds_current_escola_auth',
+  CURRENT_AUTH_USER: 'jegds_current_user_auth',
   COMITE_AUTH: 'jegds_comite_auth'
 };
+
 
 export class JegdStorage {
   private static isClient(): boolean {
@@ -502,9 +505,123 @@ export class JegdStorage {
     localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(list));
   }
 
+  public static getUsuarios(): any[] {
+    if (!this.isClient()) return [];
+    this.init();
+    const data = localStorage.getItem(STORAGE_KEYS.USUARIOS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  public static saveUsuario(user: any): void {
+    if (!this.isClient()) return;
+    const list = this.getUsuarios();
+    const idx = list.findIndex(u => u.id === user.id || u.email === user.email);
+    if (idx >= 0) list[idx] = user;
+    else list.push(user);
+    localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(list));
+  }
+
+  public static setCurrentUser(user: any | null): void {
+    if (!this.isClient()) return;
+    if (user) localStorage.setItem(STORAGE_KEYS.CURRENT_AUTH_USER, JSON.stringify(user));
+    else localStorage.removeItem(STORAGE_KEYS.CURRENT_AUTH_USER);
+  }
+
+  public static getCurrentUser(): any | null {
+    if (!this.isClient()) return null;
+    const data = localStorage.getItem(STORAGE_KEYS.CURRENT_AUTH_USER);
+    return data ? JSON.parse(data) : null;
+  }
+
+  /**
+   * Cálculo em tempo real de Vagas Ocupadas x Vagas Totais (Competitivo entre todas as escolas)
+   */
+  public static getVagasOcupadas(
+    modalidadeCodigo: ModalidadeCodigo,
+    categoria: CategoriaIdade,
+    sexo: Genero
+  ): { ocupadas: number; total: number; disponiveis: number; esgotada: boolean } {
+    const modalidades = this.getModalidades();
+    const mod = modalidades.find(m => m.codigo === modalidadeCodigo);
+    const total = mod ? mod.maxAtletas : 10;
+
+    const inscricoes = this.getInscricoes();
+    // Inscrições ativas para essa modalidade + categoria + sexo
+    const inscricoesAtivas = inscricoes.filter(
+      i => i.modalidadeCodigo === modalidadeCodigo && i.categoria === categoria && i.sexo === sexo
+    );
+
+    let ocupadas = 0;
+    inscricoesAtivas.forEach(i => {
+      ocupadas += i.atletaIds.length;
+    });
+
+    const disponiveis = Math.max(0, total - ocupadas);
+    const esgotada = ocupadas >= total;
+
+    return { ocupadas, total, disponiveis, esgotada };
+  }
+
+  /**
+   * Atualização de status de conferência pelo coordenador SEMED
+   */
+  public static updateAtletaConferencia(
+    atletaId: string,
+    conferido: boolean,
+    observacao?: string
+  ): void {
+    if (!this.isClient()) return;
+    const atletas = this.getAtletas();
+    const idx = atletas.findIndex(a => a.id === atletaId);
+    if (idx >= 0) {
+      atletas[idx].conferidoPeloCoordenador = conferido;
+      if (observacao !== undefined) {
+        atletas[idx].observacaoCoordenador = observacao;
+      }
+      localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(atletas));
+    }
+  }
+
+  /**
+   * Progresso geral de todas as escolas cadastradas
+   */
+  public static getProgressoEscolas(): {
+    escola: Escola;
+    totalAtletas: number;
+    totalInscricoes: number;
+    totalConferidos: number;
+    status: 'PREENCHIDO' | 'EM_ANDAMENTO' | 'SEM_INSCRICAO';
+  }[] {
+    const escolas = this.getEscolas();
+    const todosAtletas = this.getAtletas();
+    const todasInscricoes = this.getInscricoes();
+
+    return escolas.map(esc => {
+      const atletasEsc = todosAtletas.filter(a => a.escolaId === esc.id);
+      const inscsEsc = todasInscricoes.filter(i => i.escolaId === esc.id);
+      const conferidos = atletasEsc.filter(a => a.conferidoPeloCoordenador).length;
+
+      let status: 'PREENCHIDO' | 'EM_ANDAMENTO' | 'SEM_INSCRICAO' = 'SEM_INSCRICAO';
+      if (atletasEsc.length > 0 && inscsEsc.length > 0) {
+        status = 'PREENCHIDO';
+      } else if (atletasEsc.length > 0 || inscsEsc.length > 0) {
+        status = 'EM_ANDAMENTO';
+      }
+
+      return {
+        escola: esc,
+        totalAtletas: atletasEsc.length,
+        totalInscricoes: inscsEsc.length,
+        totalConferidos: conferidos,
+        status
+      };
+    });
+  }
+
   public static deleteComunicado(id: string): void {
     if (!this.isClient()) return;
     const list = this.getComunicados().filter(a => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(list));
   }
 }
+

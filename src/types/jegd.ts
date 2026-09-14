@@ -35,6 +35,17 @@ export interface ModalidadeConfig {
   localPadrao?: string;
 }
 
+export interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  senhaHash?: string;
+  telefone: string;
+  papel: 'PROFESSOR' | 'COORDENADOR';
+  escolaId?: string | null;
+  createdAt: string;
+}
+
 export interface DocumentosAluno {
   foto3x4?: string; // Data URL / Base64
   documentoIdentidade?: string; // RG ou Certidão
@@ -56,6 +67,15 @@ export interface Atleta {
   telefoneContato: string;
   tipoSanguineo?: string;
   consentimentoResponsavel: boolean;
+  cadastradoPor?: string; // Nome ou ID do professor
+  categoriaCalculada?: CategoriaIdade;
+  modalidadesInscritas?: {
+    modalidadeCodigo: ModalidadeCodigo;
+    modalidadeNome: string;
+    provas?: string[];
+  }[];
+  conferidoPeloCoordenador?: boolean;
+  observacaoCoordenador?: string;
   documentos: DocumentosAluno;
   ativo: boolean;
   createdAt: string;
@@ -115,3 +135,4 @@ export interface ComunicadoAviso {
   urgente: boolean;
   autor: string;
 }
+

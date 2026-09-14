@@ -354,6 +354,121 @@ export class JegdPdfGenerator {
     doc.save(`Crachas_JEGDS_${escola.sigla}_${modalidadeNome}.pdf`);
   }
 
+  /**
+   * Gera o Lote Completo da Delegação Escolar para Conferência e Impressão Manual no Evento
+   */
+  public static async gerarLoteCompletoEscola(
+    escola: Escola,
+    atletas: Atleta[],
+    inscricoes: InscricaoEquipe[] = []
+  ): Promise<void> {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    // Topo Oficial
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, 10, pageWidth - margin * 2, 28, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('JEGDS 2026 • LOTE OFICIAL DE INSCRIÇÕES DA ESCOLA', pageWidth / 2, 19, { align: 'center' });
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) • GONÇALVES DIAS - MA', pageWidth / 2, 25, { align: 'center' });
+    doc.text(`DELEGAÇÃO: ${escola.nome.toUpperCase()} (${escola.sigla}) • TOTAL DE ATLETAS: ${atletas.length}`, pageWidth / 2, 31, { align: 'center' });
+
+    // Informações da Escola
+    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, 42, pageWidth - margin * 2, 22, 2, 2, 'FD');
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`INEP: ${escola.inep || 'N/A'} | Rede: ${escola.rede} | Bairro: ${escola.bairro || 'Centro'}`, margin + 4, 49);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Responsável / Direção: ${escola.responsavelNome} • Contato: ${escola.responsavelTelefone}`, margin + 4, 55);
+    doc.text(`Inscrições em Modalidades: ${inscricoes.map(i => `${i.modalidadeNome} (${i.categoria})`).join(', ') || 'Nenhuma equipe submetida'}`, margin + 4, 61);
+
+    // Tabela de Atletas do Lote
+    let currentY = 70;
+    doc.setFillColor(30, 41, 59);
+    doc.rect(margin, currentY, pageWidth - margin * 2, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text('Nº', margin + 3, currentY + 5);
+    doc.text('ESTUDANTE-ATLETA', margin + 12, currentY + 5);
+    doc.text('DATA NASC.', margin + 70, currentY + 5);
+    doc.text('CAT/SEXO', margin + 95, currentY + 5);
+    doc.text('DOCUMENTO', margin + 122, currentY + 5);
+    doc.text('CONFERÊNCIA MESA', margin + 152, currentY + 5);
+
+    currentY += 7;
+
+    atletas.forEach((atleta, index) => {
+      if (currentY > 250) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      if (index % 2 === 0) {
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, currentY, pageWidth - margin * 2, 7, 'F');
+      }
+
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, currentY + 7, pageWidth - margin, currentY + 7);
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+
+      const numStr = (index + 1).toString().padStart(2, '0');
+      doc.text(numStr, margin + 3, currentY + 5);
+      doc.text(atleta.nomeCompleto.toUpperCase().slice(0, 26), margin + 12, currentY + 5);
+      doc.text(new Date(atleta.dataNascimento).toLocaleDateString('pt-BR'), margin + 70, currentY + 5);
+      
+      const catInfo = atleta.categoriaCalculada || 'INFANTIL';
+      doc.text(`${catInfo.slice(0, 4)} (${atleta.sexo === 'MASCULINO' ? 'M' : 'F'})`, margin + 95, currentY + 5);
+      
+      const docStr = `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
+      doc.text(docStr.slice(0, 16), margin + 122, currentY + 5);
+
+      const statusConf = atleta.conferidoPeloCoordenador ? '[X] OK (HOMOLOGADO)' : '[  ] Pendente Mesa';
+      doc.text(statusConf, margin + 152, currentY + 5);
+
+      currentY += 7;
+    });
+
+    currentY += 10;
+    if (currentY > 245) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setDrawColor(148, 163, 184);
+    doc.line(margin + 5, currentY + 15, margin + 75, currentY + 15);
+    doc.setFontSize(7.5);
+    doc.setTextColor(51, 65, 85);
+    doc.text('Professor Responsável da Escola', margin + 40, currentY + 20, { align: 'center' });
+
+    doc.line(pageWidth - margin - 75, currentY + 15, pageWidth - margin - 5, currentY + 15);
+    doc.text('Coordenação SEMED / Arbitragem', pageWidth - margin - 40, currentY + 20, { align: 'center' });
+
+    doc.save(`Lote_Escola_JEGDS_${escola.sigla}.pdf`);
+  }
+
   private static desenharPlaceholderFoto(doc: jsPDF, x: number, y: number, w: number, h: number): void {
     doc.setFillColor(226, 232, 240);
     doc.rect(x, y, w, h, 'F');
@@ -364,3 +479,4 @@ export class JegdPdfGenerator {
     doc.text('FOTO 3X4', x + w / 2, y + h / 2, { align: 'center' });
   }
 }
+
