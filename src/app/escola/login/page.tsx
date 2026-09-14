@@ -58,10 +58,10 @@ function LoginContent() {
       return;
     }
 
-    // Regra de segurança: Máx 8 caracteres, somente letras minúsculas (a-z) e números (0-9)
-    const senhaValidaRegex = /^[a-z0-9]{1,8}$/;
+    // Regra de segurança: Mínimo 4 caracteres, somente letras e números
+    const senhaValidaRegex = /^[a-z0-9]{4,30}$/;
     if (!senhaValidaRegex.test(senhaTratada)) {
-      setErro('A senha deve conter no máximo 8 caracteres, composta exclusivamente por letras minúsculas (a-z) e números (0-9).');
+      setErro('A senha deve conter no mínimo 4 caracteres, composta exclusivamente por letras minúsculas (a-z) e números (0-9).');
       return;
     }
 
@@ -258,13 +258,13 @@ function LoginContent() {
 
                 <div>
                   <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                    4. Senha (Máx 8 dígitos)
+                    4. Senha de Acesso
                   </label>
                   <div className="relative">
                     <input
                       type={mostrarSenha ? 'text' : 'password'}
                       value={profSenha}
-                      maxLength={8}
+                      maxLength={30}
                       onChange={(e) => setProfSenha(e.target.value.toLowerCase())}
                       placeholder="Sua senha de acesso"
                       className="w-full px-3 py-2.5 pl-8 pr-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
@@ -279,7 +279,7 @@ function LoginContent() {
                     </button>
                   </div>
                   <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-                    Máx 8 caracteres (letras minúsculas e números)
+                    Letras e números (mínimo 4 caracteres)
                   </p>
                 </div>
               </div>
@@ -319,7 +319,7 @@ function LoginContent() {
                   <input
                     type={mostrarSenhaAdmin ? 'text' : 'password'}
                     required
-                    maxLength={8}
+                    maxLength={30}
                     value={adminSenha}
                     onChange={(e) => setAdminSenha(e.target.value.toLowerCase())}
                     placeholder="Digite a senha institucional"
