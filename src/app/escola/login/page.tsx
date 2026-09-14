@@ -73,11 +73,10 @@ export default function EscolaLoginPage() {
       inep: novaEscola.inep,
       rede: novaEscola.rede,
       bairro: novaEscola.bairro || 'Centro',
-      endereco: novaEscola.endereco || 'Endereço não informado',
-      diretorNome: novaEscola.diretorNome || 'Diretor Responsável',
-      professorRespNome: novaEscola.professorRespNome || 'Professor de Ed. Física',
-      telefone: novaEscola.telefone || '(98) 98888-0000',
-      email: novaEscola.email || `${novaEscola.sigla.toLowerCase()}@semed.edu.br`,
+      endereco: novaEscola.endereco || 'Gonçalves Dias - MA',
+      responsavelNome: novaEscola.diretorNome || 'Responsável Escolar',
+      responsavelTelefone: novaEscola.telefone || '(99) 98888-0000',
+      loginEmail: novaEscola.email || `${novaEscola.sigla.toLowerCase()}@semed.gd.gov.br`,
       senhaHash: novaEscola.senha || '123456',
       createdAt: new Date().toISOString()
     };

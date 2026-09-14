@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PapelUsuario {
+  ESCOLA
+  COMITE
+}
+
+enum SexoAtleta {
+  MASCULINO
+  FEMININO
+}
+
+enum DocumentoTipo {
+  RG
+  CERTIDAO
+}
+
+enum CategoriaEtaria {
+  MIRIM     // 9 a 11 anos
+  INFANTIL  // 12 a 14 anos
+  INFANTO   // 15 a 17 anos
+  JUNIOR    // 18 a 20 anos
+}
+
+enum StatusInscricao {
+  PENDENTE
+  VALIDADA
+  REJEITADA
+}
+
+model Escola {
+  id                  String       @id @default(uuid())
+  nome                String
+  sigla               String?
+  inep                String?
+  endereco            String
+  bairro              String?
+  responsavelNome     String
+  responsavelTelefone String
+  loginEmail          String       @unique
+  senhaHash           String
+  usuarios            Usuario[]
+  atletas             Atleta[]
+  inscricoes          Inscricao[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+}
+
+model Usuario {
+  id        String       @id @default(uuid())
+  nome      String
+  email     String       @unique
+  senhaHash String
+  papel     PapelUsuario @default(ESCOLA)
+  escolaId  String?
+  escola    Escola?      @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Atleta {
+  id                       String          @id @default(uuid())
+  nomeCompleto             String
+  dataNascimento           DateTime
+  sexo                     SexoAtleta
+  documentoTipo            DocumentoTipo   @default(RG)
+  documentoNumero          String
+  documentoUrl             String?
+  fotoUrl                  String?
+  escolaId                 String
+  escola                   Escola          @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  categoria                CategoriaEtaria
+  consentimentoResponsavel Boolean         @default(true)
+  matricula                String?
+  turma                    String?
+  tipoSanguineo            String?
+  inscricoes               Inscricao[]
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+}
+
+model Modalidade {
+  id                 String       @id @default(uuid())
+  codigo             String       @unique
+  nome               String
+  tipo               String       @default("COLETIVA") // COLETIVA | INDIVIDUAL
+  dataEvento         DateTime
+  prazoInscricao     DateTime
+  minAtletas         Int          @default(1)
+  maxAtletas         Int          @default(12)
+  maxProvasPorAtleta Int          @default(1)
+  provasDisponiveis  String[]     @default([])
+  descricao          String?
+  inscricoes         Inscricao[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Inscricao {
+  id             String          @id @default(uuid())
+  atletaId       String
+  atleta         Atleta          @relation(fields: [atletaId], references: [id], onDelete: Cascade)
+  modalidadeId   String
+  modalidade     Modalidade      @relation(fields: [modalidadeId], references: [id], onDelete: Cascade)
+  escolaId       String
+  escola         Escola          @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  categoria      CategoriaEtaria
+  sexo           SexoAtleta
+  prova          String?         // Usado em Atletismo (ex: "100m", "salto")
+  equipe         String?         // Nome ou identificador de grupo para esportes coletivos
+  status         StatusInscricao @default(PENDENTE)
+  motivoRejeicao String?
+  dataInscricao  DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([atletaId, modalidadeId, prova])
+}
+
+model Comunicado {
+  id             String   @id @default(uuid())
+  titulo         String
+  conteudo       String
+  categoria      String   @default("CRONOGRAMA")
+  urgente        Boolean  @default(false)
+  autor          String   @default("Comitê Organizador JEGDS 2026")
+  dataPublicacao DateTime @default(now())
+}

@@ -18,8 +18,9 @@ import {
   FileText,
   Search,
   Bell,
-  MessageSquare,
-  Sparkles
+  Clock,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -27,26 +28,29 @@ import {
   Escola,
   Atleta,
   InscricaoEquipe,
-  MembroComissao,
   ComunicadoAviso,
-  StatusInscricao
+  StatusInscricao,
+  ModalidadeConfig
 } from '@/types/jegd';
+import { JegdsRulesService } from '@/services/jegds-rules';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
   const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
+  const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
-  const [abaAtiva, setAbaAtiva] = useState<'INSCRICOES' | 'ESCOLAS' | 'AVISOS'>('INSCRICOES');
+  const [abaAtiva, setAbaAtiva] = useState<'INSCRICOES' | 'LISTAS_CHAMADA' | 'ESCOLAS' | 'AVISOS'>('INSCRICOES');
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
   const [busca, setBusca] = useState('');
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
 
-  // Modal de Parecer / Análise
+  // Modal de Julgamento / Parecer
   const [modalParecerAberto, setModalParecerAberto] = useState(false);
   const [inscricaoEmAnalise, setInscricaoEmAnalise] = useState<InscricaoEquipe | null>(null);
-  const [novoStatus, setNovoStatus] = useState<StatusInscricao>('DEFERIDA');
+  const [novoStatus, setNovoStatus] = useState<StatusInscricao>('VALIDADA');
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [parecerTexto, setParecerTexto] = useState('');
 
   // Modal Novo Comunicado
@@ -58,7 +62,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     JegdStorage.init();
-    if (!JegdStorage.isAdminAuth()) {
+    if (!JegdStorage.isComiteAuth()) {
       router.push('/admin/login');
       return;
     }
@@ -69,13 +73,15 @@ export default function AdminDashboardPage() {
     setEscolas(JegdStorage.getEscolas());
     setAtletas(JegdStorage.getAtletas());
     setInscricoes(JegdStorage.getInscricoes());
+    setModalidades(JegdStorage.getModalidades());
     setComunicados(JegdStorage.getComunicados());
   };
 
   const abrirModalAnalise = (insc: InscricaoEquipe) => {
     setInscricaoEmAnalise(insc);
-    setNovoStatus(insc.status === 'RASCUNHO' || insc.status === 'ENVIADA' ? 'DEFERIDA' : insc.status);
-    setParecerTexto(insc.parecerSemed || 'Inscrição analisada e validada conforme o regulamento oficial.');
+    setNovoStatus(insc.status === 'PENDENTE' ? 'VALIDADA' : insc.status);
+    setMotivoRejeicao(insc.motivoRejeicao || '');
+    setParecerTexto(insc.parecerComite || 'Inscrição analisada e homologada pelo Comitê Organizador do JEGDS 2026.');
     setModalParecerAberto(true);
   };
 
@@ -86,7 +92,8 @@ export default function AdminDashboardPage() {
     const atualizada: InscricaoEquipe = {
       ...inscricaoEmAnalise,
       status: novoStatus,
-      parecerSemed: parecerTexto,
+      motivoRejeicao: novoStatus === 'REJEITADA' ? motivoRejeicao : undefined,
+      parecerComite: parecerTexto,
       dataHomologacao: new Date().toLocaleString('pt-BR')
     };
 
@@ -109,7 +116,7 @@ export default function AdminDashboardPage() {
       categoria: novoAvisoCategoria,
       dataPublicacao: new Date().toLocaleDateString('pt-BR'),
       urgente: novoAvisoUrgente,
-      autor: 'Coordenação Geral JEGD / SEMED'
+      autor: 'Comitê Organizador JEGDS 2026'
     };
 
     JegdStorage.saveComunicado(aviso);
@@ -119,63 +126,47 @@ export default function AdminDashboardPage() {
     setNovoAvisoConteudo('');
   };
 
-  const handleExcluirAviso = (id: string) => {
-    if (confirm('Deseja excluir este comunicado?')) {
-      JegdStorage.deleteComunicado(id);
-      carregarTodosDados();
+  const handleGerarListaChamada = async (mod: ModalidadeConfig, categoria: string, sexo: string) => {
+    // Buscar todas as inscrições validadas dessa modalidade/categoria/sexo
+    const inscricoesModalidade = inscricoes.filter(
+      i => i.modalidadeCodigo === mod.codigo && i.categoria === categoria && i.sexo === sexo
+    );
+
+    const atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] = [];
+    
+    inscricoesModalidade.forEach(insc => {
+      const escolaObj = escolas.find(e => e.id === insc.escolaId);
+      if (escolaObj) {
+        insc.atletaIds.forEach(atlId => {
+          const atlObj = atletas.find(a => a.id === atlId);
+          if (atlObj) {
+            atletasComEscola.push({
+              atleta: atlObj,
+              escola: escolaObj,
+              provas: insc.provasPorAtleta?.[atlId]
+            });
+          }
+        });
+      }
+    });
+
+    if (atletasComEscola.length === 0) {
+      alert('Nenhum atleta inscrito nesta categoria para gerar a lista de chamada.');
+      return;
     }
+
+    await JegdPdfGenerator.gerarListaChamadaOficial(
+      mod.nome,
+      categoria,
+      sexo,
+      new Date(mod.dataEvento).toLocaleDateString('pt-BR'),
+      atletasComEscola
+    );
   };
 
-  const handleGerarCrachas = async (insc: InscricaoEquipe) => {
-    const escola = escolas.find(e => e.id === insc.escolaId);
-    if (!escola) return;
-
-    setGerandoPdfId(insc.id);
-    try {
-      const atletasEquipe = insc.atletaIds
-        .map(id => JegdStorage.getAtletaById(id))
-        .filter((a): a is Atleta => a !== undefined);
-
-      await JegdPdfGenerator.gerarCrachasEmLote(
-        escola,
-        atletasEquipe,
-        insc.modalidadeNome,
-        `${insc.categoria} (${insc.genero})`
-      );
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao emitir crachás.');
-    } finally {
-      setGerandoPdfId(null);
-    }
-  };
-
-  const handleGerarFicha = async (insc: InscricaoEquipe) => {
-    const escola = escolas.find(e => e.id === insc.escolaId);
-    if (!escola) return;
-
-    setGerandoPdfId(insc.id);
-    try {
-      const atletasEquipe = insc.atletaIds
-        .map(id => JegdStorage.getAtletaById(id))
-        .filter((a): a is Atleta => a !== undefined);
-
-      const comissaoEquipe = insc.comissaoIds
-        .map(id => JegdStorage.getComissao().find(c => c.id === id))
-        .filter((c): c is MembroComissao => c !== undefined);
-
-      await JegdPdfGenerator.gerarFichaInscricao(escola, insc, atletasEquipe, comissaoEquipe);
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao gerar ficha oficial.');
-    } finally {
-      setGerandoPdfId(null);
-    }
-  };
-
-  const totalDeferidas = inscricoes.filter(i => i.status === 'DEFERIDA').length;
-  const totalPendentes = inscricoes.filter(i => i.status === 'ENVIADA' || i.status === 'RASCUNHO').length;
-  const totalAjuste = inscricoes.filter(i => i.status === 'PENDENTE_AJUSTE').length;
+  const totalValidadas = inscricoes.filter(i => i.status === 'VALIDADA').length;
+  const totalPendentes = inscricoes.filter(i => i.status === 'PENDENTE').length;
+  const totalRejeitadas = inscricoes.filter(i => i.status === 'REJEITADA').length;
 
   const inscricoesFiltradas = inscricoes.filter(i => {
     const escola = escolas.find(e => e.id === i.escolaId);
@@ -188,7 +179,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* Header SEMED */}
+      {/* Header Comitê */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
 
@@ -199,13 +190,13 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-white">Painel da Coordenação SEMED</h1>
+                <h1 className="text-2xl font-black text-white">Painel do Comitê Organizador</h1>
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                  JEGD 2026 Admin
+                  JEGDS 2026
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Homologação de inscrições, emissão oficial de credenciais com QR Code e comunicados aos gestores.
+                Jogos Escolares de Gonçalves Dias • Homologação, Súmulas de Check-in e Controle de WxO.
               </p>
             </div>
           </div>
@@ -222,19 +213,18 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Estatísticas Gerais Consolidadas */}
+      {/* Estatísticas Gerais */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Escolas</span>
           <p className="text-3xl font-black text-white mt-1">{escolas.length}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Cadastradas no JEGD</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Gonçalves Dias - MA</p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Atletas</span>
           <p className="text-3xl font-black text-white mt-1">{atletas.length}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Estudantes no banco</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Cadastrados</p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
@@ -244,24 +234,23 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Deferidas</span>
-          <p className="text-3xl font-black text-emerald-400 mt-1">{totalDeferidas}</p>
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Validadas</span>
+          <p className="text-3xl font-black text-emerald-400 mt-1">{totalValidadas}</p>
           <p className="text-[11px] text-slate-400 mt-0.5">Homologadas</p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 col-span-2 lg:col-span-1">
           <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pendentes</span>
-          <p className="text-3xl font-black text-amber-400 mt-1">{totalPendentes + totalAjuste}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Aguardando análise</p>
+          <p className="text-3xl font-black text-amber-400 mt-1">{totalPendentes}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Em análise</p>
         </div>
-
       </div>
 
       {/* Navegação por Abas */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         <button
           onClick={() => setAbaAtiva('INSCRICOES')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             abaAtiva === 'INSCRICOES'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
               : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -271,8 +260,19 @@ export default function AdminDashboardPage() {
         </button>
 
         <button
+          onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            abaAtiva === 'LISTAS_CHAMADA'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          Listas de Chamada & Súmulas WxO
+        </button>
+
+        <button
           onClick={() => setAbaAtiva('ESCOLAS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             abaAtiva === 'ESCOLAS'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
               : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -283,28 +283,26 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             abaAtiva === 'AVISOS'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
               : 'text-slate-400 hover:text-white hover:bg-slate-800'
           }`}
         >
-          Comunicados Oficiais ({comunicados.length})
+          Mural de Comunicados ({comunicados.length})
         </button>
       </div>
 
       {/* ABA: HOMOLOGAÇÃO DE INSCRIÇÕES */}
       {abaAtiva === 'INSCRICOES' && (
         <div className="space-y-4">
-          
-          {/* Barra de Filtros */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 relative">
               <input
                 type="text"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="Filtrar por nome da escola ou modalidade..."
+                placeholder="Filtrar por escola ou modalidade..."
                 className="w-full px-4 py-2.5 pl-10 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -317,25 +315,22 @@ export default function AdminDashboardPage() {
                 className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
               >
                 <option value="TODOS">Todos os Status</option>
-                <option value="ENVIADA">Enviada (Aguardando Parecer)</option>
-                <option value="DEFERIDA">Deferida</option>
-                <option value="PENDENTE_AJUSTE">Pendente de Ajuste</option>
-                <option value="INDEFERIDA">Indeferida</option>
+                <option value="PENDENTE">Pendente de Homologação</option>
+                <option value="VALIDADA">Validada (Homologada)</option>
+                <option value="REJEITADA">Rejeitada</option>
               </select>
             </div>
           </div>
 
-          {/* Tabela / Lista de Inscrições */}
           {inscricoesFiltradas.length === 0 ? (
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
               <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-3" />
               <p className="text-base font-bold text-white">Nenhuma inscrição encontrada.</p>
-              <p className="text-xs text-slate-400 mt-1">As escolas ainda não submeteram equipes com esses filtros.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {inscricoesFiltradas.map((insc) => {
-                const escola = escolas.find(e => e.id === insc.escolaId);
+                const escolaObj = escolas.find(e => e.id === insc.escolaId);
 
                 return (
                   <div
@@ -345,72 +340,59 @@ export default function AdminDashboardPage() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-base font-black text-white">
-                          {escola?.nome} ({escola?.sigla})
+                          {escolaObj?.nome} ({escolaObj?.sigla})
                         </span>
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/20">
                           {insc.modalidadeNome}
                         </span>
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
-                          {insc.categoria} • {insc.genero}
+                          {insc.categoria} • {insc.sexo}
                         </span>
 
-                        {insc.status === 'DEFERIDA' && (
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                            DEFERIDA
-                          </span>
-                        )}
-                        {insc.status === 'ENVIADA' && (
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                            AGUARDANDO ANÁLISE
-                          </span>
-                        )}
-                        {insc.status === 'PENDENTE_AJUSTE' && (
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 font-bold">
-                            AJUSTE SOLICITADO
-                          </span>
-                        )}
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+                          insc.status === 'VALIDADA'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            : insc.status === 'REJEITADA'
+                            ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                        }`}>
+                          {insc.status}
+                        </span>
                       </div>
 
                       <div className="text-xs text-slate-400 flex flex-wrap items-center gap-4">
                         <span><strong>{insc.atletaIds.length}</strong> Atletas convocados</span>
                         <span>•</span>
-                        <span>Enviado em: {insc.dataEnvio || 'Rascunho'}</span>
-                        {insc.parecerSemed && (
-                          <span className="text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded">
-                            Parecer: {insc.parecerSemed}
+                        <span>Data: {insc.dataInscricao}</span>
+                        {insc.motivoRejeicao && (
+                          <span className="text-red-400 font-medium">
+                            Motivo: {insc.motivoRejeicao}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Ações da SEMED */}
+                    {/* Ações */}
                     <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
                       <button
                         onClick={() => abrirModalAnalise(insc)}
-                        className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/10 flex items-center gap-1.5 transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md flex items-center gap-1.5 transition-colors"
                       >
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Julgar Inscrição</span>
+                        <span>Julgar / Homologar</span>
                       </button>
 
                       <button
-                        onClick={() => handleGerarCrachas(insc)}
-                        disabled={gerandoPdfId === insc.id}
-                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                        title="Emitir Crachás com Foto e QR Code"
+                        onClick={async () => {
+                          if (escolaObj) {
+                            const atls = insc.atletaIds.map(id => atletas.find(a => a.id === id)).filter((a): a is Atleta => a !== undefined);
+                            await JegdPdfGenerator.gerarCrachasEmLote(escolaObj, atls, insc.modalidadeNome, `${insc.categoria} (${insc.sexo})`);
+                          }
+                        }}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5"
                       >
                         <Download className="w-4 h-4 text-emerald-400" />
                         <span>Crachás QR</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleGerarFicha(insc)}
-                        disabled={gerandoPdfId === insc.id}
-                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                        title="Emitir Ficha de Inscrição Oficial"
-                      >
-                        <Printer className="w-4 h-4 text-slate-400" />
-                        <span>Ficha PDF</span>
                       </button>
                     </div>
 
@@ -419,134 +401,142 @@ export default function AdminDashboardPage() {
               })}
             </div>
           )}
-
         </div>
       )}
 
-      {/* ABA: UNIDADES ESCOLARES */}
-      {abaAtiva === 'ESCOLAS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {escolas.map((esc) => {
-            const atletasEscola = atletas.filter(a => a.escolaId === esc.id);
-            const inscricoesEscola = inscricoes.filter(i => i.escolaId === esc.id);
-
-            return (
-              <div
-                key={esc.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
-                      Rede {esc.rede}
-                    </span>
-                    <h3 className="text-base font-bold text-white mt-2">{esc.nome}</h3>
-                    <p className="text-xs text-slate-400">Sigla: {esc.sigla} • INEP: {esc.inep}</p>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 space-y-1">
-                  <p>Diretor(a): <strong className="text-slate-200">{esc.diretorNome}</strong></p>
-                  <p>Prof. Ed. Física: <strong className="text-slate-200">{esc.professorRespNome}</strong></p>
-                  <p>Telefone: <strong className="text-slate-200">{esc.telefone}</strong></p>
-                </div>
-
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold">
-                  <span className="text-emerald-400">{atletasEscola.length} Atletas</span>
-                  <span className="text-amber-400">{inscricoesEscola.length} Equipes</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ABA: COMUNICADOS E AVISOS */}
-      {abaAtiva === 'AVISOS' && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button
-              onClick={() => setModalAvisoAberto(true)}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md flex items-center gap-2"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Novo Comunicado</span>
-            </button>
+      {/* ABA: LISTAS DE CHAMADA & SÚMULAS */}
+      {abaAtiva === 'LISTAS_CHAMADA' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-2">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Printer className="w-5 h-5 text-amber-400" />
+              <span>Gerador de Súmulas & Listas de Chamada Oficial</span>
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Exporte a lista oficial de atletas para controle de Check-in (30 minutos de antecedência) e tolerância de WxO (15 minutos) na mesa de arbitragem.
+            </p>
           </div>
 
-          <div className="space-y-3">
-            {comunicados.map((aviso) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {modalidades.map((mod) => (
               <div
-                key={aviso.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-start justify-between gap-4"
+                key={mod.id}
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
               >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                      {aviso.categoria}
-                    </span>
-                    {aviso.urgente && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                        URGENTE
-                      </span>
-                    )}
-                    <span className="text-xs text-slate-500">{aviso.dataPublicacao}</span>
-                  </div>
-                  <h4 className="text-base font-bold text-white">{aviso.titulo}</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">{aviso.conteudo}</p>
-                  <p className="text-[11px] text-slate-500 pt-1">Publicado por: {aviso.autor}</p>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white">{mod.nome}</h4>
+                  <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                    {new Date(mod.dataEvento).toLocaleDateString('pt-BR')}
+                  </span>
                 </div>
 
-                <button
-                  onClick={() => handleExcluirAviso(aviso.id)}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                  title="Excluir comunicado"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <p className="text-xs text-slate-400">
+                  Categorias: {mod.categoriasPermitidas.join(', ')}
+                </p>
+
+                <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                  {mod.categoriasPermitidas.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => handleGerarListaChamada(mod, cat, 'MASCULINO')}
+                      className="w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold flex items-center justify-between transition-colors"
+                    >
+                      <span>Súmula {cat} (Masc)</span>
+                      <Download className="w-3 h-3 text-amber-400" />
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Modal de Julgamento / Parecer da SEMED */}
+      {/* ABA: ESCOLAS */}
+      {abaAtiva === 'ESCOLAS' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {escolas.map((esc) => (
+            <div key={esc.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+                Rede {esc.rede}
+              </span>
+              <h3 className="text-base font-bold text-white">{esc.nome}</h3>
+              <p className="text-xs text-slate-400">INEP: {esc.inep} • Resp: {esc.responsavelNome}</p>
+              <p className="text-xs text-slate-400">Tel: {esc.responsavelTelefone}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ABA: AVISOS */}
+      {abaAtiva === 'AVISOS' && (
+        <div className="space-y-3">
+          {comunicados.map((aviso) => (
+            <div key={aviso.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300">
+                  {aviso.categoria}
+                </span>
+                <span className="text-xs text-slate-500">{aviso.dataPublicacao}</span>
+              </div>
+              <h4 className="text-base font-bold text-white">{aviso.titulo}</h4>
+              <p className="text-xs text-slate-300">{aviso.conteudo}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Homologação / Parecer */}
       {modalParecerAberto && inscricaoEmAnalise && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
             <h3 className="text-lg font-bold text-white mb-1">
-              Homologação da Inscrição
+              Homologação de Inscrição • JEGDS 2026
             </h3>
             <p className="text-xs text-slate-400 mb-6">
-              {inscricaoEmAnalise.modalidadeNome} ({inscricaoEmAnalise.categoria} - {inscricaoEmAnalise.genero})
+              {inscricaoEmAnalise.modalidadeNome} ({inscricaoEmAnalise.categoria} - {inscricaoEmAnalise.sexo})
             </p>
 
             <form onSubmit={salvarAnalise} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Decisão da Comissão Organizadora
+                  Decisão do Comitê Organizador
                 </label>
                 <select
                   value={novoStatus}
                   onChange={(e) => setNovoStatus(e.target.value as StatusInscricao)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-bold focus:border-amber-500"
                 >
-                  <option value="DEFERIDA">DEFERIDA (Aprovada e Homologada)</option>
-                  <option value="PENDENTE_AJUSTE">PENDENTE DE AJUSTE (Solicitar Correção)</option>
-                  <option value="INDEFERIDA">INDEFERIDA (Recusada)</option>
+                  <option value="VALIDADA">VALIDADA (Homologada)</option>
+                  <option value="REJEITADA">REJEITADA (Indeferida com Motivo)</option>
+                  <option value="PENDENTE">PENDENTE (Aguardando Documentação)</option>
                 </select>
               </div>
 
+              {novoStatus === 'REJEITADA' && (
+                <div>
+                  <label className="block text-xs font-semibold text-red-400 mb-1">
+                    Motivo da Rejeição * (Exibido para a Escola)
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={motivoRejeicao}
+                    onChange={(e) => setMotivoRejeicao(e.target.value)}
+                    placeholder="Ex: Documento de identidade ilegível ou atleta fora da faixa etária permitida."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-red-500 text-white text-xs focus:border-red-400"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Parecer Técnico / Justificativa
+                  Parecer do Comitê
                 </label>
                 <textarea
-                  rows={4}
-                  required
+                  rows={3}
                   value={parecerTexto}
                   onChange={(e) => setParecerTexto(e.target.value)}
-                  placeholder="Descreva o parecer ou os ajustes necessários..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
                 />
               </div>
@@ -576,81 +566,43 @@ export default function AdminDashboardPage() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
             <h3 className="text-lg font-bold text-white mb-1">
-              Publicar Comunicado Oficial
+              Publicar Comunicado Oficial do JEGDS 2026
             </h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Este comunicado será exibido na página inicial e no mural de avisos para todas as escolas.
-            </p>
-
             <form onSubmit={handleSalvarAviso} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Título do Comunicado *
-                </label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Título *</label>
                 <input
                   type="text"
                   required
                   value={novoAvisoTitulo}
                   onChange={(e) => setNovoAvisoTitulo(e.target.value)}
-                  placeholder="Ex: Prorrogação do Prazo de Inscrições"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
+                  placeholder="Ex: Tabela de Jogos de Futsal Publicada"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Categoria</label>
-                  <select
-                    value={novoAvisoCategoria}
-                    onChange={(e) => setNovoAvisoCategoria(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
-                  >
-                    <option value="CRONOGRAMA">Cronograma</option>
-                    <option value="REGULAMENTO">Regulamento</option>
-                    <option value="ALERTA">Alerta</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={novoAvisoUrgente}
-                      onChange={(e) => setNovoAvisoUrgente(e.target.checked)}
-                      className="w-4 h-4 rounded text-amber-500 bg-slate-800 border-slate-700"
-                    />
-                    <span>Destaque Urgente</span>
-                  </label>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Conteúdo do Comunicado *
-                </label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Conteúdo *</label>
                 <textarea
                   rows={4}
                   required
                   value={novoAvisoConteudo}
                   onChange={(e) => setNovoAvisoConteudo(e.target.value)}
-                  placeholder="Escreva a mensagem oficial..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalAvisoAberto(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-lg"
+                  className="px-6 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
                 >
-                  Publicar Agora
+                  Publicar
                 </button>
               </div>
             </form>

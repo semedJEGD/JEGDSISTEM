@@ -80,7 +80,7 @@ export default function EscolaDashboardPage() {
         escola,
         atletasEquipe,
         inscricao.modalidadeNome,
-        `${inscricao.categoria} (${inscricao.genero})`
+        `${inscricao.categoria} (${inscricao.sexo})`
       );
     } catch (err) {
       console.error(err);
@@ -92,8 +92,8 @@ export default function EscolaDashboardPage() {
 
   if (!escola) return null;
 
-  const totalDeferidas = inscricoes.filter(i => i.status === 'DEFERIDA').length;
-  const totalPendentes = inscricoes.filter(i => i.status === 'ENVIADA' || i.status === 'RASCUNHO').length;
+  const totalValidadas = inscricoes.filter(i => i.status === 'VALIDADA').length;
+  const totalPendentes = inscricoes.filter(i => i.status === 'PENDENTE').length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -115,7 +115,7 @@ export default function EscolaDashboardPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                INEP: <strong>{escola.inep}</strong> • Bairro: <strong>{escola.bairro}</strong> • Prof. Resp: <strong>{escola.professorRespNome}</strong>
+                INEP: <strong>{escola.inep}</strong> • Bairro: <strong>{escola.bairro}</strong> • Responsável: <strong>{escola.responsavelNome}</strong>
               </p>
             </div>
           </div>
@@ -191,15 +191,15 @@ export default function EscolaDashboardPage() {
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-emerald-400">{totalDeferidas}</span>
-            <span className="text-xs text-slate-400">deferidas</span>
+            <span className="text-3xl font-black text-emerald-400">{totalValidadas}</span>
+            <span className="text-xs text-slate-400">validadas</span>
             {totalPendentes > 0 && (
               <span className="text-xs text-amber-400 ml-auto bg-amber-500/10 px-2 py-0.5 rounded">
                 {totalPendentes} em análise
               </span>
             )}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Status pela SEMED</p>
+          <p className="text-[11px] text-slate-400 mt-1">Status pelo Comitê JEGDS</p>
         </div>
 
       </div>
@@ -210,7 +210,7 @@ export default function EscolaDashboardPage() {
           <div>
             <h2 className="text-xl font-bold text-white">Equipes & Modalidades Inscritas</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Acompanhe a análise da SEMED, baixe a Ficha Oficial assinada e imprima os Crachás Oficiais.
+              Acompanhe a análise do Comitê, baixe a Ficha Oficial assinada e imprima os Crachás Oficiais.
             </p>
           </div>
           <Link
@@ -226,7 +226,7 @@ export default function EscolaDashboardPage() {
             <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-3" />
             <p className="text-sm font-semibold text-slate-300">Nenhuma modalidade inscrita ainda.</p>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-              Comece cadastrando seus alunos-atletas e em seguida monte as equipes para disputar o JEGD 2026.
+              Comece cadastrando seus alunos-atletas e em seguida monte as equipes para disputar o JEGDS 2026.
             </p>
             <Link
               href="/escola/inscricoes"
@@ -255,23 +255,23 @@ export default function EscolaDashboardPage() {
                         {insc.categoria}
                       </span>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-200 font-semibold">
-                        {insc.genero}
+                        {insc.sexo}
                       </span>
                       
                       {/* Status Badge */}
-                      {insc.status === 'DEFERIDA' && (
+                      {insc.status === 'VALIDADA' && (
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Deferida (Confirmada)
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Validada (Homologada)
                         </span>
                       )}
-                      {insc.status === 'ENVIADA' && (
-                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" /> Em Análise pela SEMED
-                        </span>
-                      )}
-                      {insc.status === 'PENDENTE_AJUSTE' && (
+                      {insc.status === 'PENDENTE' && (
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1">
-                          <AlertTriangle className="w-3.5 h-3.5" /> Ajuste Solicitado
+                          <Clock className="w-3.5 h-3.5" /> Em Análise pelo Comitê
+                        </span>
+                      )}
+                      {insc.status === 'REJEITADA' && (
+                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-bold flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Rejeitada
                         </span>
                       )}
                     </div>
@@ -279,10 +279,10 @@ export default function EscolaDashboardPage() {
                     <div className="text-xs text-slate-400 flex flex-wrap items-center gap-4">
                       <span><strong>{atletasEquipe.length}</strong> Atletas convocados</span>
                       <span>•</span>
-                      <span>Enviada em: {insc.dataEnvio || 'Rascunho'}</span>
-                      {insc.parecerSemed && (
-                        <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                          Parecer: {insc.parecerSemed}
+                      <span>Data: {insc.dataInscricao || 'Rascunho'}</span>
+                      {insc.motivoRejeicao && (
+                        <span className="text-red-400 bg-red-500/10 px-2 py-0.5 rounded">
+                          Motivo: {insc.motivoRejeicao}
                         </span>
                       )}
                     </div>

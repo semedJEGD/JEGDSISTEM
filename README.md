@@ -1,85 +1,82 @@
-# JEGDSISTEM 🏆 - Sistema Oficial de Inscrições dos Jogos Escolares
+# JEGDS 2026 🏆 - Jogos Escolares de Gonçalves Dias
 
-> Plataforma completa e moderna desenvolvida para a **SEMED (Secretaria Municipal de Educação)** gerenciar inscrições, credenciamento, emissão de crachás com QR Code e validação documental dos **Jogos Escolares (JEGD 2026)**.
-
----
-
-## 🌟 Funcionalidades Principais
-
-### 1. 🏫 Portal das Escolas (Gestão Escolar & Professores de Ed. Física)
-- **Seleção e Cadastro de Escolas**: Suporte para Redes Municipal, Estadual, Particular e Federal.
-- **Banco de Estudantes-Atletas**:
-  - Cadastro detalhado com Foto 3x4 oficial.
-  - Cálculo automático de idade e elegibilidade para as categorias **Infantil (12-14 anos)** e **Infanto (15-17 anos)**.
-  - Registro de documentos (RG, CPF, Matrícula, Turma, Tipo Sanguíneo).
-- **Comissão Técnica**: Registro de Professores e Técnicos com número de registro CREF.
-- **Inscrição por Modalidade & Categoria**:
-  - Filtro em tempo real de atletas aptos por idade e naipe (Masculino / Feminino / Misto).
-  - Verificação de cotas mínimas e máximas de atletas por esporte.
-  - Submissão com efeito de celebração e protocolo de envio.
-- **Geração de Fichas e Crachás em PDF**:
-  - Emissão de Ficha Oficial assinada em folha A4 com termos de responsabilidade.
-  - Emissão de Crachás / Credenciais em lote com Foto e QR Code exclusivo.
-
-### 2. 🏛️ Painel da Coordenação SEMED (Administrativo)
-- **Métricas Consolidadas**: Total de escolas participantes, atletas inscritos, equipes por modalidade e status.
-- **Julgamento e Homologação**: Deferimento, Indeferimento e Solicitação de Ajuste com parecer técnico oficial.
-- **Emissão Oficial em Lote**: Impressão centralizada de credenciais e listas de atletas.
-- **Mural de Comunicados**: Publicação de avisos urgentes e editais na capa do sistema.
-
-### 3. 🔍 Validador de Credencial / QR Code
-- Consulta instantânea para árbitros, fiscais de quadra e mesários verificarem a autenticidade e liberação do atleta antes do início das partidas.
+> Sistema Web Oficial de Inscrições, Credenciamento e Súmulas para os **Jogos Escolares de Gonçalves Dias 2026 (JEGDS 2026)**, realizado entre **21/11/2026 e 19/12/2026** em Gonçalves Dias, Maranhão, Brasil.
 
 ---
 
-## 🏅 Modalidades Contempladas
+## 📋 Regras Oficiais do Evento
 
-- **Coletivas**: Futsal, Voleibol, Handebol, Basquetebol, Queimada Escolar.
-- **Individuais**: Atletismo, Xadrez, Tênis de Mesa, Badminton, Natação, Judô.
+### 1. Categorias por Idade (Data de Referência: 31/12/2026)
+- **Mirim**: 9 a 11 anos (nascidos de 01/01/2015 a 31/12/2017)
+- **Infantil**: 12 a 14 anos (nascidos de 01/01/2012 a 31/12/2014)
+- **Infanto**: 15 a 17 anos (nascidos de 01/01/2009 a 31/12/2011)
+- **Junior**: 18 a 20 anos (nascidos de 01/01/2006 a 31/12/2008)
+
+### 2. Matriz Estrita Modalidade × Categoria × Sexo
+
+| Modalidade | Mirim | Infantil | Infanto | Junior | Regras e Limites |
+|---|---|---|---|---|---|
+| **Atletismo** | FEM / MASC | FEM / MASC | FEM / MASC | FEM / MASC | Máx 2 provas por atleta (Mirim: 75m, 100m; Infantil: 75m, 100m, 200m, salto; Infanto/Junior: 100m, 200m, 400m, 1000m, salto) |
+| **Xadrez** | FEM / MASC | FEM / MASC | FEM / MASC | FEM / MASC | Sistema Suíço (máx 4 atletas por escola) |
+| **Futsal** | FEM / MASC | FEM / MASC | FEM / MASC | FEM / MASC | Máximo 10 atletas inscritos por equipe |
+| **Queimada** | FEM / MASC | FEM / MASC | FEM / MASC | FEM / MASC | Mínimo 8 atletas inscritos por equipe |
+| **Futebol de Campo** | Apenas MASC | Apenas MASC | Apenas MASC | Apenas MASC | Máximo 20 atletas no elenco |
+| **Voleibol** | ❌ Não existe | Apenas MASC | Apenas MASC | Apenas MASC | Exclusivo Masculino (máx 12 atletas) |
+| **Beach Soccer** | ❌ Não existe | Apenas MASC | Apenas MASC | Apenas MASC | Exclusivo Masculino na areia (máx 12 atletas) |
+| **Tênis de Mesa** | ❌ Não existe | Apenas MASC | Apenas MASC | Apenas MASC | Exclusivo Masculino (máx 4 atletas) |
+
+### 3. Prazos Oficiais e Datas dos Jogos
+
+| Modalidade | Data do Evento | Prazo Limite de Inscrição |
+|---|---|---|
+| **Queimada, Tênis de Mesa** | 28/11/2026 | 21/11/2026 às 23:59 |
+| **Atletismo, Beach Soccer** | 05/12/2026 | 28/11/2026 às 23:59 |
+| **Futsal, Xadrez, Futebol de Campo, Voleibol** | 12/12/2026 | 05/12/2026 às 23:59 |
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Funcionalidades
 
-- **Frontend & Backend**: [Next.js 15 (App Router)](https://nextjs.org/) com TypeScript
-- **Estilização**: Tailwind CSS com tema Dark Mode de alta performance
-- **Geração de Documentos**: [jsPDF](https://github.com/parallax/jsPDF) & [QRCode](https://github.com/soldair/node-qrcode)
-- **Ícones**: [Lucide React](https://lucide.dev/)
-- **Animações e Efeitos**: Canvas Confetti
+- **Portal da Escola**: Cadastro de estudantes-atletas (RG/Certidão obrigatório, foto 3x4 e termo LGPD de consentimento dos pais), seleção de provas e montagem de elenco com validação bloqueante no backend.
+- **Painel do Comitê Organizador**:
+  - Homologação e Rejeição com motivo formal.
+  - Emissão de **Súmulas e Listas de Chamada Oficial** em PDF com horários de **Check-in (30 min de antecedência)** e **WxO (15 min de tolerância)**.
+  - Emissão em lote de **Crachás / Credenciais com Foto e QR Code**.
+- **Validador de Credencial / QR Code**: Consulta em tempo real na entrada das praças esportivas por árbitros e fiscais de mesa.
 
 ---
 
-## 📦 Como Executar o Projeto
+## 🛠️ Deploy no Railway
+
+O projeto está 100% pronto para deploy no **Railway**:
+
+1. No Railway Dashboard, crie um novo projeto a partir deste repositório GitHub (`semedJEGD/JEGDSISTEM`).
+2. Adicione o plugin **PostgreSQL** no Railway.
+3. A variável de ambiente `DATABASE_URL` será conectada automaticamente.
+4. O Railway usará o `railway.json` / `nixpacks.toml` incluídos para compilar e iniciar o sistema.
+5. Para rodar o seed com as 8 modalidades e escolas de Gonçalves Dias, execute no terminal do Railway:
+   ```bash
+   npx prisma db push
+   npm run prisma:seed
+   ```
+
+---
+
+## 💻 Execução Local
 
 ```bash
-# 1. Instalar as dependências
+# 1. Instalar dependências
 npm install
 
-# 2. Iniciar o servidor de desenvolvimento
-npm run dev
+# 2. Executar suíte de testes de regras de negócio
+npm test
 
-# 3. Acessar no navegador
-http://localhost:3000
+# 3. Iniciar servidor local
+npm run dev
 ```
 
----
-
-## 📄 Estrutura de Rotas
-
-| Rota | Descrição |
-|---|---|
-| `/` | Landing page oficial do JEGD com estatísticas e avisos |
-| `/escola/login` | Login e seleção de Unidades Escolares |
-| `/escola/dashboard` | Painel da escola com resumo de inscrições e atletas |
-| `/escola/atletas` | Gestão e cadastro do banco de alunos-atletas |
-| `/escola/comissao` | Cadastro de técnicos e professores (CREF) |
-| `/escola/inscricoes` | Montagem e submissão de equipes esportivas |
-| `/admin/login` | Acesso restrito da Coordenação SEMED |
-| `/admin/dashboard` | Julgamento de inscrições e emissor geral |
-| `/modalidades` | Guia com regras e limites de atletas |
-| `/regulamento` | Regulamento geral e critérios de idade |
-| `/validar` | Validador de crachá e leitor de QR Code |
+Acesse no navegador: `http://localhost:3000`
 
 ---
 
-Desenvolvido para os **Jogos Escolares 2026 - SEMED**.
+Desenvolvido para os **Jogos Escolares de Gonçalves Dias 2026 (JEGDS 2026)** • SEMED Gonçalves Dias - MA.

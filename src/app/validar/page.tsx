@@ -47,8 +47,8 @@ export default function ValidarCrachaPage() {
     const todosAtletas = JegdStorage.getAtletas();
     const encontrado = todosAtletas.find(
       a => a.id.toLowerCase() === idParaBuscar ||
-           a.matricula.toLowerCase() === idParaBuscar ||
-           (a.cpf && a.cpf.replace(/\D/g, '') === idParaBuscar.replace(/\D/g, '')) ||
+           (a.matricula && a.matricula.toLowerCase() === idParaBuscar) ||
+           (a.documentoNumero && a.documentoNumero.replace(/\D/g, '') === idParaBuscar.replace(/\D/g, '')) ||
            a.nomeCompleto.toLowerCase().includes(termo)
     );
 
@@ -179,7 +179,7 @@ export default function ValidarCrachaPage() {
                 <div className="space-y-3 flex-1 text-center sm:text-left">
                   <div>
                     <span className="text-xs font-bold text-emerald-400">
-                      ID: {atletaEncontrado.id} • {atletaEncontrado.genero}
+                      ID: {atletaEncontrado.id} • {atletaEncontrado.sexo}
                     </span>
                     <h2 className="text-2xl font-black text-white">
                       {atletaEncontrado.nomeCompleto}
@@ -194,7 +194,7 @@ export default function ValidarCrachaPage() {
                       Rede de Ensino: <strong className="text-white">{escolaAtleta?.rede}</strong>
                     </p>
                     <p>
-                      Matrícula Escolar: <strong className="text-white">{atletaEncontrado.matricula}</strong>
+                      Documento: <strong className="text-white">{atletaEncontrado.documentoTipo} {atletaEncontrado.documentoNumero}</strong>
                     </p>
                     <p>
                       Série / Turma: <strong className="text-white">{atletaEncontrado.serieTurma}</strong>
@@ -230,15 +230,15 @@ export default function ValidarCrachaPage() {
                         <div>
                           <p className="text-xs font-bold text-white">{insc.modalidadeNome}</p>
                           <p className="text-[10px] text-slate-400">
-                            {insc.categoria} • {insc.genero}
+                            {insc.categoria} • {insc.sexo}
                           </p>
                         </div>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          insc.status === 'DEFERIDA'
+                          insc.status === 'VALIDADA'
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                             : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                         }`}>
-                          {insc.status === 'DEFERIDA' ? 'LIBERADO PARA JOGO' : insc.status}
+                          {insc.status === 'VALIDADA' ? 'LIBERADO PARA JOGO' : insc.status}
                         </span>
                       </div>
                     ))}

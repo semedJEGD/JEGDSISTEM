@@ -57,15 +57,28 @@ export default function RegulamentoPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
+                  Categoria Mirim
+                </span>
+                <p className="text-2xl font-black text-white mt-1">9 a 11 anos</p>
+                <p className="text-xs text-slate-300 mt-2 font-medium">
+                  Nascidos entre: <strong>01/01/2015 e 31/12/2017</strong>
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Atletismo, Xadrez, Futsal, Queimada e Futebol de Campo.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
                   Categoria Infantil
                 </span>
                 <p className="text-2xl font-black text-white mt-1">12 a 14 anos</p>
                 <p className="text-xs text-slate-300 mt-2 font-medium">
-                  Nascidos nos anos: <strong>2012, 2013 e 2014</strong>
+                  Nascidos entre: <strong>01/01/2012 e 31/12/2014</strong>
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Estudantes matriculados do 6º ao 9º ano do Ensino Fundamental.
+                  Todas as 8 modalidades disponíveis.
                 </p>
               </div>
 
@@ -75,10 +88,23 @@ export default function RegulamentoPage() {
                 </span>
                 <p className="text-2xl font-black text-white mt-1">15 a 17 anos</p>
                 <p className="text-xs text-slate-300 mt-2 font-medium">
-                  Nascidos nos anos: <strong>2009, 2010 e 2011</strong>
+                  Nascidos entre: <strong>01/01/2009 e 31/12/2011</strong>
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Estudantes do Ensino Médio ou anos finais do Fundamental.
+                  Todas as 8 modalidades disponíveis.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">
+                  Categoria Junior
+                </span>
+                <p className="text-2xl font-black text-white mt-1">18 a 20 anos</p>
+                <p className="text-xs text-slate-300 mt-2 font-medium">
+                  Nascidos entre: <strong>01/01/2006 e 31/12/2008</strong>
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Todas as 8 modalidades disponíveis.
                 </p>
               </div>
             </div>

@@ -50,8 +50,8 @@ export default function EscolaComissaoPage() {
     setFuncao('TECNICO');
     setRegistroProfissional('CREF 000000-G/MA');
     setCpf('');
-    setTelefone('(98) 98888-0000');
-    setEmail(escola ? escola.email : '');
+    setTelefone('(99) 98888-0000');
+    setEmail(escola ? (escola.loginEmail || '') : '');
     setModalAberto(true);
   };
 

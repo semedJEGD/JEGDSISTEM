@@ -136,13 +136,17 @@ export default function ModalidadesPage() {
                   <strong className="text-emerald-400 font-bold">{mod.minAtletas} a {mod.maxAtletas}</strong>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Comissão técnica:</span>
-                  <strong className="text-slate-200">Até {mod.maxComissao} membro(s)</strong>
+                  <span className="text-slate-400">Data do Evento:</span>
+                  <strong className="text-slate-200">{new Date(mod.dataEvento).toLocaleDateString('pt-BR')}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Prazo Inscrição:</span>
+                  <strong className="text-amber-400">{new Date(mod.prazoInscricao).toLocaleDateString('pt-BR')}</strong>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Categorias:</span>
-                  <div className="flex gap-1">
-                    {mod.categorias.map(c => (
+                  <div className="flex flex-wrap gap-1">
+                    {mod.categoriasPermitidas?.map(c => (
                       <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-200">
                         {c}
                       </span>
@@ -152,7 +156,7 @@ export default function ModalidadesPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Gênero:</span>
                   <span className="text-slate-200 font-medium">
-                    {mod.generos.join(' / ')}
+                    {mod.sexosPermitidos?.join(' / ')}
                   </span>
                 </div>
                 {mod.localPadrao && (

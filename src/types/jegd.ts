@@ -1,23 +1,36 @@
-export type ModalidadeTipo = 'COLETIVA' | 'INDIVIDUAL';
+export type CategoriaIdade = 'MIRIM' | 'INFANTIL' | 'INFANTO' | 'JUNIOR';
 
-export type CategoriaIdade = 'INFANTIL' | 'INFANTO'; // Infantil: 12-14 anos | Infanto: 15-17 anos
+export type Genero = 'MASCULINO' | 'FEMININO';
 
-export type Genero = 'MASCULINO' | 'FEMININO' | 'MISTO';
+export type TipoDocumento = 'RG' | 'CERTIDAO';
 
 export type RedeEscolar = 'MUNICIPAL' | 'ESTADUAL' | 'PARTICULAR' | 'FEDERAL';
 
-export type StatusInscricao = 'RASCUNHO' | 'ENVIADA' | 'DEFERIDA' | 'INDEFERIDA' | 'PENDENTE_AJUSTE';
+export type StatusInscricao = 'PENDENTE' | 'VALIDADA' | 'REJEITADA';
+
+export type ModalidadeCodigo =
+  | 'atletismo'
+  | 'xadrez'
+  | 'futsal'
+  | 'queimada'
+  | 'futebol_campo'
+  | 'voleibol'
+  | 'beach_soccer'
+  | 'tenis_mesa';
 
 export interface ModalidadeConfig {
   id: string;
+  codigo: ModalidadeCodigo;
   nome: string;
-  tipo: ModalidadeTipo;
-  generos: Genero[];
-  categorias: CategoriaIdade[];
+  tipo: 'COLETIVA' | 'INDIVIDUAL';
+  dataEvento: string; // YYYY-MM-DD
+  prazoInscricao: string; // YYYY-MM-DD (7 dias antes)
+  categoriasPermitidas: CategoriaIdade[];
+  sexosPermitidos: Genero[];
   minAtletas: number;
   maxAtletas: number;
-  maxComissao: number;
-  icone: string;
+  maxProvasPorAtleta: number;
+  provasDisponiveis?: string[];
   descricao: string;
   localPadrao?: string;
 }
@@ -27,7 +40,6 @@ export interface DocumentosAluno {
   documentoIdentidade?: string; // RG ou Certidão
   comprovanteMatricula?: string;
   autorizacaoPais?: string;
-  atestadoMedico?: string;
 }
 
 export interface Atleta {
@@ -35,16 +47,15 @@ export interface Atleta {
   escolaId: string;
   nomeCompleto: string;
   dataNascimento: string; // YYYY-MM-DD
-  cpf: string;
-  rg: string;
-  orgaoExpedidor?: string;
+  sexo: Genero;
+  documentoTipo: TipoDocumento;
+  documentoNumero: string;
   matricula: string;
   serieTurma: string;
-  genero: Genero;
-  nomeMae: string;
+  nomeMae?: string;
   telefoneContato: string;
   tipoSanguineo?: string;
-  alergiasCuidados?: string;
+  consentimentoResponsavel: boolean;
   documentos: DocumentosAluno;
   ativo: boolean;
   createdAt: string;
@@ -55,11 +66,10 @@ export interface MembroComissao {
   escolaId: string;
   nomeCompleto: string;
   funcao: 'TECNICO' | 'AUXILIAR' | 'DELEGADO' | 'MASSAGISTA_FISIO';
-  registroProfissional?: string; // CREF ou similar
+  registroProfissional?: string; // CREF
   cpf: string;
   telefone: string;
   email: string;
-  foto?: string;
 }
 
 export interface Escola {
@@ -70,27 +80,27 @@ export interface Escola {
   rede: RedeEscolar;
   bairro: string;
   endereco: string;
-  diretorNome: string;
-  professorRespNome: string;
-  telefone: string;
-  email: string;
+  responsavelNome: string;
+  responsavelTelefone: string;
+  loginEmail: string;
   senhaHash?: string;
-  brasaoLogo?: string;
   createdAt: string;
 }
 
 export interface InscricaoEquipe {
   id: string;
   escolaId: string;
-  modalidadeId: string;
+  modalidadeCodigo: ModalidadeCodigo;
   modalidadeNome: string;
   categoria: CategoriaIdade;
-  genero: Genero;
+  sexo: Genero;
   atletaIds: string[];
+  provasPorAtleta?: Record<string, string[]>; // Para atletismo: atletaId -> ["100m", "salto"]
   comissaoIds: string[];
   status: StatusInscricao;
-  parecerSemed?: string;
-  dataEnvio?: string;
+  motivoRejeicao?: string;
+  parecerComite?: string;
+  dataInscricao: string;
   dataHomologacao?: string;
   createdAt: string;
   updatedAt: string;
@@ -104,19 +114,4 @@ export interface ComunicadoAviso {
   dataPublicacao: string;
   urgente: boolean;
   autor: string;
-}
-
-export interface PartidaChave {
-  id: string;
-  modalidadeId: string;
-  categoria: CategoriaIdade;
-  genero: Genero;
-  fase: 'CLASSIFICATORIA' | 'QUARTAS' | 'SEMIFINAL' | 'FINAL' | 'TERCEIRO_LUGAR';
-  escolaAId: string;
-  escolaBId: string;
-  placarA?: number;
-  placarB?: number;
-  dataHora: string;
-  local: string;
-  status: 'AGENDADA' | 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA';
 }
