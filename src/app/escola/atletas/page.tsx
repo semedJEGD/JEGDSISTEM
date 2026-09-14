@@ -24,9 +24,12 @@ import {
   Flame,
   ShieldCheck,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Printer,
+  QrCode
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
+import { JegdPdfGenerator } from '@/lib/pdf-generator';
 import { Escola, Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade } from '@/types/jegd';
 import { JegdsRulesService, PROVAS_ATLETISMO_POR_CATEGORIA } from '@/services/jegds-rules';
 
@@ -276,6 +279,28 @@ export default function EscolaAtletasPage() {
     return bateBusca && bateSexo && bateCat;
   });
 
+  // Geração de Crachás
+  const handleGerarCrachaIndividual = async (atleta: Atleta) => {
+    if (!escola) return;
+    try {
+      await JegdPdfGenerator.gerarCrachaIndividual(atleta, escola);
+    } catch {
+      alert('Erro ao gerar crachá individual em PDF.');
+    }
+  };
+
+  const handleGerarCrachasEscola = async () => {
+    if (!escola || atletas.length === 0) {
+      alert('Nenhum atleta cadastrado para gerar crachás.');
+      return;
+    }
+    try {
+      await JegdPdfGenerator.gerarCrachasEmLote(escola, atletas);
+    } catch {
+      alert('Erro ao gerar lote de crachás em PDF.');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -296,13 +321,25 @@ export default function EscolaAtletasPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleAbrirModalNovo}
-          className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 shrink-0"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>+ Cadastrar Aluno & Inscrever</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          {atletas.length > 0 && (
+            <button
+              onClick={handleGerarCrachasEscola}
+              className="w-full sm:w-auto px-4 sm:px-5 py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-black text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Crachás Desta Escola (PDF)</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleAbrirModalNovo}
+            className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>+ Cadastrar Aluno & Inscrever</span>
+          </button>
+        </div>
       </div>
 
       {/* Barra de Busca & Filtros */}
@@ -440,6 +477,13 @@ export default function EscolaAtletasPage() {
                   </span>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleGerarCrachaIndividual(atleta)}
+                      className="p-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 transition-colors"
+                      title="Gerar Crachá Oficial Individual (PDF)"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleAbrirModalEditar(atleta)}
                       className="p-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#4B5563] hover:text-[#087A5B] border border-[#E2EAE5] transition-colors"

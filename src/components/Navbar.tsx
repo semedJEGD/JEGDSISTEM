@@ -117,7 +117,7 @@ export default function Navbar() {
               }`}
             >
               <QrCode className="w-4 h-4 text-[#00A878]" />
-              Validar Crachá
+              Crachá & Controle
             </Link>
           </nav>
 
@@ -233,7 +233,7 @@ export default function Navbar() {
               }`}
             >
               <QrCode className="w-4 h-4 text-[#00A878]" />
-              <span>Validar Crachá / QR Code</span>
+              <span>Crachá & Controle Logístico</span>
             </Link>
           </nav>
 

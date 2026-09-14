@@ -56,7 +56,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/validar" className="hover:text-[#00A878] font-medium transition-colors">
-                  Validador de Crachá / QR Code
+                  Crachá & Controle Logístico
                 </Link>
               </li>
             </ul>

@@ -65,6 +65,15 @@ model Usuario {
   updatedAt DateTime     @updatedAt
 }
 
+enum TipoRegistroControle {
+  ELEGIBILIDADE
+  AGUA
+  LANCHE
+  TRANSPORTE_IDA
+  TRANSPORTE_VOLTA
+  CREDENCIAMENTO
+}
+
 model Atleta {
   id                       String          @id @default(uuid())
   nomeCompleto             String
@@ -74,6 +83,7 @@ model Atleta {
   documentoNumero          String
   documentoUrl             String?
   fotoUrl                  String?
+  crachaToken              String?         @unique
   escolaId                 String
   escola                   Escola          @relation(fields: [escolaId], references: [id], onDelete: Cascade)
   categoria                CategoriaEtaria
@@ -82,8 +92,25 @@ model Atleta {
   turma                    String?
   tipoSanguineo            String?
   inscricoes               Inscricao[]
+  registrosControle        RegistroControle[]
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
+}
+
+model RegistroControle {
+  id            String               @id @default(uuid())
+  atletaId      String
+  atleta        Atleta               @relation(fields: [atletaId], references: [id], onDelete: Cascade)
+  tipo          TipoRegistroControle
+  timestamp     DateTime             @default(now())
+  registradoPor String
+  papelOperador String?
+  escolaId      String?
+  detalhes      String?
+  createdAt     DateTime             @default(now())
+
+  @@index([atletaId])
+  @@index([tipo])
 }
 
 model Modalidade {

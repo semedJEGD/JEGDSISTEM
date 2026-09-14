@@ -24,7 +24,8 @@ import {
   CheckSquare,
   Square,
   Eye,
-  MessageSquare
+  MessageSquare,
+  QrCode
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -141,6 +142,61 @@ export default function AdminDashboardPage() {
       alert('Erro ao gerar relatório do lote da escola.');
     } finally {
       setGerandoPdf(false);
+    }
+  };
+
+  const handleGerarCrachasEscola = async (esc: Escola) => {
+    try {
+      setGerandoPdf(true);
+      const atletasEscola = atletas.filter(a => a.escolaId === esc.id);
+      if (atletasEscola.length === 0) {
+        alert('Esta escola não possui nenhum atleta cadastrado para gerar crachás.');
+        return;
+      }
+      await JegdPdfGenerator.gerarCrachasEmLote(esc, atletasEscola);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar crachás da escola em PDF.');
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
+
+  const handleGerarTodosCrachas = async () => {
+    try {
+      setGerandoPdf(true);
+      if (atletas.length === 0) {
+        alert('Nenhum atleta cadastrado no sistema.');
+        return;
+      }
+      await JegdPdfGenerator.gerarTodosCrachasGeral(escolas, atletas);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar todos os crachás.');
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
+
+  const handleGerarCrachaIndividual = async (atleta: Atleta, esc?: Escola) => {
+    try {
+      const escolaObj = esc || escolas.find(e => e.id === atleta.escolaId) || {
+        id: atleta.escolaId,
+        nome: 'Escola Municipal',
+        sigla: 'SEMED',
+        inep: '',
+        rede: 'MUNICIPAL',
+        bairro: '',
+        endereco: '',
+        responsavelNome: '',
+        responsavelTelefone: '',
+        loginEmail: '',
+        createdAt: ''
+      };
+      await JegdPdfGenerator.gerarCrachaIndividual(atleta, escolaObj);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar crachá individual em PDF.');
     }
   };
 
@@ -447,6 +503,16 @@ export default function AdminDashboardPage() {
 
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <button
+                    onClick={() => handleGerarCrachasEscola(escolaSelecionada)}
+                    disabled={gerandoPdf || atletasDaEscolaSelecionada.length === 0}
+                    className="px-4 py-2.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-black text-xs sm:text-sm shadow-2xs flex items-center gap-2 transition-all disabled:opacity-50 shrink-0"
+                    title="Gerar todos os crachás padrão CR80 desta escola em PDF"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>Gerar Crachás (PDF)</span>
+                  </button>
+
+                  <button
                     onClick={() => handleImprimirLoteEscola(escolaSelecionada)}
                     disabled={gerandoPdf || atletasDaEscolaSelecionada.length === 0}
                     className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-sm flex items-center gap-2 transition-all disabled:opacity-50 shrink-0"
@@ -685,27 +751,37 @@ export default function AdminDashboardPage() {
                                         )}
                                       </div>
 
-                                      <button
-                                        onClick={() => toggleConferenciaAtleta(atleta)}
-                                        className={`p-1.5 rounded-lg flex items-center gap-1 font-bold text-[10px] shrink-0 transition-all ${
-                                          atleta.conferidoPeloCoordenador
-                                            ? 'bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30'
-                                            : 'bg-[#F7F9F8] text-[#4B5563] border border-[#E2EAE5]'
-                                        }`}
-                                        title={atleta.conferidoPeloCoordenador ? 'Homologado pela SEMED' : 'Pendente de validação'}
-                                      >
-                                        {atleta.conferidoPeloCoordenador ? (
-                                          <>
-                                            <CheckSquare className="w-3.5 h-3.5 text-[#00A878]" />
-                                            <span className="hidden sm:inline">OK</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Square className="w-3.5 h-3.5" />
-                                            <span className="hidden sm:inline">Validar</span>
-                                          </>
-                                        )}
-                                      </button>
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                          onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
+                                          className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 transition-all"
+                                          title="Imprimir Crachá Individual deste atleta (PDF)"
+                                        >
+                                          <Printer className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        <button
+                                          onClick={() => toggleConferenciaAtleta(atleta)}
+                                          className={`p-1.5 rounded-lg flex items-center gap-1 font-bold text-[10px] transition-all ${
+                                            atleta.conferidoPeloCoordenador
+                                              ? 'bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30'
+                                              : 'bg-[#F7F9F8] text-[#4B5563] border border-[#E2EAE5]'
+                                          }`}
+                                          title={atleta.conferidoPeloCoordenador ? 'Homologado pela SEMED' : 'Pendente de validação'}
+                                        >
+                                          {atleta.conferidoPeloCoordenador ? (
+                                            <>
+                                              <CheckSquare className="w-3.5 h-3.5 text-[#00A878]" />
+                                              <span className="hidden sm:inline">OK</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Square className="w-3.5 h-3.5" />
+                                              <span className="hidden sm:inline">Validar</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>

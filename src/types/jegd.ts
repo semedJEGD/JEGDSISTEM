@@ -35,13 +35,34 @@ export interface ModalidadeConfig {
   localPadrao?: string;
 }
 
+export type PapelUsuario = 'PROFESSOR' | 'COORDENADOR' | 'MESARIO' | 'APOIO' | 'ARBITRO';
+
+export type TipoRegistroControle =
+  | 'ELEGIBILIDADE'
+  | 'AGUA'
+  | 'LANCHE'
+  | 'TRANSPORTE_IDA'
+  | 'TRANSPORTE_VOLTA'
+  | 'CREDENCIAMENTO';
+
+export interface RegistroControle {
+  id: string;
+  atletaId: string;
+  tipo: TipoRegistroControle;
+  timestamp: string; // ISO 8601
+  registradoPor: string; // Nome ou ID do operador
+  papelOperador?: PapelUsuario;
+  escolaId?: string;
+  detalhes?: string;
+}
+
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
   senhaHash?: string;
   telefone: string;
-  papel: 'PROFESSOR' | 'COORDENADOR';
+  papel: PapelUsuario;
   escolaId?: string | null;
   createdAt: string;
 }
@@ -69,6 +90,7 @@ export interface Atleta {
   consentimentoResponsavel: boolean;
   cadastradoPor?: string; // Nome ou ID do professor
   categoriaCalculada?: CategoriaIdade;
+  crachaToken?: string; // Token único criptografado/curto para leitura via QR Code
   modalidadesInscritas?: {
     modalidadeCodigo: ModalidadeCodigo;
     modalidadeNome: string;

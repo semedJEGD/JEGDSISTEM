@@ -41,12 +41,33 @@
 - **Painel do Comitê Organizador**:
   - Homologação e Rejeição com motivo formal.
   - Emissão de **Súmulas e Listas de Chamada Oficial** em PDF com horários de **Check-in (30 min de antecedência)** e **WxO (15 min de tolerância)**.
-  - Emissão em lote de **Crachás / Credenciais com Foto e QR Code**.
-- **Validador de Credencial / QR Code**: Consulta em tempo real na entrada das praças esportivas por árbitros e fiscais de mesa.
+- **Crachá & Controle Logístico Oficial (`/validar`)**:
+  - Geração de Crachás em PDF no padrão **CR80 (~85×54mm)** com cores oficiais de categoria (Mirim: Verde, Infantil: Teal, Infanto: Azul, Junior: Âmbar).
+  - QR Code contendo **apenas o `cracha_token`** único para consulta dinâmica contra falsificações.
+  - Impressão individual (pronta para laminação) e em lote com marcas de corte (8 por folha A4 ordenada por categoria e nome).
+  - Painel de Operador com permissões por papel:
+    - **Mesários / Árbitros**: Registro de Elegibilidade e Check-in de quadra.
+    - **Equipe de Apoio / Logística**: Registro de entrega de kits de água, lanche e embarque no transporte (Ida / Volta).
+    - **Coordenação SEMED**: Acesso total, histórico detalhado e remoção de registros.
+  - **Relatório Logístico Agregado**: Acompanhamento em tempo real dos totais de água, lanches e transporte por escola, com contadores de pendências.
 
 ---
 
-## 🛠️ Deploy no Railway
+## 🧪 Testes Automatizados
+
+O sistema possui uma suíte completa de testes unitários para regras de matriz e controle logístico:
+
+```bash
+# Executa todos os testes automatizados
+npm test
+
+# Executa apenas os testes de Crachá e Controle Logístico
+npx tsx tests/cracha-controle.test.ts
+```
+
+---
+
+## 🛠️ Deploy no Railway & Vercel
 
 O projeto está 100% pronto para deploy no **Railway**:
 
