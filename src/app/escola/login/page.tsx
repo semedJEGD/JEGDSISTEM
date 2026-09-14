@@ -51,6 +51,31 @@ function LoginContent() {
       return;
     }
 
+    const senhaTratada = profSenha.trim();
+    if (!senhaTratada) {
+      setErro('Por favor, digite a sua senha de acesso.');
+      return;
+    }
+
+    // Regra de segurança: Máx 8 caracteres, somente letras minúsculas (a-z) e números (0-9)
+    const senhaValidaRegex = /^[a-z0-9]{1,8}$/;
+    if (!senhaValidaRegex.test(senhaTratada)) {
+      setErro('A senha deve conter no máximo 8 caracteres, composta exclusivamente por letras minúsculas (a-z) e números (0-9).');
+      return;
+    }
+
+    // Verificação da senha: se a escola já definiu uma senha personalizada
+    if (escola.senhaHash && escola.senhaHash !== '123456' && escola.senhaHash !== 'semed2026') {
+      if (senhaTratada !== escola.senhaHash && senhaTratada !== 'semed2026') {
+        setErro('Senha incorreta para esta unidade escolar. Utilize a senha cadastrada na 1ª etapa ou a senha master semed2026.');
+        return;
+      }
+    } else {
+      // Primeira definição de senha da escola: salva a senha escolhida no cadastro
+      escola.senhaHash = senhaTratada;
+      JegdStorage.saveEscola(escola);
+    }
+
     const nomeFinal = profNome.trim() || escola.responsavelNome || 'Professor Responsável';
     const telefoneFinal = profTelefone.trim() || escola.responsavelTelefone || '(99) 98888-0000';
 
@@ -75,8 +100,10 @@ function LoginContent() {
     e.preventDefault();
     setErro('');
 
-    // Senha padrão semed2026 ou 123456
-    if (adminSenha === 'semed2026' || adminSenha === '123456' || adminSenha === 'admin') {
+    const senhaTratada = adminSenha.trim();
+
+    // Segurança estrita: Somente a senha semed2026 é aceita
+    if (senhaTratada === 'semed2026') {
       JegdStorage.setComiteAuth(true);
       const coordNome = adminCoordenador === 'ELIAS_VELOSO' ? 'Elias Veloso (SEMED)' : 'Herbert de Sá (SEMED)';
       const coordEmail = adminCoordenador === 'ELIAS_VELOSO' ? 'elias.veloso@semed.gd.gov.br' : 'herbert.sa@semed.gd.gov.br';
@@ -93,7 +120,7 @@ function LoginContent() {
       JegdStorage.setCurrentUser(adminUser);
       router.push('/admin/dashboard');
     } else {
-      setErro('Senha incorreta da Coordenação SEMED. Dica: semed2026');
+      setErro('Senha incorreta da Coordenação SEMED. Apenas a senha oficial semed2026 é permitida.');
     }
   };
 
@@ -227,14 +254,15 @@ function LoginContent() {
 
                 <div>
                   <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                    4. Senha
+                    4. Senha (Máx 8 dígitos)
                   </label>
                   <div className="relative">
                     <input
                       type={mostrarSenha ? 'text' : 'password'}
                       value={profSenha}
-                      onChange={(e) => setProfSenha(e.target.value)}
-                      placeholder="Sua senha"
+                      maxLength={8}
+                      onChange={(e) => setProfSenha(e.target.value.toLowerCase())}
+                      placeholder="Ex: semed2026"
                       className="w-full px-3 py-2.5 pl-8 pr-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
                     <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
@@ -246,6 +274,9 @@ function LoginContent() {
                       {mostrarSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
+                  <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
+                    Apenas letras minúsculas (a-z) e números (0-9)
+                  </p>
                 </div>
               </div>
 
@@ -284,15 +315,16 @@ function LoginContent() {
                   <input
                     type="password"
                     required
+                    maxLength={8}
                     value={adminSenha}
-                    onChange={(e) => setAdminSenha(e.target.value)}
+                    onChange={(e) => setAdminSenha(e.target.value.toLowerCase())}
                     placeholder="Digite a senha institucional"
                     className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
                   <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
                 </div>
                 <p className="text-[11px] text-[#4B5563] mt-1 font-medium">
-                  Senha padrão do comitê: <strong className="text-[#087A5B]">semed2026</strong>
+                  Senha oficial da coordenação: <strong className="text-[#087A5B]">semed2026</strong>
                 </p>
               </div>
 
