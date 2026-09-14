@@ -11,7 +11,8 @@ import {
   Shield,
   Award,
   Users,
-  Bell
+  Bell,
+  Sparkles
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { ComunicadoAviso } from '@/types/jegd';
@@ -28,15 +29,16 @@ export default function RegulamentoPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
       
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-          Documentos & Normas Oficiais
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+      <div className="text-center max-w-3xl mx-auto space-y-3.5">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E8F7F1] border border-[#00A878]/25 text-[#087A5B] text-xs font-bold tracking-wide">
+          <Sparkles className="w-3.5 h-3.5 text-[#00A878]" />
+          <span>DOCUMENTOS & NORMAS OFICIAIS</span>
+        </div>
+        <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
           Regulamento Geral • JEGD 2026
         </h1>
-        <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
-          Secretaria Municipal de Educação (SEMED) • Coordenação de Desporto Escolar
+        <p className="text-base text-[#68756E] leading-relaxed font-normal">
+          Secretaria Municipal de Educação (SEMED) • Coordenação de Desporto Escolar de Gonçalves Dias - MA
         </p>
       </div>
 
@@ -46,64 +48,64 @@ export default function RegulamentoPage() {
         <div className="lg:col-span-8 space-y-8">
           
           {/* Box de Faixas Etárias Oficiais */}
-          <div className="bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-emerald-400" />
+          <div className="bg-white border border-[#00A878]/30 rounded-2xl p-6 sm:p-8 shadow-xs space-y-4">
+            <h2 className="text-xl font-bold text-[#17221D] flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#00A878]" />
               <span>Categorias & Anos de Nascimento Permitidos</span>
             </h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              O sistema calcula automaticamente a elegibilidade de cada aluno com base no ano de nascimento:
+            <p className="text-xs text-[#68756E] leading-relaxed">
+              O sistema calcula automaticamente a elegibilidade de cada aluno com base na data de nascimento e no ano de referência (2026):
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-4">
+                <span className="text-xs font-bold text-[#087A5B] uppercase tracking-wider">
                   Categoria Mirim
                 </span>
-                <p className="text-2xl font-black text-white mt-1">9 a 11 anos</p>
-                <p className="text-xs text-slate-300 mt-2 font-medium">
+                <p className="text-2xl font-black text-[#17221D] mt-1">9 a 11 anos</p>
+                <p className="text-xs text-[#17221D] mt-2 font-medium">
                   Nascidos entre: <strong>01/01/2015 e 31/12/2017</strong>
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Atletismo, Xadrez, Futsal, Queimada e Futebol de Campo.
+                <p className="text-[11px] text-[#68756E] mt-1">
+                  Atletismo, Xadrez, Futsal, Queimada e Futebol.
                 </p>
               </div>
 
-              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-4">
+                <span className="text-xs font-bold text-[#00A878] uppercase tracking-wider">
                   Categoria Infantil
                 </span>
-                <p className="text-2xl font-black text-white mt-1">12 a 14 anos</p>
-                <p className="text-xs text-slate-300 mt-2 font-medium">
+                <p className="text-2xl font-black text-[#17221D] mt-1">12 a 14 anos</p>
+                <p className="text-xs text-[#17221D] mt-2 font-medium">
                   Nascidos entre: <strong>01/01/2012 e 31/12/2014</strong>
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-[#68756E] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>
 
-              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-4">
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
                   Categoria Infanto
                 </span>
-                <p className="text-2xl font-black text-white mt-1">15 a 17 anos</p>
-                <p className="text-xs text-slate-300 mt-2 font-medium">
+                <p className="text-2xl font-black text-[#17221D] mt-1">15 a 17 anos</p>
+                <p className="text-xs text-[#17221D] mt-2 font-medium">
                   Nascidos entre: <strong>01/01/2009 e 31/12/2011</strong>
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-[#68756E] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>
 
-              <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">
+              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-4">
+                <span className="text-xs font-bold text-teal-700 uppercase tracking-wider">
                   Categoria Junior
                 </span>
-                <p className="text-2xl font-black text-white mt-1">18 a 20 anos</p>
-                <p className="text-xs text-slate-300 mt-2 font-medium">
+                <p className="text-2xl font-black text-[#17221D] mt-1">18 a 20 anos</p>
+                <p className="text-xs text-[#17221D] mt-2 font-medium">
                   Nascidos entre: <strong>01/01/2006 e 31/12/2008</strong>
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-[#68756E] mt-1">
                   Todas as 8 modalidades disponíveis.
                 </p>
               </div>
@@ -111,48 +113,48 @@ export default function RegulamentoPage() {
           </div>
 
           {/* Artigos Principais */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 text-slate-300 text-xs sm:text-sm leading-relaxed">
+          <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 sm:p-8 shadow-xs space-y-6 text-[#17221D] text-xs sm:text-sm leading-relaxed">
             
             <section className="space-y-2">
-              <h3 className="text-base font-bold text-white uppercase tracking-wider text-emerald-400">
+              <h3 className="text-sm font-bold text-[#087A5B] uppercase tracking-wider">
                 Capítulo I - Das Finalidades
               </h3>
-              <p>
-                <strong>Art. 1º</strong> — Os Jogos Escolares (JEGD 2026) têm por finalidade promover a ampla mobilização da juventude estudantil em torno do esporte, incentivando a prática da atividade física como instrumento pedagógico de desenvolvimento integral do estudante, disciplina, respeito e cidadania.
+              <p className="text-[#68756E]">
+                <strong>Art. 1º</strong> — Os Jogos Escolares de Gonçalves Dias (JEGD 2026) têm por finalidade promover a ampla mobilização da juventude estudantil em torno do esporte, incentivando a prática da atividade física como instrumento pedagógico de desenvolvimento integral do estudante, disciplina, respeito e cidadania.
               </p>
             </section>
 
             <section className="space-y-2">
-              <h3 className="text-base font-bold text-white uppercase tracking-wider text-emerald-400">
+              <h3 className="text-sm font-bold text-[#087A5B] uppercase tracking-wider">
                 Capítulo II - Da Participação e Escolas
               </h3>
-              <p>
+              <p className="text-[#68756E]">
                 <strong>Art. 2º</strong> — Poderão participar do JEGD 2026 todas as Unidades Escolares pertencentes às Redes Municipal, Estadual, Federal e Particular com sede no município e devidamente cadastradas no sistema oficial.
               </p>
-              <p>
+              <p className="text-[#68756E]">
                 <strong>Art. 3º</strong> — Cada escola poderá inscrever até 1 (uma) equipe por modalidade, categoria e gênero.
               </p>
             </section>
 
             <section className="space-y-2">
-              <h3 className="text-base font-bold text-white uppercase tracking-wider text-emerald-400">
+              <h3 className="text-sm font-bold text-[#087A5B] uppercase tracking-wider">
                 Capítulo III - Da Documentação e Credenciamento Obrigatório
               </h3>
-              <p>
+              <p className="text-[#68756E]">
                 <strong>Art. 4º</strong> — Para ter acesso às praças esportivas e aos jogos, o estudante-atleta deverá obrigatoriamente apresentar:
               </p>
-              <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                <li><strong>Crachá Oficial do JEGD 2026</strong> com Foto e QR Code gerado pelo sistema.</li>
+              <ul className="list-disc pl-5 space-y-1.5 text-[#68756E]">
+                <li><strong className="text-[#17221D]">Crachá Oficial do JEGD 2026</strong> com Foto e QR Code gerado pelo sistema.</li>
                 <li>Documento oficial de identidade original com foto (RG) ou Certidão de Nascimento acompanhada de documento com foto.</li>
-                <li>Comprovação de vínculo e frequência escolar ativa emitida pela direção.</li>
+                <li>Comprovação de vínculo e frequência escolar ativa emitida pela direção da escola.</li>
               </ul>
             </section>
 
             <section className="space-y-2">
-              <h3 className="text-base font-bold text-white uppercase tracking-wider text-emerald-400">
+              <h3 className="text-sm font-bold text-[#087A5B] uppercase tracking-wider">
                 Capítulo IV - Da Comissão Técnica e Disciplina
               </h3>
-              <p>
+              <p className="text-[#68756E]">
                 <strong>Art. 5º</strong> — Todos os técnicos e professores responsáveis deverão possuir registro no Conselho Regional de Educação Física (CREF) ou autorização especial chancelada pela SEMED.
               </p>
             </section>
@@ -161,12 +163,12 @@ export default function RegulamentoPage() {
 
         </div>
 
-        {/* Lateral: Mural de Avisos e Download do PDF */}
+        {/* Lateral: Mural de Avisos */}
         <div className="lg:col-span-4 space-y-6">
           
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Bell className="w-5 h-5 text-amber-400" />
+          <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 shadow-xs space-y-4">
+            <h3 className="text-base font-bold text-[#17221D] flex items-center gap-2">
+              <Bell className="w-5 h-5 text-amber-600" />
               <span>Mural de Comunicados SEMED</span>
             </h3>
 
@@ -174,28 +176,28 @@ export default function RegulamentoPage() {
               {comunicados.map((aviso) => (
                 <div
                   key={aviso.id}
-                  className="bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 space-y-2"
+                  className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-4 space-y-2"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
                       {aviso.categoria}
                     </span>
-                    <span className="text-[10px] text-slate-400">{aviso.dataPublicacao}</span>
+                    <span className="text-[10px] text-[#68756E]">{aviso.dataPublicacao}</span>
                   </div>
-                  <h4 className="text-xs font-bold text-white">{aviso.titulo}</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">{aviso.conteudo}</p>
+                  <h4 className="text-xs font-bold text-[#17221D]">{aviso.titulo}</h4>
+                  <p className="text-[11px] text-[#68756E] leading-relaxed">{aviso.conteudo}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-950 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 shadow-xl space-y-3">
-            <Shield className="w-8 h-8 text-emerald-400" />
-            <h4 className="text-base font-bold text-white">Precisa de suporte?</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
+          <div className="bg-[#E8F7F1] border border-[#00A878]/30 rounded-2xl p-6 shadow-xs space-y-3">
+            <Shield className="w-7 h-7 text-[#00A878]" />
+            <h4 className="text-base font-bold text-[#17221D]">Precisa de suporte?</h4>
+            <p className="text-xs text-[#68756E] leading-relaxed">
               Dúvidas sobre o regulamento ou envio de recursos? Entre em contato direto com a Coordenação Técnica de Arbitragem da SEMED.
             </p>
-            <p className="text-xs font-semibold text-emerald-400">
+            <p className="text-xs font-bold text-[#087A5B]">
               E-mail: jogosescolares@semed.gov.br
             </p>
           </div>
@@ -207,3 +209,4 @@ export default function RegulamentoPage() {
     </div>
   );
 }
+

@@ -12,7 +12,8 @@ import {
   Trophy,
   Users,
   ShieldCheck,
-  Camera
+  Camera,
+  Sparkles
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Atleta, Escola, InscricaoEquipe } from '@/types/jegd';
@@ -85,23 +86,27 @@ export default function ValidarCrachaPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-teal-500/10">
+      <div className="text-center max-w-2xl mx-auto space-y-3">
+        <div className="w-14 h-14 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 text-[#00A878] flex items-center justify-center mx-auto mb-2 shadow-2xs">
           <QrCode className="w-7 h-7 stroke-[2.2]" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E8F7F1] text-[#087A5B] text-xs font-bold border border-[#00A878]/25">
+          <Sparkles className="w-3.5 h-3.5 text-[#00A878]" />
+          <span>MESA & ARBITRAGEM</span>
+        </div>
+        <h1 className="text-2xl sm:text-4xl font-black text-[#17221D]">
           Validador de Credencial & Crachá Oficial
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400">
+        <p className="text-xs sm:text-sm text-[#68756E]">
           Uso oficial para Árbitros, Mesários e Fiscais de Quadra confirmarem a elegibilidade dos atletas em quadra.
         </p>
       </div>
 
       {/* Formulário de Busca / Leitura de QR */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 sm:p-8 shadow-xs">
         <form onSubmit={handleValidar} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-2">
               Cole o Código QR ou digite o ID / Matrícula / Nome do Atleta
             </label>
             <div className="relative">
@@ -110,19 +115,19 @@ export default function ValidarCrachaPage() {
                 value={codigoBusca}
                 onChange={(e) => setCodigoBusca(e.target.value)}
                 placeholder="Ex: atl-01, 20260012 ou cole o payload do QR Code..."
-                className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-slate-800/90 border border-slate-700 text-white text-sm focus:border-teal-500 transition-colors"
+                className="w-full px-4 py-3.5 pl-11 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm focus:border-[#00A878] focus:bg-white transition-all outline-none"
               />
-              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
+              <Search className="w-5 h-5 text-[#68756E] absolute left-4 top-3.5" />
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span>Exemplos para teste:</span>
+            <div className="flex items-center gap-2 text-xs text-[#68756E]">
+              <span>Exemplos:</span>
               <button
                 type="button"
                 onClick={() => handleCarregarExemplo('atl-01')}
-                className="text-teal-400 hover:underline font-semibold"
+                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold"
               >
                 Gabriel Henrique (atl-01)
               </button>
@@ -130,7 +135,7 @@ export default function ValidarCrachaPage() {
               <button
                 type="button"
                 onClick={() => handleCarregarExemplo('atl-02')}
-                className="text-teal-400 hover:underline font-semibold"
+                className="text-[#00A878] hover:text-[#087A5B] hover:underline font-bold"
               >
                 Lucas Gabriel (atl-02)
               </button>
@@ -138,7 +143,7 @@ export default function ValidarCrachaPage() {
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2 transition-all hover:scale-105"
+              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs shadow-xs hover:shadow-md flex items-center justify-center gap-2 transition-all active:scale-98"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Verificar Autenticidade</span>
@@ -151,8 +156,8 @@ export default function ValidarCrachaPage() {
       {buscou && (
         <div>
           {atletaEncontrado ? (
-            <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-emerald-500 text-slate-950 text-xs font-black px-6 py-1.5 rounded-bl-2xl uppercase tracking-wider flex items-center gap-1.5 shadow-md">
+            <div className="bg-white border-2 border-[#00A878] rounded-2xl p-6 sm:p-8 shadow-md space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-[#00A878] text-white text-xs font-black px-6 py-1.5 rounded-bl-xl uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Credencial Válida & Regular</span>
               </div>
@@ -160,7 +165,7 @@ export default function ValidarCrachaPage() {
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pt-4">
                 
                 {/* Foto do Atleta */}
-                <div className="w-28 h-36 rounded-2xl bg-slate-800 border-2 border-emerald-500/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                <div className="w-28 h-36 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
                   {atletaEncontrado.documentos?.foto3x4 ? (
                     <img
                       src={atletaEncontrado.documentos.foto3x4}
@@ -169,8 +174,8 @@ export default function ValidarCrachaPage() {
                     />
                   ) : (
                     <div className="text-center p-2">
-                      <Users className="w-10 h-10 text-slate-600 mx-auto mb-1" />
-                      <span className="text-[10px] text-slate-400 font-bold">FOTO OFICIAL</span>
+                      <Users className="w-10 h-10 text-[#CBD5E1] mx-auto mb-1" />
+                      <span className="text-[10px] text-[#68756E] font-bold">FOTO OFICIAL</span>
                     </div>
                   )}
                 </div>
@@ -178,32 +183,32 @@ export default function ValidarCrachaPage() {
                 {/* Dados Principais */}
                 <div className="space-y-3 flex-1 text-center sm:text-left">
                   <div>
-                    <span className="text-xs font-bold text-emerald-400">
+                    <span className="text-xs font-bold text-[#087A5B] bg-[#E8F7F1] px-2.5 py-0.5 rounded-md border border-[#00A878]/20">
                       ID: {atletaEncontrado.id} • {atletaEncontrado.sexo}
                     </span>
-                    <h2 className="text-2xl font-black text-white">
+                    <h2 className="text-2xl font-black text-[#17221D] mt-1.5">
                       {atletaEncontrado.nomeCompleto}
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#68756E]">
                     <p>
-                      Escola: <strong className="text-white">{escolaAtleta?.nome} ({escolaAtleta?.sigla})</strong>
+                      Escola: <strong className="text-[#17221D]">{escolaAtleta?.nome} ({escolaAtleta?.sigla})</strong>
                     </p>
                     <p>
-                      Rede de Ensino: <strong className="text-white">{escolaAtleta?.rede}</strong>
+                      Rede de Ensino: <strong className="text-[#17221D]">{escolaAtleta?.rede}</strong>
                     </p>
                     <p>
-                      Documento: <strong className="text-white">{atletaEncontrado.documentoTipo} {atletaEncontrado.documentoNumero}</strong>
+                      Documento: <strong className="text-[#17221D]">{atletaEncontrado.documentoTipo} {atletaEncontrado.documentoNumero}</strong>
                     </p>
                     <p>
-                      Série / Turma: <strong className="text-white">{atletaEncontrado.serieTurma}</strong>
+                      Série / Turma: <strong className="text-[#17221D]">{atletaEncontrado.serieTurma}</strong>
                     </p>
                     <p>
-                      Data de Nasc.: <strong className="text-white">{new Date(atletaEncontrado.dataNascimento).toLocaleDateString('pt-BR')}</strong>
+                      Data de Nasc.: <strong className="text-[#17221D]">{new Date(atletaEncontrado.dataNascimento).toLocaleDateString('pt-BR')}</strong>
                     </p>
                     <p>
-                      Categoria: <strong className="text-emerald-400 font-bold">{catInfo?.categoria} ({catInfo?.idade} anos)</strong>
+                      Categoria: <strong className="text-[#087A5B] font-bold">{catInfo?.categoria} ({catInfo?.idade} anos)</strong>
                     </p>
                   </div>
                 </div>
@@ -211,32 +216,32 @@ export default function ValidarCrachaPage() {
               </div>
 
               {/* Modalidades Inscritas */}
-              <div className="pt-6 border-t border-slate-800 space-y-3">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <div className="pt-6 border-t border-[#E2EAE5] space-y-3">
+                <h3 className="text-xs font-bold text-[#17221D] uppercase tracking-wider">
                   Equipes & Modalidades Vinculadas
                 </h3>
 
                 {inscricoesAtleta.length === 0 ? (
-                  <p className="text-xs text-amber-400">
-                    * Este atleta está cadastrado no banco da escola, mas ainda não foi convocado em nenhuma equipe homologada.
+                  <p className="text-xs text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    * Este atleta está cadastrado no banco da escola, mas ainda não foi vinculado em nenhuma equipe homologada.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {inscricoesAtleta.map((insc) => (
                       <div
                         key={insc.id}
-                        className="bg-slate-800/80 border border-slate-700 rounded-xl p-3 flex items-center justify-between"
+                        className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-3.5 flex items-center justify-between"
                       >
                         <div>
-                          <p className="text-xs font-bold text-white">{insc.modalidadeNome}</p>
-                          <p className="text-[10px] text-slate-400">
+                          <p className="text-xs font-bold text-[#17221D]">{insc.modalidadeNome}</p>
+                          <p className="text-[10px] text-[#68756E]">
                             {insc.categoria} • {insc.sexo}
                           </p>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
                           insc.status === 'VALIDADA'
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                            ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
                         }`}>
                           {insc.status === 'VALIDADA' ? 'LIBERADO PARA JOGO' : insc.status}
                         </span>
@@ -248,10 +253,10 @@ export default function ValidarCrachaPage() {
 
             </div>
           ) : (
-            <div className="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 text-center space-y-3">
-              <XCircle className="w-12 h-12 text-red-400 mx-auto" />
-              <h3 className="text-lg font-bold text-white">Nenhum Atleta Encontrado</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <div className="bg-white border-2 border-rose-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
+              <XCircle className="w-12 h-12 text-rose-500 mx-auto" />
+              <h3 className="text-lg font-bold text-[#17221D]">Nenhum Atleta Encontrado</h3>
+              <p className="text-xs text-[#68756E] max-w-md mx-auto">
                 Não localizamos nenhum estudante-atleta com esse código ou QR. Verifique se o código digitado está correto ou se o aluno está cadastrado na base da SEMED.
               </p>
             </div>
@@ -262,3 +267,4 @@ export default function ValidarCrachaPage() {
     </div>
   );
 }
+

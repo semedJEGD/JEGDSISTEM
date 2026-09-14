@@ -1,51 +1,58 @@
 import React from 'react';
 import Link from 'next/link';
-import { Trophy, Mail, Phone, MapPin, Shield, ExternalLink } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Phone, MapPin, Shield, ExternalLink, Trophy } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800/80 text-slate-400 text-sm">
+    <footer className="bg-white border-t border-[#E2EAE5] text-[#68756E] text-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           
           {/* Coluna 1 - Identidade */}
           <div className="md:col-span-1 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-amber-400 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-slate-950 font-bold" />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center">
+                <Image 
+                  src="/logo-jegd.png" 
+                  alt="Logo JEGD" 
+                  width={40} 
+                  height={40} 
+                  className="object-contain" 
+                />
               </div>
-              <span className="font-extrabold text-xl text-white tracking-wider">
-                JEGD <span className="text-emerald-400">2026</span>
+              <span className="font-black text-xl text-[#17221D] tracking-tight">
+                JEGD <span className="text-[#00A878]">2026</span>
               </span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Sistema Oficial de Gestão e Inscrições dos Jogos Escolares. Fomentando a cidadania, disciplina e talentos do esporte escolar.
+            <p className="text-xs text-[#68756E] leading-relaxed">
+              Sistema Oficial de Gestão e Inscrições dos Jogos Escolares de Gonçalves Dias - MA. Fomentando o esporte, a educação e a cidadania.
             </p>
           </div>
 
           {/* Coluna 2 - Acesso Rápido */}
           <div>
-            <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider text-emerald-400">
+            <h4 className="text-[#17221D] font-bold mb-4 text-xs uppercase tracking-wider text-[#087A5B]">
               Acesso Rápido
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               <li>
-                <Link href="/escola/login" className="hover:text-white transition-colors">
+                <Link href="/escola/login" className="hover:text-[#00A878] transition-colors">
                   Portal da Escola (Inscrições)
                 </Link>
               </li>
               <li>
-                <Link href="/modalidades" className="hover:text-white transition-colors">
+                <Link href="/modalidades" className="hover:text-[#00A878] transition-colors">
                   Modalidades & Categorias
                 </Link>
               </li>
               <li>
-                <Link href="/regulamento" className="hover:text-white transition-colors">
+                <Link href="/regulamento" className="hover:text-[#00A878] transition-colors">
                   Regulamento Geral 2026
                 </Link>
               </li>
               <li>
-                <Link href="/validar" className="hover:text-white transition-colors">
+                <Link href="/validar" className="hover:text-[#00A878] transition-colors">
                   Consulta & Validador de Crachá
                 </Link>
               </li>
@@ -54,41 +61,46 @@ export default function Footer() {
 
           {/* Coluna 3 - Categorias */}
           <div>
-            <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider text-emerald-400">
+            <h4 className="text-[#17221D] font-bold mb-4 text-xs uppercase tracking-wider text-[#087A5B]">
               Faixas Etárias
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs">
               <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span><strong>Infantil:</strong> 12 a 14 anos (2012 - 2014)</span>
+                <span className="w-2 h-2 rounded-full bg-[#00A878]"></span>
+                <span><strong>Mirim:</strong> 9 a 11 anos</span>
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span><strong>Infanto:</strong> 15 a 17 anos (2009 - 2011)</span>
+                <span className="w-2 h-2 rounded-full bg-[#087A5B]"></span>
+                <span><strong>Infantil:</strong> 12 a 14 anos</span>
               </li>
-              <li className="pt-2 text-[11px] text-slate-500">
-                Redes: Municipal, Estadual, Particular e Federal.
+              <li className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                <span><strong>Infanto:</strong> 15 a 17 anos</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-600"></span>
+                <span><strong>Junior:</strong> 18 a 20 anos</span>
               </li>
             </ul>
           </div>
 
           {/* Coluna 4 - Contato e Suporte SEMED */}
           <div>
-            <h4 className="text-white font-semibold mb-4 text-xs uppercase tracking-wider text-emerald-400">
-              Coordenação Geral
+            <h4 className="text-[#17221D] font-bold mb-4 text-xs uppercase tracking-wider text-[#087A5B]">
+              Coordenação SEMED
             </h4>
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2.5 text-xs">
               <p className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>SEMED - Secretaria Municipal de Educação / Setor de Desporto</span>
+                <MapPin className="w-4 h-4 text-[#00A878] shrink-0 mt-0.5" />
+                <span>SEMED — Secretaria Municipal de Educação / Gonçalves Dias - MA</span>
               </p>
               <p className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                <Mail className="w-4 h-4 text-[#00A878] shrink-0" />
                 <span>jogosescolares@semed.gov.br</span>
               </p>
               <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>(98) 3214-9000 • Ramal 204</span>
+                <Phone className="w-4 h-4 text-[#00A878] shrink-0" />
+                <span>(99) 3662-1000 • Atendimento Oficial</span>
               </p>
             </div>
           </div>
@@ -96,11 +108,11 @@ export default function Footer() {
         </div>
 
         {/* Linha Final */}
-        <div className="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© 2026 JEGD - Jogos Escolares. Todos os direitos reservados. SEMED.</p>
+        <div className="pt-8 border-t border-[#E2EAE5] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#68756E]">
+          <p>© 2026 JEGD - Jogos Escolares de Gonçalves Dias. SEMED / Prefeitura Municipal.</p>
           <div className="flex items-center gap-4">
-            <Link href="/admin/login" className="hover:text-amber-400 flex items-center gap-1 transition-colors">
-              <Shield className="w-3.5 h-3.5" /> Acesso Administrativo
+            <Link href="/admin/login" className="hover:text-[#087A5B] flex items-center gap-1 transition-colors font-medium">
+              <Shield className="w-3.5 h-3.5 text-[#00A878]" /> Acesso Administrativo SEMED
             </Link>
           </div>
         </div>
@@ -108,3 +120,4 @@ export default function Footer() {
     </footer>
   );
 }
+

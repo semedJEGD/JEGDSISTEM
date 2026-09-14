@@ -110,21 +110,21 @@ export default function EscolaComissaoPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/escola/dashboard"
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2.5 rounded-xl bg-white border border-[#E2EAE5] text-[#68756E] hover:text-[#17221D] transition-colors shadow-2xs"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-white">Comissão Técnica & Professores</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Profissionais responsáveis pela delegação da escola: <strong>{escola.nome}</strong>
+            <h1 className="text-2xl font-black text-[#17221D]">Comissão Técnica & Professores</h1>
+            <p className="text-xs text-[#68756E] mt-0.5">
+              Profissionais responsáveis pela delegação da escola: <strong className="text-[#17221D]">{escola.nome}</strong>
             </p>
           </div>
         </div>
 
         <button
           onClick={handleAbrirModalNovo}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 flex items-center gap-2 transition-all hover:scale-105"
+          className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs shadow-xs hover:shadow-md flex items-center gap-2 transition-all active:scale-98"
         >
           <UserPlus className="w-4 h-4" />
           <span>Cadastrar Membro da Comissão</span>
@@ -133,15 +133,15 @@ export default function EscolaComissaoPage() {
 
       {/* Grid de Membros */}
       {comissao.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
-          <School className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-          <p className="text-base font-bold text-white">Nenhum membro técnico cadastrado.</p>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-6">
+        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-12 text-center shadow-xs">
+          <School className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" />
+          <p className="text-base font-bold text-[#17221D]">Nenhum membro técnico cadastrado.</p>
+          <p className="text-xs text-[#68756E] max-w-sm mx-auto mt-1 mb-6">
             Cadastre os professores de Educação Física e técnicos que irão acompanhar os alunos nos jogos.
           </p>
           <button
             onClick={handleAbrirModalNovo}
-            className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs inline-flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs"
           >
             <UserPlus className="w-4 h-4" />
             <span>Cadastrar Primeiro Professor</span>
@@ -152,49 +152,49 @@ export default function EscolaComissaoPage() {
           {comissao.map((membro) => (
             <div
               key={membro.id}
-              className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg relative group transition-all"
+              className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-2xl p-5 shadow-xs hover:shadow-md relative group transition-all"
             >
               <div className="flex items-start justify-between mb-3">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/20">
                   {membro.funcao === 'TECNICO' ? 'TÉCNICO RESPONSÁVEL' : membro.funcao}
                 </span>
-                <span className="text-xs text-slate-400 font-medium">CREF / Registro</span>
+                <span className="text-xs text-[#68756E] font-medium">CREF / Registro</span>
               </div>
 
-              <h3 className="text-base font-bold text-white mb-2">
+              <h3 className="text-base font-bold text-[#17221D] mb-2">
                 {membro.nomeCompleto}
               </h3>
 
-              <div className="space-y-1.5 text-xs text-slate-400">
+              <div className="space-y-1.5 text-xs text-[#68756E]">
                 <p className="flex items-center gap-2">
-                  <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="text-slate-300 font-semibold">{membro.registroProfissional || 'Sem CREF informado'}</span>
+                  <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="text-[#17221D] font-semibold">{membro.registroProfissional || 'Sem CREF informado'}</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                  <Phone className="w-3.5 h-3.5 text-[#00A878] shrink-0" />
                   <span>{membro.telefone}</span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <Mail className="w-3.5 h-3.5 text-[#68756E] shrink-0" />
                   <span className="truncate">{membro.email}</span>
                 </p>
-                <p className="text-[11px] text-slate-500 pt-1">
+                <p className="text-[11px] text-[#94A3B8] pt-1">
                   CPF: {membro.cpf}
                 </p>
               </div>
 
               {/* Ações */}
-              <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-end gap-2">
+              <div className="mt-4 pt-3 border-t border-[#E2EAE5] flex items-center justify-end gap-2">
                 <button
                   onClick={() => handleAbrirModalEditar(membro)}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-2 rounded-lg bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#68756E] hover:text-[#087A5B] transition-colors border border-[#E2EAE5]"
                   title="Editar Membro"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleExcluirMembro(membro.id, membro.nomeCompleto)}
-                  className="p-2 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                  className="p-2 rounded-lg bg-[#F7F9F8] hover:bg-rose-50 text-[#68756E] hover:text-rose-600 transition-colors border border-[#E2EAE5]"
                   title="Excluir Membro"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -207,21 +207,21 @@ export default function EscolaComissaoPage() {
 
       {/* Modal de Cadastro / Edição */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-xl relative my-8">
             
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#E2EAE5]">
               <div>
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-black text-[#17221D]">
                   {membroEditando ? 'Editar Membro da Comissão' : 'Cadastrar Membro Técnico'}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#68756E]">
                   Cadastre o professor de Ed. Física ou dirigente oficial da delegação.
                 </p>
               </div>
               <button
                 onClick={() => setModalAberto(false)}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"
+                className="p-2 rounded-xl bg-[#F7F9F8] hover:bg-slate-100 text-[#68756E] hover:text-[#17221D] border border-[#E2EAE5]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -229,7 +229,7 @@ export default function EscolaComissaoPage() {
 
             <form onSubmit={handleSalvarMembro} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-[#17221D] mb-1">
                   Nome Completo do Profissional *
                 </label>
                 <input
@@ -238,19 +238,19 @@ export default function EscolaComissaoPage() {
                   value={nomeCompleto}
                   onChange={(e) => setNomeCompleto(e.target.value)}
                   placeholder="Ex: Prof. Carlos Eduardo Silveira"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] focus:bg-white outline-none font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
                     Função na Delegação
                   </label>
                   <select
                     value={funcao}
                     onChange={(e) => setFuncao(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] outline-none font-medium"
                   >
                     <option value="TECNICO">Técnico Principal</option>
                     <option value="AUXILIAR">Auxiliar Técnico</option>
@@ -260,7 +260,7 @@ export default function EscolaComissaoPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
                     CREF / Registro Profissional
                   </label>
                   <input
@@ -268,14 +268,14 @@ export default function EscolaComissaoPage() {
                     value={registroProfissional}
                     onChange={(e) => setRegistroProfissional(e.target.value)}
                     placeholder="Ex: CREF 012498-G/MA"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
                     CPF *
                   </label>
                   <input
@@ -284,12 +284,12 @@ export default function EscolaComissaoPage() {
                     value={cpf}
                     onChange={(e) => setCpf(e.target.value)}
                     placeholder="000.000.000-00"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] focus:bg-white outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
                     Telefone / WhatsApp
                   </label>
                   <input
@@ -297,13 +297,13 @@ export default function EscolaComissaoPage() {
                     value={telefone}
                     onChange={(e) => setTelefone(e.target.value)}
                     placeholder="(98) 98888-0000"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-[#17221D] mb-1">
                   E-mail de Contato
                 </label>
                 <input
@@ -311,21 +311,21 @@ export default function EscolaComissaoPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="professor@escola.edu.br"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:border-teal-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:border-[#00A878] focus:bg-white outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#E2EAE5]">
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-[#F7F9F8] hover:bg-slate-100 text-xs font-semibold text-[#17221D] border border-[#E2EAE5]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold shadow-lg shadow-teal-500/20 transition-all hover:scale-105"
+                  className="px-6 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold shadow-xs hover:shadow-md"
                 >
                   {membroEditando ? 'Salvar Alterações' : 'Concluir Cadastro'}
                 </button>
@@ -339,3 +339,4 @@ export default function EscolaComissaoPage() {
     </div>
   );
 }
+
