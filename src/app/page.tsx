@@ -59,13 +59,23 @@ export default function HomePage() {
       <section className="relative bg-white border-b border-[#E2EAE5] pt-6 pb-12 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           
-          {/* Banner Ilustrado Oficial */}
-          <div className="w-full rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-white">
-            <img
-              src="/banner-jegd.png"
-              alt="Banner Oficial JEGD 2026 - Mais que jogos, grandes valores para a vida"
+          {/* Hero Video Institucional Oficial JEGD 2026 */}
+          <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-[#17221D] relative">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              poster="/banner-jegd.png"
               className="w-full h-auto max-h-[380px] object-cover object-center block"
-            />
+            >
+              <source src="/video-jegd.mp4" type="video/mp4" />
+              <img
+                src="/banner-jegd.png"
+                alt="Banner Oficial JEGD 2026 - Mais que jogos, grandes valores para a vida"
+                className="w-full h-auto max-h-[380px] object-cover object-center block"
+              />
+            </video>
           </div>
 
           {/* Conteúdo Central Hero */}
