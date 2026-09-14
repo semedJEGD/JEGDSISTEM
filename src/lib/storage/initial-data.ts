@@ -1,0 +1,341 @@
+import {
+  Escola,
+  ModalidadeConfig,
+  ComunicadoAviso,
+  Usuario
+} from '@/types/jegd';
+
+export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
+  {
+    id: 'queimada',
+    codigo: 'queimada',
+    nome: 'Queimada',
+    tipo: 'COLETIVA',
+    dataEvento: '2026-11-28',
+    prazoInscricao: '2026-11-21',
+    categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['FEMININO', 'MASCULINO'],
+    minAtletas: 8,
+    maxAtletas: 12,
+    maxProvasPorAtleta: 1,
+    descricao: 'Dinâmica de 8 atletas em quadra. Masculino e Feminino em todas as 4 categorias.',
+    localPadrao: 'Quadra Poliesportiva Municipal de Gonçalves Dias'
+  },
+  {
+    id: 'tenis_mesa',
+    codigo: 'tenis_mesa',
+    nome: 'Tênis de Mesa',
+    tipo: 'INDIVIDUAL',
+    dataEvento: '2026-11-28',
+    prazoInscricao: '2026-11-21',
+    categoriasPermitidas: ['INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['MASCULINO'],
+    minAtletas: 1,
+    maxAtletas: 4,
+    maxProvasPorAtleta: 1,
+    descricao: 'Exclusivamente Masculino a partir do Infantil (12 anos). Não existe categoria Mirim.',
+    localPadrao: 'Centro Esportivo Municipal'
+  },
+  {
+    id: 'atletismo',
+    codigo: 'atletismo',
+    nome: 'Atletismo',
+    tipo: 'INDIVIDUAL',
+    dataEvento: '2026-12-05',
+    prazoInscricao: '2026-11-28',
+    categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['FEMININO', 'MASCULINO'],
+    minAtletas: 1,
+    maxAtletas: 8,
+    maxProvasPorAtleta: 2,
+    provasDisponiveis: ['75m', '100m', '200m', '400m', '1000m', 'salto'],
+    descricao: 'Máximo 2 provas por atleta. Mirim (75m, 100m); Infantil (75m, 100m, 200m, salto); Infanto/Junior (100m, 200m, 400m, 1000m, salto).',
+    localPadrao: 'Pista de Atletismo Municipal'
+  },
+  {
+    id: 'beach_soccer',
+    codigo: 'beach_soccer',
+    nome: 'Beach Soccer',
+    tipo: 'COLETIVA',
+    dataEvento: '2026-12-05',
+    prazoInscricao: '2026-11-28',
+    categoriasPermitidas: ['INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['MASCULINO'],
+    minAtletas: 5,
+    maxAtletas: 12,
+    maxProvasPorAtleta: 1,
+    descricao: 'Exclusivamente Masculino na areia a partir do Infantil (12 anos). Não existe Mirim.',
+    localPadrao: 'Arena de Areia de Gonçalves Dias'
+  },
+  {
+    id: 'futsal',
+    codigo: 'futsal',
+    nome: 'Futsal',
+    tipo: 'COLETIVA',
+    dataEvento: '2026-12-12',
+    prazoInscricao: '2026-12-05',
+    categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['FEMININO', 'MASCULINO'],
+    minAtletas: 5,
+    maxAtletas: 10,
+    maxProvasPorAtleta: 1,
+    descricao: 'Máximo 10 atletas inscritos por equipe/categoria/sexo. Fase de grupos até finais.',
+    localPadrao: 'Ginásio Municipal Central'
+  },
+  {
+    id: 'xadrez',
+    codigo: 'xadrez',
+    nome: 'Xadrez',
+    tipo: 'INDIVIDUAL',
+    dataEvento: '2026-12-12',
+    prazoInscricao: '2026-12-05',
+    categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['FEMININO', 'MASCULINO'],
+    minAtletas: 1,
+    maxAtletas: 4,
+    maxProvasPorAtleta: 1,
+    descricao: 'Disputa em Sistema Suíço para todas as idades e ambos os sexos.',
+    localPadrao: 'Salão Comunitário da SEMED'
+  },
+  {
+    id: 'futebol_campo',
+    codigo: 'futebol_campo',
+    nome: 'Futebol de Campo',
+    tipo: 'COLETIVA',
+    dataEvento: '2026-12-12',
+    prazoInscricao: '2026-12-05',
+    categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['MASCULINO'],
+    minAtletas: 11,
+    maxAtletas: 20,
+    maxProvasPorAtleta: 1,
+    descricao: 'Exclusivamente Masculino. Elenco com no máximo 20 atletas por equipe.',
+    localPadrao: 'Estádio Municipal de Gonçalves Dias'
+  },
+  {
+    id: 'voleibol',
+    codigo: 'voleibol',
+    nome: 'Voleibol',
+    tipo: 'COLETIVA',
+    dataEvento: '2026-12-12',
+    prazoInscricao: '2026-12-05',
+    categoriasPermitidas: ['INFANTIL', 'INFANTO', 'JUNIOR'],
+    sexosPermitidos: ['MASCULINO'],
+    minAtletas: 6,
+    maxAtletas: 12,
+    maxProvasPorAtleta: 1,
+    descricao: 'Exclusivamente Masculino a partir do Infantil (12 anos). Não existe categoria Mirim.',
+    localPadrao: 'Ginásio Municipal de Esportes'
+  }
+];
+
+export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
+  {
+    id: 'esc-aldenora-araujo',
+    nome: 'Aldenora Araújo',
+    sigla: 'ALDENORA ARAÚJO',
+    inep: '21004501',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0001',
+    loginEmail: 'aldenora@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-anisio-gomes',
+    nome: 'Anísio Gomes',
+    sigla: 'ANÍSIO GOMES',
+    inep: '21004502',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0002',
+    loginEmail: 'anisiogomes@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-anita-furtado',
+    nome: 'Anita Furtado',
+    sigla: 'ANITA FURTADO',
+    inep: '21004503',
+    rede: 'MUNICIPAL',
+    bairro: 'Bairro Novo',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0003',
+    loginEmail: 'anitafurtado@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-antonio-goncalves-dias',
+    nome: 'Antônio Gonçalves Dias',
+    sigla: 'ANTÔNIO GD',
+    inep: '21004504',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0004',
+    loginEmail: 'antoniogd@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-basilio-alves',
+    nome: 'Basílio Alves',
+    sigla: 'BASÍLIO ALVES',
+    inep: '21004505',
+    rede: 'MUNICIPAL',
+    bairro: 'Zona Rural',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0005',
+    loginEmail: 'basilioalves@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-emilio-murad',
+    nome: 'Emílio Murad',
+    sigla: 'EMÍLIO MURAD',
+    inep: '21004506',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0006',
+    loginEmail: 'emiliomurad@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-jose-correa-lima',
+    nome: 'José Corrêa Lima',
+    sigla: 'JOSÉ CORRÊA',
+    inep: '21004507',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0007',
+    loginEmail: 'josecorrea@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-jose-goncalves-dias',
+    nome: 'José Gonçalves Dias',
+    sigla: 'JOSÉ GD',
+    inep: '21004508',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0008',
+    loginEmail: 'josegd@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-raimundo-reis',
+    nome: 'Raimundo Reis',
+    sigla: 'RAIMUNDO REIS',
+    inep: '21004509',
+    rede: 'MUNICIPAL',
+    bairro: 'Bairro Novo',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0009',
+    loginEmail: 'raimundoreis@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ce-sulamita-lucio',
+    nome: 'C.E Sulamita Lúcio',
+    sigla: 'C.E SULAMITA LÚCIO',
+    inep: '21004510',
+    rede: 'ESTADUAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0010',
+    loginEmail: 'sulamitalucio@educacao.ma.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ue-benta-vilanova',
+    nome: 'U.E Benta Vilanova',
+    sigla: 'U.E BENTA VILANOVA',
+    inep: '21004511',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0011',
+    loginEmail: 'bentavilanova@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-cietec',
+    nome: 'C.I.E.T.E.C',
+    sigla: 'C.I.E.T.E.C',
+    inep: '21004512',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0012',
+    loginEmail: 'cietec@semed.gd.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const COMUNICADOS_JEGDS: ComunicadoAviso[] = [
+  {
+    id: 'aviso-01',
+    titulo: 'Regulamento Oficial do JEGDS 2026 - Gonçalves Dias Publicado',
+    conteudo: 'A SEMED e o Comitê Organizador convidam todas as 12 escolas oficiais a realizarem as inscrições de seus alunos nas 8 modalidades. O evento ocorre entre 21/11/2026 e 19/12/2026.',
+    categoria: 'REGULAMENTO',
+    dataPublicacao: '14/09/2026',
+    urgente: true,
+    autor: 'Comitê Organizador JEGDS 2026'
+  },
+  {
+    id: 'aviso-02',
+    titulo: 'Prazos de Inscrição: 7 dias de antecedência de cada modalidade',
+    conteudo: 'Atenção aos prazos de encerramento: Queimada e Tênis de Mesa encerram em 21/11; Atletismo e Beach Soccer em 28/11; Futsal, Xadrez, Futebol e Voleibol em 05/12.',
+    categoria: 'CRONOGRAMA',
+    dataPublicacao: '14/09/2026',
+    urgente: false,
+    autor: 'Coordenação Geral de Desporto'
+  }
+];
+
+export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
+  {
+    id: 'coord-elias-veloso',
+    nome: 'Elias Veloso (SEMED)',
+    email: 'elias.veloso@semed.gd.gov.br',
+    telefone: '(99) 98801-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'coord-herbert-sa',
+    nome: 'Herbert de Sá (SEMED)',
+    email: 'herbert.sa@semed.gd.gov.br',
+    telefone: '(99) 98801-1002',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  }
+];

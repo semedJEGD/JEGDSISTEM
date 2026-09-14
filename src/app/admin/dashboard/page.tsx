@@ -38,6 +38,14 @@ import {
   ModalidadeConfig
 } from '@/types/jegd';
 import { JegdsRulesService } from '@/services/jegds-rules';
+import { ModalAnaliseInscricao } from './components/ModalAnaliseInscricao';
+import { ModalNovoAviso } from './components/ModalNovoAviso';
+import { ModalObsAtleta } from './components/ModalObsAtleta';
+import { AbaEscolasLote } from './components/AbaEscolasLote';
+import { AbaHomologacao } from './components/AbaHomologacao';
+import { AbaAlertas } from './components/AbaAlertas';
+import { AbaSumulas } from './components/AbaSumulas';
+import { AbaComunicados } from './components/AbaComunicados';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -75,7 +83,7 @@ export default function AdminDashboardPage() {
   const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
   const [novoAvisoConteudo, setNovoAvisoConteudo] = useState('');
-  const [novoAvisoCategoria, setNovoAvisoCategoria] = useState<'CRONOGRAMA' | 'REGULAMENTO' | 'ALERTA'>('CRONOGRAMA');
+  const [novoAvisoCategoria, setNovoAvisoCategoria] = useState<'CRONOGRAMA' | 'REGULAMENTO' | 'ALERTA' | 'RESULTADOS'>('CRONOGRAMA');
   const [novoAvisoUrgente, setNovoAvisoUrgente] = useState(false);
 
   useEffect(() => {
@@ -445,835 +453,100 @@ export default function AdminDashboardPage() {
 
       {/* ABA: LOTES POR ESCOLA & CONFERÊNCIA */}
       {abaAtiva === 'ESCOLAS_LOTE' && (
-        <div className="space-y-6">
-          
-          {/* Painel Geral de Progresso por Escola */}
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
-            <h3 className="text-lg font-black text-[#17221D] flex items-center gap-2">
-              <School className="w-5 h-5 text-[#00A878]" />
-              <span>Painel Geral de Progresso por Escola</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {progressoEscolas.map((item) => (
-                <div
-                  key={item.escola.id}
-                  onClick={() => setEscolaSelecionadaId(item.escola.id)}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                    escolaSelecionadaId === item.escola.id
-                      ? 'bg-[#E8F7F1] border-[#00A878] shadow-sm'
-                      : 'bg-[#F7F9F8] border-[#E2EAE5] hover:bg-white hover:border-[#00A878]/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-black text-[#17221D] truncate">
-                      {item.escola.sigla} • {item.escola.nome}
-                    </span>
-                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                      item.status === 'PREENCHIDO'
-                        ? 'bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30'
-                        : item.status === 'EM_ANDAMENTO'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {item.status === 'PREENCHIDO' ? 'PREENCHIDO' : item.status === 'EM_ANDAMENTO' ? 'EM ANDAMENTO' : 'SEM INSCRIÇÃO'}
-                    </span>
-                  </div>
-                  <div className="text-xs text-[#4B5563] space-y-1">
-                    <p>Alunos inscritos: <strong className="text-[#17221D]">{item.totalAtletas}</strong></p>
-                    <p>Conferidos: <strong className="text-[#087A5B]">{item.totalConferidos}/{item.totalAtletas}</strong></p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Inspeção e Conferência do Lote da Escola Selecionada */}
-          {escolaSelecionada && (
-            <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-[#E2EAE5]">
-                <div>
-                  <h3 className="text-xl font-black text-[#17221D] flex items-center gap-2">
-                    <span>Lote de Inscrições: {escolaSelecionada.nome} ({escolaSelecionada.sigla})</span>
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium">
-                    Responsável: {escolaSelecionada.responsavelNome} • Contato: {escolaSelecionada.responsavelTelefone} • INEP: {escolaSelecionada.inep}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <button
-                    onClick={() => handleGerarCrachasEscola(escolaSelecionada)}
-                    disabled={gerandoPdf || atletasDaEscolaSelecionada.length === 0}
-                    className="px-4 py-2.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-black text-xs sm:text-sm shadow-2xs flex items-center gap-2 transition-all disabled:opacity-50 shrink-0"
-                    title="Gerar todos os crachás padrão CR80 desta escola em PDF"
-                  >
-                    <QrCode className="w-4 h-4" />
-                    <span>Gerar Crachás (PDF)</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleImprimirLoteEscola(escolaSelecionada)}
-                    disabled={gerandoPdf || atletasDaEscolaSelecionada.length === 0}
-                    className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-sm flex items-center gap-2 transition-all disabled:opacity-50 shrink-0"
-                    title="Imprimir relatório completo de todos os alunos e modalidades da escola"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Imprimir Delegação Geral (PDF)</span>
-                  </button>
-
-                  {(filtroModalidadeLote !== 'TODAS' || filtroCategoriaLote !== 'TODAS' || filtroSexoLote !== 'TODOS') && (
-                    <button
-                      onClick={() => handleImprimirLoteEscola(escolaSelecionada, filtroModalidadeLote, filtroCategoriaLote, filtroSexoLote)}
-                      disabled={gerandoPdf}
-                      className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs sm:text-sm shadow-sm flex items-center gap-2 transition-all shrink-0"
-                      title="Imprimir apenas o subconjunto filtrado"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Imprimir Filtro Selecionado</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* BARRA DE FILTROS E ORGANIZAÇÃO DO LOTE */}
-              <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 space-y-3">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#087A5B]">
-                    <Trophy className="w-4 h-4 text-[#00A878]" />
-                    <span>FILTRAR E ORGANIZAR DELEGAÇÃO:</span>
-                  </div>
-
-                  {/* Alternador de Modo de Visualização */}
-                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#E2EAE5] shrink-0 text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setModoVisualizacaoLote('CARDS')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        modoVisualizacaoLote === 'CARDS'
-                          ? 'bg-[#00A878] text-white shadow-xs'
-                          : 'text-[#4B5563] hover:text-[#17221D]'
-                      }`}
-                    >
-                      🗂️ Cards por Modalidade
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setModoVisualizacaoLote('TABELA')}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${
-                        modoVisualizacaoLote === 'TABELA'
-                          ? 'bg-[#00A878] text-white shadow-xs'
-                          : 'text-[#4B5563] hover:text-[#17221D]'
-                      }`}
-                    >
-                      📋 Tabela Geral
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {/* Filtro Modalidade */}
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Modalidade</label>
-                    <select
-                      value={filtroModalidadeLote}
-                      onChange={(e) => setFiltroModalidadeLote(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
-                    >
-                      <option value="TODAS">Todas as Modalidades</option>
-                      {modalidades.map(m => (
-                        <option key={m.id} value={m.codigo}>{m.nome} ({m.tipo})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Filtro Categoria / Faixa Etária */}
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Faixa Etária / Categoria</label>
-                    <select
-                      value={filtroCategoriaLote}
-                      onChange={(e) => setFiltroCategoriaLote(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
-                    >
-                      <option value="TODAS">Todas as Categorias</option>
-                      <option value="MIRIM">Mirim (9 a 11 anos)</option>
-                      <option value="INFANTIL">Infantil (12 a 14 anos)</option>
-                      <option value="INFANTO">Infanto (15 a 17 anos)</option>
-                      <option value="JUNIOR">Junior (18 a 20 anos)</option>
-                    </select>
-                  </div>
-
-                  {/* Filtro Naipe / Sexo */}
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Naipe / Sexo</label>
-                    <select
-                      value={filtroSexoLote}
-                      onChange={(e) => setFiltroSexoLote(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
-                    >
-                      <option value="TODOS">Todos os Naipes</option>
-                      <option value="MASCULINO">Masculino</option>
-                      <option value="FEMININO">Feminino</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {atletasDaEscolaSelecionada.length === 0 ? (
-                <div className="py-12 text-center text-[#4B5563] text-sm bg-[#F7F9F8] rounded-2xl border border-dashed border-[#E2EAE5]">
-                  <School className="w-8 h-8 text-[#A0AEC0] mx-auto mb-2 opacity-60" />
-                  <p className="font-bold">Esta escola ainda não cadastrou nenhum atleta no sistema.</p>
-                  <p className="text-xs text-[#68756E] mt-1">Os atletas cadastrados pelos professores aparecerão organizados aqui por modalidade.</p>
-                </div>
-              ) : modoVisualizacaoLote === 'CARDS' ? (
-                /* VISUALIZAÇÃO EM CARDS POR MODALIDADE */
-                <div className="space-y-6">
-                  {modalidades
-                    .filter(m => filtroModalidadeLote === 'TODAS' || m.codigo === filtroModalidadeLote || m.id === filtroModalidadeLote)
-                    .map((modalidade) => {
-                      // Atletas da escola que estão inscritos nesta modalidade
-                      const atletasNestaModalidade = atletasDaEscolaSelecionada.filter(a => 
-                        a.modalidadesInscritas?.some(mod => mod.modalidadeCodigo === modalidade.codigo || mod.modalidadeNome.toLowerCase().includes(modalidade.nome.toLowerCase()))
-                      ).filter(a => {
-                        if (filtroCategoriaLote !== 'TODAS' && a.categoriaCalculada !== filtroCategoriaLote) return false;
-                        if (filtroSexoLote !== 'TODOS' && a.sexo !== filtroSexoLote) return false;
-                        return true;
-                      });
-
-                      if (atletasNestaModalidade.length === 0 && filtroModalidadeLote !== 'TODAS') {
-                        return (
-                          <div key={modalidade.id} className="p-6 bg-[#F7F9F8] rounded-2xl border border-[#E2EAE5] text-center text-xs text-[#4B5563]">
-                            Nenhum atleta inscrito em <strong>{modalidade.nome}</strong> com os filtros atuais.
-                          </div>
-                        );
-                      }
-
-                      if (atletasNestaModalidade.length === 0) return null;
-
-                      // Agrupa por Categoria e Sexo dentro desta modalidade
-                      const gruposMap: { [key: string]: Atleta[] } = {};
-                      atletasNestaModalidade.forEach(atleta => {
-                        const chave = `${atleta.categoriaCalculada || 'INFANTIL'} • ${atleta.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'}`;
-                        if (!gruposMap[chave]) gruposMap[chave] = [];
-                        gruposMap[chave].push(atleta);
-                      });
-
-                      return (
-                        <div
-                          key={modalidade.id}
-                          className="bg-white border-2 border-[#E2EAE5] hover:border-[#00A878]/50 rounded-2xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm transition-all"
-                        >
-                          {/* Topo do Card da Modalidade */}
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#E2EAE5]">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-[#E8F7F1] border border-[#00A878]/30 text-[#00A878] flex items-center justify-center font-black">
-                                <Trophy className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="text-base sm:text-lg font-black text-[#17221D]">{modalidade.nome}</h4>
-                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/20 uppercase">
-                                    {modalidade.tipo}
-                                  </span>
-                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                                    {atletasNestaModalidade.length} {atletasNestaModalidade.length === 1 ? 'Atleta' : 'Atletas'}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[#4B5563] mt-0.5">{modalidade.descricao}</p>
-                              </div>
-                            </div>
-
-                            {/* Botão Imprimir Modalidade Completa */}
-                            <button
-                              onClick={() => handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo)}
-                              className="px-4 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs shrink-0"
-                              title={`Imprimir ficha oficial e delegação de ${modalidade.nome}`}
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span>Imprimir {modalidade.nome} (PDF)</span>
-                            </button>
-                          </div>
-
-                          {/* Subgrupos por Categoria e Naipe */}
-                          <div className="space-y-4 pt-1">
-                            {Object.entries(gruposMap).map(([grupoNome, atletasDoGrupo]) => (
-                              <div
-                                key={grupoNome}
-                                className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 space-y-3"
-                              >
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-[#00A878]" />
-                                    <h5 className="text-xs sm:text-sm font-black text-[#17221D]">
-                                      {grupoNome}
-                                    </h5>
-                                    <span className="text-[10px] font-bold text-[#4B5563] bg-white px-2 py-0.5 rounded border border-[#E2EAE5]">
-                                      {atletasDoGrupo.length} {atletasDoGrupo.length === 1 ? 'estudante' : 'estudantes'}
-                                    </span>
-                                  </div>
-
-                                  <button
-                                    onClick={() => {
-                                      const partes = grupoNome.split(' • ');
-                                      const cat = partes[0];
-                                      const sex = partes[1] === 'Masculino' ? 'MASCULINO' : 'FEMININO';
-                                      handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo, cat, sex);
-                                    }}
-                                    className="text-xs font-bold text-[#087A5B] hover:text-[#00A878] flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-[#E2EAE5] hover:border-[#00A878]/30 transition-all shadow-2xs"
-                                  >
-                                    <Printer className="w-3 h-3" />
-                                    <span>Ficha desta Equipe</span>
-                                  </button>
-                                </div>
-
-                                {/* Grade de Atletas do Subgrupo */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                                  {atletasDoGrupo.map((atleta) => (
-                                    <div
-                                      key={atleta.id}
-                                      className="bg-white border border-[#E2EAE5] rounded-xl p-3 flex items-start justify-between gap-2 shadow-2xs"
-                                    >
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-black text-[#17221D] truncate" title={atleta.nomeCompleto}>
-                                          {atleta.nomeCompleto}
-                                        </p>
-                                        <p className="text-[10px] text-[#4B5563] mt-0.5">
-                                          Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')} • {atleta.documentoTipo}: {atleta.documentoNumero}
-                                        </p>
-                                        {modalidade.codigo === 'atletismo' && (
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo')?.provas?.map(p => (
-                                              <span key={p} className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                                                {p}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        <button
-                                          onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
-                                          className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 transition-all"
-                                          title="Imprimir Crachá Individual deste atleta (PDF)"
-                                        >
-                                          <Printer className="w-3.5 h-3.5" />
-                                        </button>
-
-                                        <button
-                                          onClick={() => toggleConferenciaAtleta(atleta)}
-                                          className={`p-1.5 rounded-lg flex items-center gap-1 font-bold text-[10px] transition-all ${
-                                            atleta.conferidoPeloCoordenador
-                                              ? 'bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30'
-                                              : 'bg-[#F7F9F8] text-[#4B5563] border border-[#E2EAE5]'
-                                          }`}
-                                          title={atleta.conferidoPeloCoordenador ? 'Homologado pela SEMED' : 'Pendente de validação'}
-                                        >
-                                          {atleta.conferidoPeloCoordenador ? (
-                                            <>
-                                              <CheckSquare className="w-3.5 h-3.5 text-[#00A878]" />
-                                              <span className="hidden sm:inline">OK</span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Square className="w-3.5 h-3.5" />
-                                              <span className="hidden sm:inline">Validar</span>
-                                            </>
-                                          )}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              ) : (
-                /* VISUALIZAÇÃO EM TABELA GERAL */
-                <div className="space-y-3">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-[#17221D]">
-                      <thead className="bg-[#F7F9F8] text-[#4B5563] uppercase text-xs font-bold border-b border-[#E2EAE5]">
-                        <tr>
-                          <th className="p-3.5">Conferência</th>
-                          <th className="p-3.5">Aluno</th>
-                          <th className="p-3.5">Data Nasc.</th>
-                          <th className="p-3.5">Categoria/Sexo</th>
-                          <th className="p-3.5">Documento</th>
-                          <th className="p-3.5">Modalidades / Provas</th>
-                          <th className="p-3.5">Cadastrado Por</th>
-                          <th className="p-3.5 text-right">Observações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2EAE5]">
-                        {atletasDaEscolaSelecionada
-                          .filter(a => {
-                            if (filtroModalidadeLote !== 'TODAS' && !a.modalidadesInscritas?.some(m => m.modalidadeCodigo === filtroModalidadeLote || m.modalidadeNome.toLowerCase().includes(filtroModalidadeLote.toLowerCase()))) return false;
-                            if (filtroCategoriaLote !== 'TODAS' && a.categoriaCalculada !== filtroCategoriaLote) return false;
-                            if (filtroSexoLote !== 'TODOS' && a.sexo !== filtroSexoLote) return false;
-                            return true;
-                          })
-                          .map((atleta) => (
-                          <tr key={atleta.id} className="hover:bg-[#F7F9F8]">
-                            <td className="p-3.5">
-                              <button
-                                onClick={() => toggleConferenciaAtleta(atleta)}
-                                className={`p-2 rounded-xl flex items-center gap-1.5 font-bold text-xs transition-all ${
-                                  atleta.conferidoPeloCoordenador
-                                    ? 'bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30'
-                                    : 'bg-white text-[#4B5563] border border-[#E2EAE5]'
-                                }`}
-                              >
-                                {atleta.conferidoPeloCoordenador ? (
-                                  <>
-                                    <CheckSquare className="w-4 h-4 text-[#00A878]" />
-                                    <span>Correto</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Square className="w-4 h-4" />
-                                    <span>Pendente</span>
-                                  </>
-                                )}
-                              </button>
-                            </td>
-
-                            <td className="p-3.5 font-bold text-[#17221D]">
-                              {atleta.nomeCompleto}
-                            </td>
-
-                            <td className="p-3.5 text-[#4B5563]">
-                              {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}
-                            </td>
-
-                            <td className="p-3.5">
-                              <span className="px-2.5 py-0.5 rounded-md bg-[#F7F9F8] border border-[#E2EAE5] font-bold text-xs text-[#17221D]">
-                                {atleta.categoriaCalculada || 'N/A'} ({atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'})
-                              </span>
-                            </td>
-
-                            <td className="p-3.5 text-[#17221D]">
-                              <strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}
-                            </td>
-
-                            <td className="p-3.5">
-                              {atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {atleta.modalidadesInscritas.map((m, idx) => (
-                                    <span key={idx} className="px-2.5 py-0.5 rounded-md bg-[#E8F7F1] text-[#087A5B] text-xs border border-[#00A878]/20 font-medium">
-                                      {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-[#4B5563] italic text-xs">Nenhuma</span>
-                              )}
-                            </td>
-
-                            <td className="p-3.5 text-[#4B5563] text-xs">
-                              {atleta.cadastradoPor || escolaSelecionada.responsavelNome}
-                            </td>
-
-                            <td className="p-3.5 text-right">
-                              <button
-                                onClick={() => abrirModalObsAtleta(atleta)}
-                                className={`p-2 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
-                                  atleta.observacaoCoordenador
-                                    ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                    : 'bg-white text-[#4B5563] border-[#E2EAE5] hover:border-[#00A878]'
-                                }`}
-                                title="Inserir observação"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                                <span>{atleta.observacaoCoordenador ? 'Ver Nota' : 'Anotar'}</span>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-        </div>
+        <AbaEscolasLote
+          progressoEscolas={progressoEscolas}
+          escolaSelecionadaId={escolaSelecionadaId}
+          setEscolaSelecionadaId={setEscolaSelecionadaId}
+          escolaSelecionada={escolaSelecionada}
+          atletasDaEscolaSelecionada={atletasDaEscolaSelecionada}
+          modalidades={modalidades}
+          filtroModalidadeLote={filtroModalidadeLote}
+          setFiltroModalidadeLote={setFiltroModalidadeLote}
+          filtroCategoriaLote={filtroCategoriaLote}
+          setFiltroCategoriaLote={setFiltroCategoriaLote}
+          filtroSexoLote={filtroSexoLote}
+          setFiltroSexoLote={setFiltroSexoLote}
+          modoVisualizacaoLote={modoVisualizacaoLote}
+          setModoVisualizacaoLote={setModoVisualizacaoLote}
+          gerandoPdf={gerandoPdf}
+          handleGerarCrachasEscola={handleGerarCrachasEscola}
+          handleImprimirLoteEscola={handleImprimirLoteEscola}
+          handleGerarCrachaIndividual={handleGerarCrachaIndividual}
+          toggleConferenciaAtleta={toggleConferenciaAtleta}
+          abrirModalObsAtleta={abrirModalObsAtleta}
+        />
       )}
 
       {/* ABA: HOMOLOGAÇÃO DE INSCRIÇÕES */}
       {abaAtiva === 'HOMOLOGACAO' && (
-        <div className="space-y-4">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 shadow-xs">
-            <div className="sm:col-span-2 relative">
-              <input
-                type="text"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Filtrar por escola ou modalidade..."
-                className="w-full px-4 py-3 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm focus:outline-none focus:border-[#00A878] focus:bg-white"
-              />
-              <Search className="w-4 h-4 text-[#4B5563] absolute left-4 top-3.5" />
-            </div>
-
-            <div>
-              <select
-                value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
-              >
-                <option value="TODOS">Todos os Status</option>
-                <option value="PENDENTE">Pendente de Homologação</option>
-                <option value="VALIDADA">Validada (Homologada)</option>
-                <option value="REJEITADA">Rejeitada</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {inscricoes.map((insc) => {
-              const escolaObj = escolas.find(e => e.id === insc.escolaId);
-
-              return (
-                <div
-                  key={insc.id}
-                  className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 transition-all"
-                >
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="text-lg font-black text-[#17221D]">
-                        {escolaObj?.nome} ({escolaObj?.sigla})
-                      </span>
-                      <span className="text-xs px-3 py-1 rounded-full bg-[#E8F7F1] text-[#087A5B] font-bold border border-[#00A878]/20">
-                        {insc.modalidadeNome}
-                      </span>
-                      <span className="text-xs px-3 py-1 rounded-full bg-[#F7F9F8] text-[#4B5563] font-bold border border-[#E2EAE5]">
-                        {insc.categoria} • {insc.sexo}
-                      </span>
-
-                      <span className={`text-xs px-3 py-1 rounded-full font-bold border ${
-                        insc.status === 'VALIDADA'
-                          ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
-                          : insc.status === 'REJEITADA'
-                          ? 'bg-red-50 text-red-600 border-red-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        {insc.status}
-                      </span>
-                    </div>
-
-                    <div className="text-sm text-[#4B5563] flex flex-wrap items-center gap-4">
-                      <span><strong className="text-[#17221D] font-bold">{insc.atletaIds.length}</strong> Atletas convocados</span>
-                      <span>•</span>
-                      <span>Data: {insc.dataInscricao}</span>
-                      {insc.motivoRejeicao && (
-                        <span className="text-red-600 font-medium">
-                          Motivo: {insc.motivoRejeicao}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Ações */}
-                  <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
-                    <button
-                      onClick={() => abrirModalAnalise(insc)}
-                      className="px-4 py-2.5 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2 transition-colors"
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Julgar / Homologar</span>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        if (escolaObj) {
-                          const atls = insc.atletaIds.map(id => atletas.find(a => a.id === id)).filter((a): a is Atleta => a !== undefined);
-                          await JegdPdfGenerator.gerarCrachasEmLote(escolaObj, atls, insc.modalidadeNome, `${insc.categoria} (${insc.sexo})`);
-                        }
-                      }}
-                      className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center gap-2 shadow-2xs transition-colors"
-                    >
-                      <Download className="w-4 h-4 text-[#00A878]" />
-                      <span>Crachás QR</span>
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <AbaHomologacao
+          busca={busca}
+          setBusca={setBusca}
+          filtroStatus={filtroStatus}
+          setFiltroStatus={setFiltroStatus}
+          inscricoes={inscricoes}
+          escolas={escolas}
+          atletas={atletas}
+          abrirModalAnalise={abrirModalAnalise}
+        />
       )}
 
       {/* ABA: ALERTAS DE INCONSISTÊNCIA */}
       {abaAtiva === 'ALERTAS' && (
-        <div className="space-y-4">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 space-y-2 shadow-sm">
-            <h3 className="text-base font-bold text-[#17221D] flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <span>Auditoria e Alertas de Inconsistências</span>
-            </h3>
-            <p className="text-xs text-[#68756E]">
-              O sistema verifica automaticamente documentos faltantes, termos pendentes e cadastros que requerem atenção da comissão.
-            </p>
-          </div>
-
-          {alertasInconsistencia.length === 0 ? (
-            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-8 text-center text-xs text-[#087A5B] font-bold shadow-sm">
-              ✓ Nenhuma inconsistência encontrada no momento. Todos os atletas cadastrados possuem documentação completa.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {alertasInconsistencia.map((alerta, idx) => (
-                <div key={idx} className="bg-white border border-red-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
-                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#17221D]">{alerta.atletaNome}</span>
-                      <span className="text-[#68756E]">({alerta.escolaNome})</span>
-                    </div>
-                    <p className="text-red-700">{alerta.mensagem}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <AbaAlertas alertas={alertasInconsistencia} />
       )}
 
       {/* ABA: LISTAS DE CHAMADA & SÚMULAS */}
       {abaAtiva === 'LISTAS_CHAMADA' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 space-y-2 shadow-sm">
-            <h3 className="text-base font-bold text-[#17221D] flex items-center gap-2">
-              <Printer className="w-5 h-5 text-[#00A878]" />
-              <span>Gerador de Súmulas & Listas de Chamada Oficial</span>
-            </h3>
-            <p className="text-xs text-[#68756E] leading-relaxed">
-              Exporte a lista oficial de atletas para controle de Check-in (30 minutos de antecedência) e tolerância de WxO (15 minutos) na mesa de arbitragem.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {modalidades.map((mod) => (
-              <div
-                key={mod.id}
-                className="bg-white border border-[#E2EAE5] rounded-2xl p-5 space-y-3 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-[#17221D]">{mod.nome}</h4>
-                  <span className="text-[10px] text-[#68756E] bg-[#F7F9F8] px-2 py-0.5 rounded border border-[#E2EAE5]">
-                    {new Date(mod.dataEvento).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
-
-                <p className="text-xs text-[#68756E]">
-                  Categorias: {mod.categoriasPermitidas.join(', ')}
-                </p>
-
-                <div className="space-y-1.5 pt-2 border-t border-[#E2EAE5]">
-                  {mod.categoriasPermitidas.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => handleGerarListaChamada(mod, cat, 'MASCULINO')}
-                      className="w-full py-1.5 px-3 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-[11px] font-bold flex items-center justify-between transition-colors shadow-sm"
-                    >
-                      <span>Súmula {cat} (Masc)</span>
-                      <Download className="w-3 h-3 text-[#00A878]" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AbaSumulas
+          modalidades={modalidades}
+          handleGerarListaChamada={handleGerarListaChamada}
+        />
       )}
 
       {/* ABA: AVISOS */}
       {abaAtiva === 'AVISOS' && (
-        <div className="space-y-3">
-          {comunicados.map((aviso) => (
-            <div key={aviso.id} className="bg-white border border-[#E2EAE5] rounded-2xl p-5 space-y-2 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/20">
-                  {aviso.categoria}
-                </span>
-                <span className="text-xs text-[#68756E]">{aviso.dataPublicacao}</span>
-              </div>
-              <h4 className="text-base font-bold text-[#17221D]">{aviso.titulo}</h4>
-              <p className="text-xs text-[#68756E]">{aviso.conteudo}</p>
-            </div>
-          ))}
-        </div>
+        <AbaComunicados comunicados={comunicados} />
       )}
 
       {/* Modal de Homologação / Parecer */}
-      {modalParecerAberto && inscricaoEmAnalise && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
-            <h3 className="text-lg font-bold text-[#17221D] mb-1">
-              Homologação de Inscrição • JEGDS 2026
-            </h3>
-            <p className="text-xs text-[#68756E] mb-6">
-              {inscricaoEmAnalise.modalidadeNome} ({inscricaoEmAnalise.categoria} - {inscricaoEmAnalise.sexo})
-            </p>
-
-            <form onSubmit={salvarAnalise} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#17221D] mb-1">
-                  Decisão do Comitê Organizador
-                </label>
-                <select
-                  value={novoStatus}
-                  onChange={(e) => setNovoStatus(e.target.value as StatusInscricao)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
-                >
-                  <option value="VALIDADA">VALIDADA (Homologada)</option>
-                  <option value="REJEITADA">REJEITADA (Indeferida com Motivo)</option>
-                  <option value="PENDENTE">PENDENTE (Aguardando Documentação)</option>
-                </select>
-              </div>
-
-              {novoStatus === 'REJEITADA' && (
-                <div>
-                  <label className="block text-xs font-bold text-red-600 mb-1">
-                    Motivo da Rejeição * (Exibido para a Escola)
-                  </label>
-                  <textarea
-                    rows={3}
-                    required
-                    value={motivoRejeicao}
-                    onChange={(e) => setMotivoRejeicao(e.target.value)}
-                    placeholder="Ex: Documento de identidade ilegível ou atleta fora da faixa etária permitida."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-red-50 border border-red-300 text-red-900 text-xs focus:outline-none focus:border-red-500"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-[#17221D] mb-1">
-                  Parecer do Comitê
-                </label>
-                <textarea
-                  rows={3}
-                  value={parecerTexto}
-                  onChange={(e) => setParecerTexto(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:outline-none focus:border-[#00A878] focus:bg-white"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E2EAE5]">
-                <button
-                  type="button"
-                  onClick={() => setModalParecerAberto(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E2EAE5] text-xs font-bold text-[#68756E]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold shadow-md shadow-[#00A878]/20 transition-all"
-                >
-                  Salvar Parecer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ModalAnaliseInscricao
+        isOpen={modalParecerAberto}
+        inscricao={inscricaoEmAnalise}
+        novoStatus={novoStatus}
+        setNovoStatus={setNovoStatus}
+        motivoRejeicao={motivoRejeicao}
+        setMotivoRejeicao={setMotivoRejeicao}
+        parecerTexto={parecerTexto}
+        setParecerTexto={setParecerTexto}
+        onClose={() => setModalParecerAberto(false)}
+        onSubmit={salvarAnalise}
+      />
 
       {/* Modal de Observação de Atleta */}
-      {modalObsAtletaAberto && atletaObs && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            <h3 className="text-base font-bold text-[#17221D] mb-1">
-              Observação da Mesa: {atletaObs.nomeCompleto}
-            </h3>
-            <p className="text-xs text-[#68756E] mb-4">
-              Anotação interna para controle da arbitragem e checagem de documentos.
-            </p>
-
-            <form onSubmit={salvarObsAtleta} className="space-y-4">
-              <textarea
-                rows={3}
-                value={obsTexto}
-                onChange={(e) => setObsTexto(e.target.value)}
-                placeholder="Ex: Documento apresentado fisicamente na mesa com sucesso."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:outline-none focus:border-[#00A878] focus:bg-white"
-              />
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setModalObsAtletaAberto(false)}
-                  className="px-4 py-2 rounded-xl bg-[#F7F9F8] text-xs font-bold text-[#68756E]"
-                >
-                  Fechar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs shadow-sm transition-all"
-                >
-                  Salvar Anotação
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ModalObsAtleta
+        isOpen={modalObsAtletaAberto}
+        atleta={atletaObs}
+        obsTexto={obsTexto}
+        setObsTexto={setObsTexto}
+        onClose={() => setModalObsAtletaAberto(false)}
+        onSubmit={salvarObsAtleta}
+      />
 
       {/* Modal de Publicação de Comunicado */}
-      {modalAvisoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
-            <h3 className="text-lg font-bold text-[#17221D] mb-1">
-              Publicar Comunicado Oficial do JEGDS 2026
-            </h3>
-            <form onSubmit={handleSalvarAviso} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#17221D] mb-1">Título *</label>
-                <input
-                  type="text"
-                  required
-                  value={novoAvisoTitulo}
-                  onChange={(e) => setNovoAvisoTitulo(e.target.value)}
-                  placeholder="Ex: Tabela de Jogos de Futsal Publicada"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:outline-none focus:border-[#00A878] focus:bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#17221D] mb-1">Conteúdo *</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={novoAvisoConteudo}
-                  onChange={(e) => setNovoAvisoConteudo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs focus:outline-none focus:border-[#00A878] focus:bg-white"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#E2EAE5]">
-                <button
-                  type="button"
-                  onClick={() => setModalAvisoAberto(false)}
-                  className="px-4 py-2 rounded-xl bg-[#F7F9F8] text-[#68756E] text-xs font-bold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs shadow-md shadow-[#00A878]/20 transition-all"
-                >
-                  Publicar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ModalNovoAviso
+        isOpen={modalAvisoAberto}
+        titulo={novoAvisoTitulo}
+        setTitulo={setNovoAvisoTitulo}
+        conteudo={novoAvisoConteudo}
+        setConteudo={setNovoAvisoConteudo}
+        categoria={novoAvisoCategoria}
+        setCategoria={setNovoAvisoCategoria}
+        urgente={novoAvisoUrgente}
+        setUrgente={setNovoAvisoUrgente}
+        onClose={() => setModalAvisoAberto(false)}
+        onSubmit={handleSalvarAviso}
+      />
 
     </div>
   );
