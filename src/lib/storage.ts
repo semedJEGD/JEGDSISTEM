@@ -546,6 +546,24 @@ export class JegdStorage {
     if (!this.isClient()) return;
     const list = this.getAtletas().filter(a => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
+
+    let inscricoes = this.getInscricoes();
+    inscricoes = inscricoes.map(insc => {
+      if (insc.atletaIds.includes(id)) {
+        const newIds = insc.atletaIds.filter(aId => aId !== id);
+        const newProvas = { ...(insc.provasPorAtleta || {}) };
+        delete newProvas[id];
+        return {
+          ...insc,
+          atletaIds: newIds,
+          provasPorAtleta: newProvas,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return insc;
+    }).filter(insc => insc.atletaIds.length > 0);
+
+    localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoes));
   }
 
   // COMISSAO
@@ -594,6 +612,89 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = { ...insc, updatedAt: new Date().toISOString() };
     else list.unshift({ ...insc, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(list));
+  }
+
+  public static syncAtletaComEquipes(escolaId: string, atleta: Atleta): void {
+    if (!this.isClient()) return;
+    const cat = atleta.categoriaCalculada || JegdsRulesService.calcularCategoria(atleta.dataNascimento).categoria;
+    if (!cat) return;
+
+    const modalidadesConfig = this.getModalidades();
+    let todasInscricoes = this.getInscricoes();
+
+    // 1. Primeiro removemos o atleta de quaisquer equipes que ele não esteja mais vinculado
+    const modCodigosAtuais = atleta.modalidadesInscritas?.map(m => m.modalidadeCodigo) || [];
+    
+    todasInscricoes = todasInscricoes.map(insc => {
+      if (insc.escolaId === escolaId) {
+        if (!modCodigosAtuais.includes(insc.modalidadeCodigo) || insc.categoria !== cat || insc.sexo !== atleta.sexo) {
+          // Remove o atleta se ele estava nessa equipe
+          if (insc.atletaIds.includes(atleta.id)) {
+            const newAtletaIds = insc.atletaIds.filter(id => id !== atleta.id);
+            const newProvas = { ...(insc.provasPorAtleta || {}) };
+            delete newProvas[atleta.id];
+            return {
+              ...insc,
+              atletaIds: newAtletaIds,
+              provasPorAtleta: newProvas,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        }
+      }
+      return insc;
+    });
+
+    // 2. Agora adiciona/atualiza nas equipes vinculadas
+    atleta.modalidadesInscritas?.forEach(modInsc => {
+      const modObj = modalidadesConfig.find(m => m.codigo === modInsc.modalidadeCodigo);
+      if (!modObj) return;
+
+      const idx = todasInscricoes.findIndex(
+        i => i.escolaId === escolaId && i.modalidadeCodigo === modInsc.modalidadeCodigo && i.categoria === cat && i.sexo === atleta.sexo
+      );
+
+      if (idx >= 0) {
+        const equipeExistente = todasInscricoes[idx];
+        const atletaIds = equipeExistente.atletaIds.includes(atleta.id)
+          ? equipeExistente.atletaIds
+          : [...equipeExistente.atletaIds, atleta.id];
+
+        const provasPorAtleta = {
+          ...(equipeExistente.provasPorAtleta || {}),
+          ...(modInsc.provas ? { [atleta.id]: modInsc.provas } : {})
+        };
+
+        todasInscricoes[idx] = {
+          ...equipeExistente,
+          atletaIds,
+          provasPorAtleta: modInsc.modalidadeCodigo === 'atletismo' ? provasPorAtleta : equipeExistente.provasPorAtleta,
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        // Cria nova inscrição de equipe
+        const novaInsc: InscricaoEquipe = {
+          id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}`,
+          escolaId,
+          modalidadeCodigo: modInsc.modalidadeCodigo,
+          modalidadeNome: modObj.nome,
+          categoria: cat,
+          sexo: atleta.sexo,
+          atletaIds: [atleta.id],
+          provasPorAtleta: modInsc.provas ? { [atleta.id]: modInsc.provas } : undefined,
+          comissaoIds: [],
+          status: 'PENDENTE',
+          dataInscricao: new Date().toLocaleString('pt-BR'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        todasInscricoes.unshift(novaInsc);
+      }
+    });
+
+    // Remove equipes que ficaram com 0 atletas
+    todasInscricoes = todasInscricoes.filter(i => i.atletaIds.length > 0);
+    localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
   }
 
   public static deleteInscricao(id: string): void {

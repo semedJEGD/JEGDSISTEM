@@ -122,18 +122,18 @@ export default function EscolaDashboardPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/escola/atletas"
-              className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold shadow-xs hover:shadow-md flex items-center gap-2 transition-all active:scale-98"
+              className="px-5 py-3 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black shadow-md shadow-[#00A878]/20 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95"
             >
-              <UserPlus className="w-4 h-4" />
-              <span>Cadastrar Aluno-Atleta</span>
+              <Sparkles className="w-4 h-4" />
+              <span>+ Cadastrar Aluno & Formar Equipe</span>
             </Link>
 
             <Link
               href="/escola/inscricoes"
-              className="px-4 py-2.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-2 transition-all"
+              className="px-4 py-3 rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-2 transition-all"
             >
               <Trophy className="w-4 h-4 text-[#00A878]" />
-              <span>Inscrever Modalidades</span>
+              <span>Ver Equipes & Súmulas</span>
             </Link>
           </div>
         </div>
@@ -147,12 +147,12 @@ export default function EscolaDashboardPage() {
           className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between text-[#68756E] mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider">Atletas Registrados</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Alunos Cadastrados</span>
             <Users className="w-5 h-5 text-[#00A878] group-hover:scale-110 transition-transform" />
           </div>
           <p className="text-3xl font-black text-[#17221D]">{atletas.length}</p>
           <p className="text-[11px] text-[#00A878] mt-1 flex items-center gap-1 font-semibold">
-            Gerenciar cadastro <ArrowUpRight className="w-3 h-3" />
+            Cadastrar ou gerenciar <ArrowUpRight className="w-3 h-3" />
           </p>
         </Link>
 
@@ -175,12 +175,12 @@ export default function EscolaDashboardPage() {
           className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between text-[#68756E] mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider">Equipes Submetidas</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Equipes em Disputa</span>
             <Trophy className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
           </div>
           <p className="text-3xl font-black text-[#17221D]">{inscricoes.length}</p>
           <p className="text-[11px] text-[#087A5B] mt-1 flex items-center gap-1 font-semibold">
-            Ver modalidades <ArrowUpRight className="w-3 h-3" />
+            Formadas automaticamente <ArrowUpRight className="w-3 h-3" />
           </p>
         </Link>
 
@@ -207,32 +207,32 @@ export default function EscolaDashboardPage() {
       <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-[#E2EAE5]">
           <div>
-            <h2 className="text-xl font-black text-[#17221D]">Equipes & Modalidades Inscritas</h2>
+            <h2 className="text-xl font-black text-[#17221D]">Equipes Formadas Automaticamente</h2>
             <p className="text-xs text-[#68756E] mt-0.5">
-              Acompanhe a análise do Comitê, baixe a Ficha Oficial assinada e imprima os Crachás Oficiais.
+              Conforme você cadastra e inscreve os alunos, as equipes são montadas em tempo real aqui.
             </p>
           </div>
           <Link
-            href="/escola/inscricoes"
-            className="px-4 py-2 rounded-xl bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs font-bold hover:bg-[#d5f0e5] transition-colors"
+            href="/escola/atletas"
+            className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold shadow-sm transition-all"
           >
-            + Nova Inscrição de Equipe
+            + Cadastrar Mais Alunos
           </Link>
         </div>
 
         {inscricoes.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-[#E2EAE5] rounded-2xl bg-[#F7F9F8]">
             <Trophy className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" />
-            <p className="text-sm font-bold text-[#17221D]">Nenhuma modalidade inscrita ainda.</p>
+            <p className="text-sm font-bold text-[#17221D]">Nenhuma equipe formada ainda.</p>
             <p className="text-xs text-[#68756E] max-w-sm mx-auto mt-1 mb-4">
-              Comece cadastrando seus alunos-atletas e em seguida monte as equipes para disputar o JEGD 2026.
+              Ao cadastrar seu primeiro aluno na Etapa 1 e escolher a modalidade na Etapa 2, sua equipe será criada automaticamente!
             </p>
             <Link
-              href="/escola/inscricoes"
+              href="/escola/atletas"
               className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs"
             >
-              <Trophy className="w-4 h-4" />
-              <span>Inscrever Primeira Equipe</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Cadastrar Aluno & Iniciar Equipe</span>
             </Link>
           </div>
         ) : (
