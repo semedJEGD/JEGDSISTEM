@@ -25,6 +25,7 @@ function LoginContent() {
   // Dados da Coordenação
   const [adminCoordenador, setAdminCoordenador] = useState<'ELIAS_VELOSO' | 'HERBERT_SA'>('ELIAS_VELOSO');
   const [adminSenha, setAdminSenha] = useState('');
+  const [mostrarSenhaAdmin, setMostrarSenhaAdmin] = useState(false);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
@@ -51,7 +52,7 @@ function LoginContent() {
       return;
     }
 
-    const senhaTratada = profSenha.trim();
+    const senhaTratada = profSenha.trim().toLowerCase();
     if (!senhaTratada) {
       setErro('Por favor, digite a sua senha de acesso.');
       return;
@@ -64,10 +65,13 @@ function LoginContent() {
       return;
     }
 
-    // Verificação da senha: se a escola já definiu uma senha personalizada
-    if (escola.senhaHash && escola.senhaHash !== '123456' && escola.senhaHash !== 'semed2026') {
-      if (senhaTratada !== escola.senhaHash && senhaTratada !== 'semed2026') {
-        setErro('Senha incorreta para esta unidade escolar. Utilize a senha cadastrada na 1ª etapa ou a senha master semed2026.');
+    // Se informou a senha master institucional semed2026, acesso é autorizado imediatamente
+    if (senhaTratada === 'semed2026') {
+      // Senha master sempre autorizada
+    } else if (escola.senhaHash && escola.senhaHash !== '123456' && escola.senhaHash !== 'semed2026') {
+      // Verificação da senha personalizada já cadastrada pela escola
+      if (senhaTratada !== escola.senhaHash) {
+        setErro('Senha incorreta para esta unidade escolar. Verifique os dados ou utilize a chave de acesso institucional.');
         return;
       }
     } else {
@@ -82,7 +86,7 @@ function LoginContent() {
     const usuarioProf: Usuario = {
       id: `prof-${Date.now()}`,
       nome: nomeFinal,
-      email: `${escola.sigla.toLowerCase().replace(/\s+/g, '')}@semed.gd.gov.br`,
+      email: `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}@semed.gd.gov.br`,
       telefone: telefoneFinal,
       papel: 'PROFESSOR',
       escolaId: escola.id,
@@ -100,9 +104,9 @@ function LoginContent() {
     e.preventDefault();
     setErro('');
 
-    const senhaTratada = adminSenha.trim();
+    const senhaTratada = adminSenha.trim().toLowerCase();
 
-    // Segurança estrita: Somente a senha semed2026 é aceita
+    // Segurança institucional da Coordenação SEMED
     if (senhaTratada === 'semed2026') {
       JegdStorage.setComiteAuth(true);
       const coordNome = adminCoordenador === 'ELIAS_VELOSO' ? 'Elias Veloso (SEMED)' : 'Herbert de Sá (SEMED)';
@@ -120,7 +124,7 @@ function LoginContent() {
       JegdStorage.setCurrentUser(adminUser);
       router.push('/admin/dashboard');
     } else {
-      setErro('Senha incorreta da Coordenação SEMED. Apenas a senha oficial semed2026 é permitida.');
+      setErro('Senha incorreta da Coordenação SEMED. Digite a senha institucional autorizada.');
     }
   };
 
@@ -262,7 +266,7 @@ function LoginContent() {
                       value={profSenha}
                       maxLength={8}
                       onChange={(e) => setProfSenha(e.target.value.toLowerCase())}
-                      placeholder="Ex: semed2026"
+                      placeholder="Sua senha de acesso"
                       className="w-full px-3 py-2.5 pl-8 pr-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
                     <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
@@ -275,7 +279,7 @@ function LoginContent() {
                     </button>
                   </div>
                   <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-                    Apenas letras minúsculas (a-z) e números (0-9)
+                    Máx 8 caracteres (letras minúsculas e números)
                   </p>
                 </div>
               </div>
@@ -313,18 +317,25 @@ function LoginContent() {
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={mostrarSenhaAdmin ? 'text' : 'password'}
                     required
                     maxLength={8}
                     value={adminSenha}
                     onChange={(e) => setAdminSenha(e.target.value.toLowerCase())}
                     placeholder="Digite a senha institucional"
-                    className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
                   <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenhaAdmin(!mostrarSenhaAdmin)}
+                    className="absolute right-3 top-3 text-[#4B5563] hover:text-[#17221D]"
+                  >
+                    {mostrarSenhaAdmin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
-                <p className="text-[11px] text-[#4B5563] mt-1 font-medium">
-                  Senha oficial da coordenação: <strong className="text-[#087A5B]">semed2026</strong>
+                <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
+                  Acesso restrito à Coordenação Geral SEMED
                 </p>
               </div>
 
