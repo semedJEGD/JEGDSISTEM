@@ -255,7 +255,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Painel da Coordenação SEMED</h1>
                 <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-black shrink-0">
-                  2 Coordenadores
+                  Elias Veloso & Herbert de Sá (SEMED)
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium break-words">

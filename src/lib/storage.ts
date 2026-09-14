@@ -7,7 +7,8 @@ import {
   ComunicadoAviso,
   CategoriaIdade,
   ModalidadeCodigo,
-  Genero
+  Genero,
+  Usuario
 } from '@/types/jegd';
 import { JegdsRulesService } from '@/services/jegds-rules';
 
@@ -327,20 +328,37 @@ export const COMUNICADOS_JEGDS: ComunicadoAviso[] = [
   }
 ];
 
+export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
+  {
+    id: 'coord-elias-veloso',
+    nome: 'Elias Veloso (SEMED)',
+    email: 'elias.veloso@semed.gd.gov.br',
+    telefone: '(99) 98801-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'coord-herbert-sa',
+    nome: 'Herbert de Sá (SEMED)',
+    email: 'herbert.sa@semed.gd.gov.br',
+    telefone: '(99) 98801-1002',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  }
+];
+
 const STORAGE_KEYS = {
-  ESCOLAS: 'jegds_escolas_v4',
-  ATLETAS: 'jegds_atletas_v4',
-  COMISSAO: 'jegds_comissao_v4',
-  INSCRICOES: 'jegds_inscricoes_v4',
-  MODALIDADES: 'jegds_modalidades_v4',
-  COMUNICADOS: 'jegds_comunicados_v4',
-  USUARIOS: 'jegds_usuarios_v4',
+  ESCOLAS: 'jegds_escolas_v5',
+  ATLETAS: 'jegds_atletas_v5',
+  COMISSAO: 'jegds_comissao_v5',
+  INSCRICOES: 'jegds_inscricoes_v5',
+  MODALIDADES: 'jegds_modalidades_v5',
+  COMUNICADOS: 'jegds_comunicados_v5',
+  USUARIOS: 'jegds_usuarios_v5',
   CURRENT_AUTH_ESCOLA: 'jegds_current_escola_auth',
   CURRENT_AUTH_USER: 'jegds_current_user_auth',
   COMITE_AUTH: 'jegds_comite_auth'
 };
-
-
 
 export class JegdStorage {
   private static isClient(): boolean {
@@ -362,103 +380,21 @@ export class JegdStorage {
       localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(COMUNICADOS_JEGDS));
     }
 
+    if (!localStorage.getItem(STORAGE_KEYS.USUARIOS)) {
+      localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(COORDENADORES_OFICIAIS_SEMED));
+    }
+
+    // Inicialização sem mockups (zerado para uso real)
     if (!localStorage.getItem(STORAGE_KEYS.ATLETAS)) {
-      const atletasExemplo: Atleta[] = [
-        {
-          id: 'atl-01',
-          escolaId: 'esc-01',
-          nomeCompleto: 'Lucas Gabriel Morais',
-          dataNascimento: '2016-04-12', // 10 anos -> MIRIM
-          sexo: 'MASCULINO',
-          documentoTipo: 'RG',
-          documentoNumero: '054.912.880-12',
-          matricula: '2026-GD-001',
-          serieTurma: '5º Ano A',
-          nomeMae: 'Tereza Morais',
-          telefoneContato: '(99) 98112-9900',
-          tipoSanguineo: 'O+',
-          consentimentoResponsavel: true,
-          documentos: {},
-          ativo: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'atl-02',
-          escolaId: 'esc-01',
-          nomeCompleto: 'Matheus Henrique Sousa',
-          dataNascimento: '2013-06-20', // 13 anos -> INFANTIL
-          sexo: 'MASCULINO',
-          documentoTipo: 'RG',
-          documentoNumero: '061.229.450-33',
-          matricula: '2026-GD-002',
-          serieTurma: '7º Ano B',
-          nomeMae: 'Francisca Sousa',
-          telefoneContato: '(99) 98455-8811',
-          tipoSanguineo: 'A+',
-          consentimentoResponsavel: true,
-          documentos: {},
-          ativo: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'atl-03',
-          escolaId: 'esc-01',
-          nomeCompleto: 'Beatriz Vasconcelos Lima',
-          dataNascimento: '2010-08-15', // 16 anos -> INFANTO
-          sexo: 'FEMININO',
-          documentoTipo: 'CERTIDAO',
-          documentoNumero: 'Termo 1245 Lv 12 Fl 90',
-          matricula: '2026-GD-003',
-          serieTurma: '1º Ano EM',
-          nomeMae: 'Maria de Fátima Lima',
-          telefoneContato: '(99) 98844-3322',
-          tipoSanguineo: 'B+',
-          consentimentoResponsavel: true,
-          documentos: {},
-          ativo: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'atl-04',
-          escolaId: 'esc-02',
-          nomeCompleto: 'João Victor da Silva',
-          dataNascimento: '2007-03-10', // 19 anos -> JUNIOR
-          sexo: 'MASCULINO',
-          documentoTipo: 'RG',
-          documentoNumero: '039.882.112-55',
-          matricula: '2026-GD-004',
-          serieTurma: '3º Ano EM',
-          nomeMae: 'Raimunda Silva',
-          telefoneContato: '(99) 99122-0044',
-          tipoSanguineo: 'AB+',
-          consentimentoResponsavel: true,
-          documentos: {},
-          ativo: true,
-          createdAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(atletasExemplo));
+      localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.INSCRICOES)) {
-      const inscricoesExemplo: InscricaoEquipe[] = [
-        {
-          id: 'insc-01',
-          escolaId: 'esc-01',
-          modalidadeCodigo: 'futsal',
-          modalidadeNome: 'Futsal',
-          categoria: 'INFANTIL',
-          sexo: 'MASCULINO',
-          atletaIds: ['atl-02'],
-          comissaoIds: [],
-          status: 'VALIDADA',
-          parecerComite: 'Inscrição homologada pelo Comitê Organizador.',
-          dataInscricao: '14/09/2026 10:00',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoesExemplo));
+      localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify([]));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.COMISSAO)) {
+      localStorage.setItem(STORAGE_KEYS.COMISSAO, JSON.stringify([]));
     }
   }
 

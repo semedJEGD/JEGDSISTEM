@@ -23,7 +23,7 @@ function LoginContent() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // Dados da Coordenação
-  const [adminCoordenador, setAdminCoordenador] = useState<'COORDENADOR_1' | 'COORDENADOR_2'>('COORDENADOR_1');
+  const [adminCoordenador, setAdminCoordenador] = useState<'ELIAS_VELOSO' | 'HERBERT_SA'>('ELIAS_VELOSO');
   const [adminSenha, setAdminSenha] = useState('');
   const [erro, setErro] = useState('');
 
@@ -78,13 +78,14 @@ function LoginContent() {
     // Senha padrão semed2026 ou 123456
     if (adminSenha === 'semed2026' || adminSenha === '123456' || adminSenha === 'admin') {
       JegdStorage.setComiteAuth(true);
-      const coordNome = adminCoordenador === 'COORDENADOR_1' ? 'Coordenador SEMED 1' : 'Coordenador SEMED 2';
+      const coordNome = adminCoordenador === 'ELIAS_VELOSO' ? 'Elias Veloso (SEMED)' : 'Herbert de Sá (SEMED)';
+      const coordEmail = adminCoordenador === 'ELIAS_VELOSO' ? 'elias.veloso@semed.gd.gov.br' : 'herbert.sa@semed.gd.gov.br';
       
       const adminUser: Usuario = {
-        id: `coord-${Date.now()}`,
+        id: `coord-${adminCoordenador.toLowerCase()}`,
         nome: coordNome,
-        email: 'coordenacao.jegds@semed.gd.gov.br',
-        telefone: '(98) 3214-9000',
+        email: coordEmail,
+        telefone: '(99) 98801-1000',
         papel: 'COORDENADOR',
         createdAt: new Date().toISOString()
       };
@@ -270,8 +271,8 @@ function LoginContent() {
                   onChange={(e) => setAdminCoordenador(e.target.value as any)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                 >
-                  <option value="COORDENADOR_1">Coordenador Geral 1 (SEMED Desporto)</option>
-                  <option value="COORDENADOR_2">Coordenador Geral 2 (SEMED Educação)</option>
+                  <option value="ELIAS_VELOSO">Elias Veloso (SEMED)</option>
+                  <option value="HERBERT_SA">Herbert de Sá (SEMED)</option>
                 </select>
               </div>
 
