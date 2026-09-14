@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  Trophy,
   Users,
+  User,
   MapPin,
   Calendar,
   Layers,
@@ -13,17 +14,52 @@ import {
   Zap,
   Grid,
   CircleDot,
-  Wind,
-  Waves,
-  Award,
-  Target,
-  Shield,
   ArrowRight,
-  Clock,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { ModalidadeConfig } from '@/types/jegd';
+
+/**
+ * Mapeamento Centralizado de Assets e Acessibilidade das Modalidades
+ * Permite substituir URLs ou imagens facilmente em um único ponto.
+ */
+const MODALIDADES_ASSETS: Record<string, { img: string; alt: string }> = {
+  queimada: {
+    img: '/assets/modalidades/queimada.jpg',
+    alt: 'Estudantes jogando partida de queimada em ginásio esportivo'
+  },
+  tenis_mesa: {
+    img: '/assets/modalidades/tenis-mesa.jpg',
+    alt: 'Partida oficial de tênis de mesa com raquete, bola e mesa azul'
+  },
+  atletismo: {
+    img: '/assets/modalidades/atletismo.jpg',
+    alt: 'Atletas correndo em pista sintética de atletismo escolar'
+  },
+  beach_soccer: {
+    img: '/assets/modalidades/beach-soccer.jpg',
+    alt: 'Jogadores disputando partida de futebol de areia na praia'
+  },
+  futsal: {
+    img: '/assets/modalidades/futsal.jpg',
+    alt: 'Partida dinâmica de futsal com bola em direção ao gol'
+  },
+  xadrez: {
+    img: '/assets/modalidades/xadrez.jpg',
+    alt: 'Tabuleiro de xadrez com peças em madeira de alto acabamento'
+  },
+  futebol_campo: {
+    img: '/assets/modalidades/futebol-campo.jpg',
+    alt: 'Disputa de bola em partida de futebol de campo em estádio'
+  },
+  voleibol: {
+    img: '/assets/modalidades/voleibol.jpg',
+    alt: 'Atletas saltando no bloqueio em partida de voleibol'
+  }
+};
 
 export default function ModalidadesPage() {
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
@@ -39,68 +75,53 @@ export default function ModalidadesPage() {
     return m.tipo === filtroTipo;
   });
 
-  const getIcon = (nome: string) => {
-    switch (nome) {
-      case 'Futsal': return <Activity className="w-6 h-6 text-[#00A878]" />;
-      case 'Voleibol': return <Layers className="w-6 h-6 text-[#00A878]" />;
-      case 'Handebol': return <Shield className="w-6 h-6 text-[#00A878]" />;
-      case 'Basquetebol': return <Flame className="w-6 h-6 text-[#00A878]" />;
-      case 'Atletismo': return <Zap className="w-6 h-6 text-[#00A878]" />;
-      case 'Xadrez': return <Grid className="w-6 h-6 text-[#00A878]" />;
-      case 'Tênis de Mesa': return <CircleDot className="w-6 h-6 text-[#00A878]" />;
-      case 'Badminton': return <Wind className="w-6 h-6 text-[#00A878]" />;
-      case 'Natação': return <Waves className="w-6 h-6 text-[#00A878]" />;
-      case 'Judô': return <Award className="w-6 h-6 text-[#00A878]" />;
-      case 'Queimada Escolar':
-      case 'Queimada': return <Target className="w-6 h-6 text-[#00A878]" />;
-      default: return <Trophy className="w-6 h-6 text-[#00A878]" />;
-    }
-  };
-
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8 sm:space-y-10">
       
-      {/* Título da página */}
-      <div className="text-center max-w-3xl mx-auto space-y-3.5">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/25 text-[#087A5B] text-xs font-black tracking-wide">
-          <Sparkles className="w-4 h-4 text-[#00A878]" />
-          <span>JEGD 2026 • GUIA OFICIAL</span>
+      {/* Cabeçalho da Página */}
+      <div className="text-center max-w-3xl mx-auto space-y-3">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/25 text-[#087A5B] text-xs font-black tracking-wide">
+          <Sparkles className="w-3.5 h-3.5 text-[#00A878]" />
+          <span>JEGD 2026 • GUIA OFICIAL DE MODALIDADES</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
           Modalidades Esportivas
         </h1>
-        <p className="text-base sm:text-lg text-[#374151] leading-relaxed font-normal">
-          Consulte categorias, limites de atletas e informações para inscrição no JEGDS 2026.
+        <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed font-normal max-w-2xl mx-auto">
+          Consulte categorias, limites de atletas por equipe, faixas etárias e regras de participação do JEGDS 2026.
         </p>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
+      {/* Filtros por Tipo de Modalidade */}
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full max-w-md mx-auto">
         <button
+          type="button"
           onClick={() => setFiltroTipo('TODOS')}
-          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
+          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
             filtroTipo === 'TODOS'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
+              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
           }`}
         >
           Todas ({modalidades.length})
         </button>
         <button
+          type="button"
           onClick={() => setFiltroTipo('COLETIVA')}
-          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
+          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
             filtroTipo === 'COLETIVA'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
+              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
           }`}
         >
-          Coletivos
+          Coletivas
         </button>
         <button
+          type="button"
           onClick={() => setFiltroTipo('INDIVIDUAL')}
-          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all border text-center ${
+          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
             filtroTipo === 'INDIVIDUAL'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-sm'
+              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
               : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
           }`}
         >
@@ -110,91 +131,107 @@ export default function ModalidadesPage() {
 
       {/* Grid de Cards das Modalidades */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {modalidadesFiltradas.map((mod) => (
-          <div
-            key={mod.id}
-            className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-md space-y-6 flex flex-col justify-between transition-all group"
-          >
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="w-14 h-14 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/20 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
-                  {getIcon(mod.nome)}
-                </div>
-                <span className="text-xs font-black px-3.5 py-1 rounded-full bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/20 uppercase tracking-wider">
-                  {mod.tipo}
-                </span>
+        {modalidadesFiltradas.map((mod) => {
+          const asset = MODALIDADES_ASSETS[mod.codigo] || {
+            img: '/banner-jegd.png',
+            alt: `Modalidade esportiva ${mod.nome}`
+          };
+
+          const isColetiva = mod.tipo === 'COLETIVA';
+          const generoTexto = mod.sexosPermitidos?.join(' / ') || 'MASCULINO / FEMININO';
+
+          return (
+            <div
+              key={mod.id}
+              className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/60 rounded-3xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1"
+            >
+              {/* ÁREA SUPERIOR: FOTOGRAFIA COM ZOOM SUAVE NO HOVER (30-40% DO CARD) */}
+              <div className="relative w-full h-44 sm:h-48 overflow-hidden bg-[#F0FDF4]">
+                <img
+                  src={asset.img}
+                  alt={asset.alt}
+                  className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
               </div>
 
-              <div>
-                <h3 className="text-2xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors">
-                  {mod.nome}
-                </h3>
-                <p className="text-sm text-[#374151] mt-2 leading-relaxed line-clamp-3">
-                  {mod.descricao}
-                </p>
-              </div>
+              {/* CORPO DO CARD COM AS INFORMAÇÕES OFICIAIS */}
+              <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between space-y-4">
+                <div className="space-y-3">
+                  
+                  {/* Linha de Identificação: Tipo e Limite de Atletas */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${
+                        isColetiva
+                          ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
+                          : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
+                      }`}
+                    >
+                      {mod.tipo}
+                    </span>
 
-              <div className="space-y-3 pt-4 border-t border-[#E2EAE5] text-sm text-[#17221D]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Atletas por equipe:</span>
-                  <strong className="text-[#00A878] font-black text-base">
-                    {mod.minAtletas} a {mod.maxAtletas}
-                  </strong>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Data do evento:</span>
-                  <strong className="text-[#17221D] font-bold">
-                    {new Date(mod.dataEvento).toLocaleDateString('pt-BR')}
-                  </strong>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Prazo de inscrição:</span>
-                  <strong className="text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md text-xs font-bold border border-amber-200">
-                    {new Date(mod.prazoInscricao).toLocaleDateString('pt-BR')}
-                  </strong>
-                </div>
-
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[#4B5563] shrink-0">Categorias:</span>
-                  <div className="flex flex-wrap gap-1.5 justify-end">
-                    {mod.categoriasPermitidas?.map(c => (
-                      <span key={c} className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/15">
-                        {c}
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#00A878]">
+                      {isColetiva ? (
+                        <Users className="w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <User className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>
+                        {mod.minAtletas} a {mod.maxAtletas} atletas
                       </span>
-                    ))}
+                    </div>
                   </div>
+
+                  {/* Nome da Modalidade */}
+                  <h3 className="text-xl sm:text-2xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors leading-tight">
+                    {mod.nome}
+                  </h3>
+
+                  {/* Descrição das Regras */}
+                  <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed line-clamp-3 font-normal">
+                    {mod.descricao}
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Gênero:</span>
-                  <span className="text-[#17221D] font-bold text-sm">
-                    {mod.sexosPermitidos?.join(' e ')}
-                  </span>
+                {/* Rodapé Interno: Divisor + Categorias e Gênero */}
+                <div className="pt-3.5 border-t border-[#E2EAE5] space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Categorias Permitidas */}
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {mod.categoriasPermitidas?.map((cat) => (
+                        <span
+                          key={cat}
+                          className="text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/15"
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Sexo / Gênero Permitido */}
+                    <span className="text-[10px] sm:text-xs font-black text-[#087A5B] uppercase tracking-wider text-right shrink-0">
+                      {generoTexto}
+                    </span>
+                  </div>
+
+                  {/* Botão de Ação: Inscrever Equipe */}
+                  <Link
+                    href="/escola/inscricoes"
+                    className="w-full py-2.5 sm:py-3 rounded-xl bg-[#F0FDF4] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs sm:text-sm font-black border border-[#00A878]/25 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn mt-2"
+                  >
+                    <span>Inscrever equipe</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
 
-                {mod.localPadrao && (
-                  <div className="flex items-start gap-2 pt-2 text-[#4B5563]">
-                    <MapPin className="w-4 h-4 text-[#00A878] shrink-0 mt-0.5" />
-                    <span className="text-sm truncate font-medium text-[#17221D]">{mod.localPadrao}</span>
-                  </div>
-                )}
               </div>
             </div>
-
-            <Link
-              href="/escola/inscricoes"
-              className="w-full py-3.5 rounded-2xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-sm font-bold border border-[#00A878]/30 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn"
-            >
-              <span>Inscrever equipe</span>
-              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
     </div>
   );
 }
-
