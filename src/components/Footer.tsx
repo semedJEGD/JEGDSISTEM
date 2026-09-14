@@ -12,13 +12,11 @@ export default function Footer() {
           {/* Coluna 1 - Identidade */}
           <div className="md:col-span-1 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center">
-                <Image 
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0">
+                <img 
                   src="/logo-jegd.png" 
                   alt="Logo JEGD" 
-                  width={40} 
-                  height={40} 
-                  className="object-contain" 
+                  className="w-full h-full object-contain p-0.5" 
                 />
               </div>
               <span className="font-black text-xl text-[#17221D] tracking-tight">

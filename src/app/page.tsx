@@ -60,13 +60,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Banner Ilustrado Oficial */}
-          <div className="relative w-full rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-10 bg-white aspect-[21/9] sm:aspect-[24/8] max-h-[380px]">
-            <Image
+          <div className="w-full rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-10 bg-white">
+            <img
               src="/banner-jegd.png"
               alt="Banner Oficial JEGD 2026 - Mais que jogos, grandes valores para a vida"
-              fill
-              className="object-cover object-center"
-              priority
+              className="w-full h-auto max-h-[420px] object-cover object-center block"
             />
           </div>
 

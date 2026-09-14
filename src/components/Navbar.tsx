@@ -47,14 +47,11 @@ export default function Navbar() {
           
           {/* Logo Oficial e Título */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-[#E2EAE5] shadow-xs group-hover:scale-105 transition-transform duration-300 bg-white flex items-center justify-center">
-              <Image 
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border border-[#E2EAE5] shadow-xs group-hover:scale-105 transition-transform duration-300 bg-white flex items-center justify-center shrink-0">
+              <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD 2026" 
-                width={48} 
-                height={48} 
-                className="object-contain"
-                priority
+                className="w-full h-full object-contain p-0.5"
               />
             </div>
             <div>

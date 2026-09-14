@@ -104,13 +104,11 @@ function LoginContent() {
           
           {/* Logo & Título Institucional */}
           <div className="text-center mb-6">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 shadow-xs">
-              <Image 
+            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 shadow-xs shrink-0">
+              <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD" 
-                width={60} 
-                height={60} 
-                className="object-contain" 
+                className="w-full h-full object-contain p-1" 
               />
             </div>
             <h1 className="text-2xl font-black text-[#17221D]">Acesso ao Sistema</h1>
