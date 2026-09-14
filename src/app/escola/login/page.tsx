@@ -97,21 +97,39 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12 bg-[#F7F9F8] w-full">
-      <div className="max-w-lg w-full">
+    <div className="relative min-h-[calc(100vh-76px)] flex items-center justify-center px-3 sm:px-4 py-8 sm:py-16 overflow-hidden w-full">
+      
+      {/* VÍDEO DE BACKGROUND EM LOOP */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="/banner-jegd.png"
+          className="w-full h-full object-cover object-center scale-105"
+        >
+          <source src="/login-bg.mp4" type="video/mp4" />
+        </video>
         
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-10 shadow-sm relative overflow-hidden">
+        {/* Camada de Sobreposição (Overlay) Institucional */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b291e]/75 via-[#0d3326]/70 to-[#071d15]/85 backdrop-blur-[1.5px]" />
+      </div>
+
+      {/* CARD DE LOGIN FLUTUANTE */}
+      <div className="relative z-10 max-w-lg w-full mx-auto">
+        <div className="bg-white/98 backdrop-blur-md border border-white/60 sm:border-[#E2EAE5] rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden transition-all duration-300">
           
           {/* Logo & Título Institucional */}
           <div className="text-center mb-6 sm:mb-8">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-2xs shrink-0">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-sm shrink-0">
               <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD" 
                 className="w-full h-full object-contain p-1" 
               />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Acesso ao Sistema</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D] tracking-tight">Acesso ao Sistema</h1>
             <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium">
               JEGDS 2026 • Jogos Escolares de Gonçalves Dias
             </p>
@@ -232,7 +250,7 @@ function LoginContent() {
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
+                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-base shadow-lg shadow-[#00A878]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
               >
                 <span>Entrar no Painel da Escola</span>
                 <ArrowRight className="w-5 h-5" />
@@ -279,7 +297,7 @@ function LoginContent() {
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-base shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
+                className="w-full py-4 px-6 rounded-2xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-base shadow-lg shadow-[#087A5B]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
               >
                 <span>Acessar Painel da Coordenação</span>
                 <ArrowRight className="w-5 h-5" />
