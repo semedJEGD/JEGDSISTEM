@@ -140,25 +140,14 @@ export default function Navbar() {
                   <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
-            ) : (
-              <Link
-                href="/escola/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all active:scale-95"
-              >
-                <School className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">Portal da Escola</span>
-                <span className="sm:hidden">Escola</span>
-              </Link>
-            )}
-
-            {isAdmin ? (
-              <div className="hidden sm:flex items-center gap-1.5">
+            ) : isAdmin ? (
+              <div className="flex items-center gap-1.5">
                 <Link
                   href="/admin/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm font-bold hover:bg-amber-100 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all"
                 >
-                  <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>Admin</span>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Painel SEMED</span>
                 </Link>
                 <button
                   onClick={handleLogoutAdmin}
@@ -170,11 +159,11 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                href="/admin/login"
-                title="Acesso da Comissão Organizadora SEMED"
-                className="hidden sm:flex p-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] transition-colors"
+                href="/escola/login"
+                className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black tracking-wide shadow-xs hover:shadow-md transition-all active:scale-95 whitespace-nowrap"
               >
-                <ShieldCheck className="w-4 h-4" />
+                <School className="w-4 h-4 stroke-[2.5]" />
+                <span>LOGIN PROFESSORES / SEMED</span>
               </Link>
             )}
 
@@ -249,27 +238,18 @@ export default function Navbar() {
           </nav>
 
           <div className="pt-3 border-t border-[#E2EAE5] space-y-2">
-            {!escolaAtual && (
+            {!escolaAtual && !isAdmin && (
               <Link
                 href="/escola/login"
                 onClick={() => setMenuMobileAberto(false)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-bold shadow-xs"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
               >
                 <School className="w-4 h-4" />
-                <span>Entrar no Portal da Escola</span>
+                <span>LOGIN PROFESSORES / SEMED</span>
               </Link>
             )}
 
-            {!isAdmin ? (
-              <Link
-                href="/admin/login"
-                onClick={() => setMenuMobileAberto(false)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] text-xs font-bold"
-              >
-                <ShieldCheck className="w-4 h-4 text-[#087A5B]" />
-                <span>Acesso da Coordenação SEMED</span>
-              </Link>
-            ) : (
+            {isAdmin && (
               <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50 border border-amber-200">
                 <Link
                   href="/admin/dashboard"
