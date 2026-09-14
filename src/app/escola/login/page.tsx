@@ -98,34 +98,34 @@ function LoginContent() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-[#F7F9F8]">
-      <div className="max-w-md w-full">
+      <div className="max-w-lg w-full">
         
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-8 shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
           
           {/* Logo & Título Institucional */}
-          <div className="text-center mb-6">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-3 shadow-xs shrink-0">
+          <div className="text-center mb-8">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-4 shadow-2xs shrink-0">
               <img 
                 src="/logo-jegd.png" 
                 alt="Logo JEGD" 
                 className="w-full h-full object-contain p-1" 
               />
             </div>
-            <h1 className="text-2xl font-black text-[#17221D]">Acesso ao Sistema</h1>
-            <p className="text-xs text-[#68756E] mt-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Acesso ao Sistema</h1>
+            <p className="text-sm text-[#4B5563] mt-1.5 font-medium">
               JEGDS 2026 • Jogos Escolares de Gonçalves Dias
             </p>
           </div>
 
           {/* Abas Unificadas: Professor / Escola vs Coordenação SEMED */}
-          <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#F7F9F8] rounded-2xl mb-6 border border-[#E2EAE5]">
+          <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-[#F7F9F8] rounded-2xl mb-8 border border-[#E2EAE5]">
             <button
               type="button"
               onClick={() => { setTipoAcesso('ESCOLA'); setErro(''); }}
-              className={`py-2.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+              className={`py-3 px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-2 transition-all ${
                 tipoAcesso === 'ESCOLA'
                   ? 'bg-[#00A878] text-white shadow-sm'
-                  : 'text-[#68756E] hover:text-[#17221D] hover:bg-white'
+                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
               <School className="w-4 h-4" />
@@ -134,10 +134,10 @@ function LoginContent() {
             <button
               type="button"
               onClick={() => { setTipoAcesso('ADMIN'); setErro(''); }}
-              className={`py-2.5 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+              className={`py-3 px-3 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-2 transition-all ${
                 tipoAcesso === 'ADMIN'
                   ? 'bg-[#087A5B] text-white shadow-sm'
-                  : 'text-[#68756E] hover:text-[#17221D] hover:bg-white'
+                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -146,23 +146,23 @@ function LoginContent() {
           </div>
 
           {erro && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3.5 mb-5 flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-2xl p-4 mb-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <span>{erro}</span>
             </div>
           )}
 
           {/* FORMULÁRIO 1: PROFESSOR / ESCOLA */}
           {tipoAcesso === 'ESCOLA' && (
-            <form onSubmit={handleLoginEscola} className="space-y-4">
+            <form onSubmit={handleLoginEscola} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                   1. Selecione a sua Escola
                 </label>
                 <select
                   value={escolaSelecionadaId}
                   onChange={(e) => setEscolaSelecionadaId(e.target.value)}
-                  className="w-full px-3.5 py-3 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                 >
                   {escolas.map((esc) => (
                     <option key={esc.id} value={esc.id}>
@@ -173,7 +173,7 @@ function LoginContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                   2. Nome do Professor / Responsável
                 </label>
                 <div className="relative">
@@ -183,15 +183,15 @@ function LoginContent() {
                     value={profNome}
                     onChange={(e) => setProfNome(e.target.value)}
                     placeholder="Ex: Prof. Marcos Silva"
-                    className="w-full px-3.5 py-2.5 pl-10 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
-                  <User className="w-4 h-4 text-[#68756E] absolute left-3.5 top-3" />
+                  <User className="w-4 h-4 text-[#4B5563] absolute left-4 top-3.5" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                     3. WhatsApp
                   </label>
                   <div className="relative">
@@ -200,14 +200,14 @@ function LoginContent() {
                       value={profTelefone}
                       onChange={(e) => setProfTelefone(e.target.value)}
                       placeholder="(99) 98888-0000"
-                      className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                      className="w-full px-4 py-3 pl-10 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
-                    <Phone className="w-3.5 h-3.5 text-[#68756E] absolute left-3 top-3.5" />
+                    <Phone className="w-4 h-4 text-[#4B5563] absolute left-3.5 top-3.5" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                     4. Senha
                   </label>
                   <div className="relative">
@@ -216,15 +216,15 @@ function LoginContent() {
                       value={profSenha}
                       onChange={(e) => setProfSenha(e.target.value)}
                       placeholder="Sua senha"
-                      className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                      className="w-full px-4 py-3 pl-10 pr-10 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                     />
-                    <Lock className="w-3.5 h-3.5 text-[#68756E] absolute left-3 top-3.5" />
+                    <Lock className="w-4 h-4 text-[#4B5563] absolute left-3.5 top-3.5" />
                     <button
                       type="button"
                       onClick={() => setMostrarSenha(!mostrarSenha)}
-                      className="absolute right-3 top-3 text-[#68756E] hover:text-[#17221D]"
+                      className="absolute right-3.5 top-3.5 text-[#4B5563] hover:text-[#17221D]"
                     >
-                      {mostrarSenha ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -232,25 +232,25 @@ function LoginContent() {
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-2"
+                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
               >
                 <span>Entrar no Painel da Escola</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </button>
             </form>
           )}
 
           {/* FORMULÁRIO 2: COORDENAÇÃO SEMED */}
           {tipoAcesso === 'ADMIN' && (
-            <form onSubmit={handleLoginAdmin} className="space-y-4">
+            <form onSubmit={handleLoginAdmin} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                   Coordenador Responsável
                 </label>
                 <select
                   value={adminCoordenador}
                   onChange={(e) => setAdminCoordenador(e.target.value as any)}
-                  className="w-full px-3.5 py-3 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                 >
                   <option value="COORDENADOR_1">Coordenador Geral 1 (SEMED Desporto)</option>
                   <option value="COORDENADOR_2">Coordenador Geral 2 (SEMED Educação)</option>
@@ -258,7 +258,7 @@ function LoginContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                   Senha da Coordenação
                 </label>
                 <div className="relative">
@@ -268,21 +268,21 @@ function LoginContent() {
                     value={adminSenha}
                     onChange={(e) => setAdminSenha(e.target.value)}
                     placeholder="Digite a senha institucional"
-                    className="w-full px-3.5 py-3 pl-10 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   />
-                  <Lock className="w-4 h-4 text-[#68756E] absolute left-3.5 top-3.5" />
+                  <Lock className="w-4 h-4 text-[#4B5563] absolute left-4 top-4" />
                 </div>
-                <p className="text-[11px] text-[#68756E] mt-1">
+                <p className="text-xs text-[#4B5563] mt-2 font-medium">
                   Senha padrão do comitê: <strong className="text-[#087A5B]">semed2026</strong>
                 </p>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white font-bold text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-2"
+                className="w-full py-4 px-6 rounded-2xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-base shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
               >
                 <span>Acessar Painel da Coordenação</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </button>
             </form>
           )}

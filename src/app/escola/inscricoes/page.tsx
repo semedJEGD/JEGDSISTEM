@@ -236,20 +236,20 @@ export default function EscolaInscricoesPage() {
   const provasPermitidasAtletismo = PROVAS_ATLETISMO_POR_CATEGORIA[categoriaSel] || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/escola/dashboard"
-            className="p-2.5 rounded-xl bg-white border border-[#E2EAE5] text-[#68756E] hover:text-[#087A5B] hover:border-[#00A878] shadow-sm transition-all"
+            className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-[#17221D]">Inscrição de Equipes & Atletas</h1>
-            <p className="text-xs text-[#68756E] mt-0.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#17221D]">Inscrição de Equipes & Atletas</h1>
+            <p className="text-sm text-[#4B5563] mt-1 font-medium">
               Escola: <strong className="text-[#17221D]">{escola.nome}</strong> ({escola.sigla}) • Gonçalves Dias - MA
             </p>
           </div>
@@ -260,12 +260,12 @@ export default function EscolaInscricoesPage() {
         
         {/* Formulário / Wizard */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-[#17221D] mb-1 flex items-center gap-2">
+          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 sm:p-8 shadow-xs">
+            <h2 className="text-xl font-black text-[#17221D] mb-1 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#00A878]" />
               <span>Montar Nova Inscrição de Equipe</span>
             </h2>
-            <p className="text-xs text-[#68756E] mb-6">
+            <p className="text-sm text-[#4B5563] mb-6 font-medium">
               Selecione a modalidade, categoria e convoque os atletas elegíveis conforme a Matriz Oficial do JEGDS 2026.
             </p>
 
@@ -273,7 +273,7 @@ export default function EscolaInscricoesPage() {
               
               {/* Seleção de Modalidade */}
               <div>
-                <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-2">
+                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2.5">
                   1. Selecione a Modalidade Esportiva (8 Oficiais)
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -288,14 +288,14 @@ export default function EscolaInscricoesPage() {
                           setAtletasSelecionadosIds([]);
                           setProvasPorAtleta({});
                         }}
-                        className={`p-3 rounded-2xl border text-left transition-all ${
+                        className={`p-3.5 rounded-2xl border text-left transition-all ${
                           sel
                             ? 'bg-[#E8F7F1] border-[#00A878] text-[#087A5B] font-bold shadow-sm'
-                            : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#68756E] hover:bg-white hover:border-[#00A878]/50'
+                            : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#4B5563] hover:bg-white hover:border-[#00A878]/50'
                         }`}
                       >
-                        <p className="text-xs font-bold truncate">{mod.nome}</p>
-                        <p className="text-[10px] text-[#00A878] font-semibold mt-0.5">
+                        <p className="text-sm font-black truncate">{mod.nome}</p>
+                        <p className="text-xs text-[#00A878] font-bold mt-0.5">
                           Máx: {mod.maxAtletas}
                         </p>
                       </button>
@@ -306,12 +306,12 @@ export default function EscolaInscricoesPage() {
 
               {/* Informação do Prazo da Modalidade Selecionada */}
               {modalidadeAtual && (
-                <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
                   <div>
-                    <span className="text-[#68756E]">Data do Evento:</span>{' '}
+                    <span className="text-[#4B5563]">Data do Evento:</span>{' '}
                     <strong className="text-[#17221D]">{new Date(modalidadeAtual.dataEvento).toLocaleDateString('pt-BR')}</strong>
                   </div>
-                  <div className="flex items-center gap-1.5 text-amber-700 font-semibold bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                  <div className="flex items-center gap-1.5 text-amber-800 font-bold bg-amber-50 px-3 py-1 rounded-xl border border-amber-200 text-xs">
                     <Clock className="w-3.5 h-3.5" />
                     <span>Prazo de Inscrição: {new Date(modalidadeAtual.prazoInscricao).toLocaleDateString('pt-BR')}</span>
                   </div>
@@ -321,7 +321,7 @@ export default function EscolaInscricoesPage() {
               {/* Seleção de Categoria e Sexo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                     2. Categoria Etária (Ref: 31/12/2026)
                   </label>
                   <select
@@ -331,7 +331,7 @@ export default function EscolaInscricoesPage() {
                       setAtletasSelecionadosIds([]);
                       setProvasPorAtleta({});
                     }}
-                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   >
                     <option value="MIRIM">Mirim (9 a 11 anos: 2015-2017)</option>
                     <option value="INFANTIL">Infantil (12 a 14 anos: 2012-2014)</option>
@@ -341,7 +341,7 @@ export default function EscolaInscricoesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
                     3. Gênero / Naipe
                   </label>
                   <select
@@ -351,7 +351,7 @@ export default function EscolaInscricoesPage() {
                       setAtletasSelecionadosIds([]);
                       setProvasPorAtleta({});
                     }}
-                    className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
                   >
                     <option value="MASCULINO">Masculino</option>
                     <option value="FEMININO">Feminino</option>
@@ -361,11 +361,11 @@ export default function EscolaInscricoesPage() {
 
               {/* Alerta de Validação da Matriz */}
               {!validacaoMatriz.valido && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl p-4 flex items-start gap-3">
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
                   <div>
-                    <strong className="font-bold">Combinação Bloqueada pelo Regulamento:</strong>
-                    <p className="mt-0.5 leading-relaxed">{validacaoMatriz.erro}</p>
+                    <strong className="font-black">Combinação Bloqueada pelo Regulamento:</strong>
+                    <p className="mt-0.5 leading-relaxed font-medium">{validacaoMatriz.erro}</p>
                   </div>
                 </div>
               )}
@@ -373,33 +373,33 @@ export default function EscolaInscricoesPage() {
               {/* Lista de Atletas Elegíveis */}
               {validacaoMatriz.valido && (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-bold text-[#17221D] uppercase tracking-wider">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
                       4. Seleção de Alunos-Atletas
                     </label>
                     {modalidadeAtual && (
-                      <span className="text-xs font-bold text-[#087A5B] bg-[#E8F7F1] px-2.5 py-0.5 rounded-full border border-[#00A878]/30">
+                      <span className="text-xs font-black text-[#087A5B] bg-[#E8F7F1] px-3 py-1 rounded-full border border-[#00A878]/30">
                         {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} inscritos (Mín: {modalidadeAtual.minAtletas})
                       </span>
                     )}
                   </div>
 
                   {atletasElegiveis.length === 0 ? (
-                    <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-6 text-center">
+                    <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-3xl p-6 text-center">
                       <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                      <p className="text-xs font-semibold text-[#17221D]">
+                      <p className="text-sm font-bold text-[#17221D]">
                         Nenhum atleta cadastrado na escola para a categoria {categoriaSel} ({sexoSel}).
                       </p>
                       <Link
                         href="/escola/atletas"
-                        className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-1.5 mt-3 shadow-sm transition-all"
+                        className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-1.5 mt-3 shadow-xs transition-all"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                         <span>Cadastrar Novo Atleta</span>
                       </Link>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                       {atletasElegiveis.map((atleta) => {
                         const selecionado = atletasSelecionadosIds.includes(atleta.id);
                         const provasDoAtleta = provasPorAtleta[atleta.id] || [];
@@ -407,7 +407,7 @@ export default function EscolaInscricoesPage() {
                         return (
                           <div
                             key={atleta.id}
-                            className={`p-3.5 rounded-2xl border transition-all ${
+                            className={`p-4 rounded-2xl border transition-all ${
                               selecionado
                                 ? 'bg-[#E8F7F1] border-[#00A878] shadow-sm'
                                 : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] hover:bg-white hover:border-[#00A878]/40'
@@ -417,36 +417,36 @@ export default function EscolaInscricoesPage() {
                               onClick={() => toggleAtleta(atleta.id)}
                               className="flex items-center justify-between cursor-pointer"
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3.5">
                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
                                   selecionado ? 'bg-[#00A878] border-[#00A878] text-white' : 'border-[#CBD5E1] bg-white'
                                 }`}>
                                   {selecionado && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-[#17221D]">{atleta.nomeCompleto}</p>
-                                  <p className="text-[10px] text-[#68756E]">
+                                  <p className="text-sm font-bold text-[#17221D]">{atleta.nomeCompleto}</p>
+                                  <p className="text-xs text-[#4B5563] mt-0.5">
                                     Doc: {atleta.documentoTipo} {atleta.documentoNumero} • Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}
                                   </p>
                                 </div>
                               </div>
-                              <span className="text-[10px] font-bold text-[#087A5B] bg-white px-2 py-0.5 rounded-lg border border-[#E2EAE5]">
+                              <span className="text-xs font-bold text-[#087A5B] bg-white px-2.5 py-1 rounded-lg border border-[#E2EAE5]">
                                 {atleta.matricula}
                               </span>
                             </div>
 
                             {/* Seletor de Provas para Atletismo */}
                             {selecionado && modalidadeSelCodigo === 'atletismo' && (
-                              <div className="mt-3 pt-3 border-t border-[#00A878]/20 space-y-1.5">
+                              <div className="mt-3.5 pt-3 border-t border-[#00A878]/20 space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-[#087A5B]">
+                                  <span className="text-xs font-bold text-[#087A5B]">
                                     Selecione até 2 provas de Atletismo:
                                   </span>
-                                  <span className="text-[10px] text-[#68756E]">
+                                  <span className="text-xs font-bold text-[#4B5563]">
                                     {provasDoAtleta.length}/2 selecionadas
                                   </span>
                                 </div>
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-2">
                                   {provasPermitidasAtletismo.map((prova) => {
                                     const provaAtiva = provasDoAtleta.includes(prova);
                                     return (
@@ -457,10 +457,10 @@ export default function EscolaInscricoesPage() {
                                           e.stopPropagation();
                                           toggleProvaAtleta(atleta.id, prova);
                                         }}
-                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                                           provaAtiva
                                             ? 'bg-[#00A878] text-white shadow-sm'
-                                            : 'bg-white text-[#68756E] border border-[#E2EAE5] hover:border-[#00A878]'
+                                            : 'bg-white text-[#4B5563] border border-[#E2EAE5] hover:border-[#00A878]'
                                         }`}
                                       >
                                         {prova}
@@ -488,9 +488,9 @@ export default function EscolaInscricoesPage() {
                   !modalidadeAtual ||
                   atletasSelecionadosIds.length < (modalidadeAtual?.minAtletas || 1)
                 }
-                className="w-full py-3.5 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm sm:text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-5 h-5" />
                 <span>Confirmar e Enviar Inscrição para o Comitê JEGDS</span>
               </button>
 
@@ -500,28 +500,28 @@ export default function EscolaInscricoesPage() {
 
         {/* Resumo das Inscrições Efetuadas */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-[#17221D]">Inscrições Realizadas ({inscricoes.length})</h3>
+          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs space-y-4">
+            <h3 className="text-lg font-black text-[#17221D]">Inscrições Realizadas ({inscricoes.length})</h3>
 
             {inscricoes.length === 0 ? (
-              <p className="text-xs text-[#68756E] text-center py-8">
+              <p className="text-sm text-[#4B5563] text-center py-8">
                 Nenhuma equipe submetida ainda.
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {inscricoes.map((insc) => (
                   <div
                     key={insc.id}
-                    className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 space-y-3"
+                    className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-3"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="text-sm font-black text-[#17221D]">{insc.modalidadeNome}</h4>
-                        <p className="text-xs text-[#68756E] mt-0.5">
+                        <h4 className="text-base font-black text-[#17221D]">{insc.modalidadeNome}</h4>
+                        <p className="text-xs text-[#4B5563] mt-0.5 font-medium">
                           {insc.categoria} • {insc.sexo}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
                         insc.status === 'VALIDADA'
                           ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
                           : insc.status === 'REJEITADA'
@@ -532,10 +532,10 @@ export default function EscolaInscricoesPage() {
                       </span>
                     </div>
 
-                    <div className="text-xs text-[#68756E]">
-                      <span><strong className="text-[#17221D]">{insc.atletaIds.length}</strong> Atletas convocados</span>
+                    <div className="text-xs text-[#4B5563]">
+                      <span><strong className="text-[#17221D] font-bold">{insc.atletaIds.length}</strong> Atletas convocados</span>
                       {insc.motivoRejeicao && (
-                        <p className="text-red-600 mt-1 text-[11px]">
+                        <p className="text-red-600 mt-1 text-xs font-medium">
                           Motivo Rejeição: {insc.motivoRejeicao}
                         </p>
                       )}
@@ -546,7 +546,7 @@ export default function EscolaInscricoesPage() {
                         type="button"
                         onClick={() => handleGerarPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
+                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                       >
                         <Printer className="w-3.5 h-3.5 text-[#00A878]" />
                         <span>Ficha PDF</span>
@@ -556,7 +556,7 @@ export default function EscolaInscricoesPage() {
                         type="button"
                         onClick={() => handleGerarCrachasPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
+                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5 text-[#00A878]" />
                         <span>Crachás QR</span>
@@ -565,7 +565,7 @@ export default function EscolaInscricoesPage() {
                       <button
                         type="button"
                         onClick={() => handleExcluirInscricao(insc.id, insc.modalidadeNome)}
-                        className="p-2 rounded-xl bg-white hover:bg-red-50 text-[#68756E] hover:text-red-600 border border-[#E2EAE5] hover:border-red-200 transition-colors shadow-sm"
+                        className="p-2 rounded-xl bg-white hover:bg-red-50 text-[#4B5563] hover:text-red-600 border border-[#E2EAE5] hover:border-red-200 transition-colors shadow-2xs"
                         title="Remover"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
