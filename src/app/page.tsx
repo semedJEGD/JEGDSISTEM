@@ -69,7 +69,8 @@ export default function HomePage() {
               poster="/banner-jegd.png"
               className="w-full h-auto max-h-[380px] object-cover object-center block"
             >
-              <source src="/video-jegd.mp4" type="video/mp4" />
+              <source src="/VIDEOJEGDS.mp4?v=2026" type="video/mp4" />
+              <source src="/video-jegd.mp4?v=2026" type="video/mp4" />
               <img
                 src="/banner-jegd.png"
                 alt="Banner Oficial JEGD 2026 - Mais que jogos, grandes valores para a vida"

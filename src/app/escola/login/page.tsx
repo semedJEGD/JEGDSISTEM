@@ -267,7 +267,8 @@ function LoginContent() {
           poster="/banner-jegd.png"
           className="w-full h-full object-cover object-center scale-105"
         >
-          <source src="/login-bg.mp4" type="video/mp4" />
+          <source src="/atrasdologin.mp4?v=2026" type="video/mp4" />
+          <source src="/login-bg.mp4?v=2026" type="video/mp4" />
         </video>
         
         {/* Camada de Sobreposição Institucional */}
