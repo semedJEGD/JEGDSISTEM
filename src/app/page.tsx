@@ -44,11 +44,11 @@ export default function HomePage() {
       
       {/* Banner de Aviso Oficial */}
       {comunicados.length > 0 && comunicados[0].urgente && (
-        <div className="bg-amber-500 text-slate-950 font-semibold py-2.5 px-4 text-xs sm:text-sm text-center shadow-xs flex items-center justify-center gap-2">
+        <div className="bg-red-600 text-white font-semibold py-2.5 px-4 text-xs sm:text-sm text-center shadow-xs flex items-center justify-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
           <span>
             <strong>AVISO OFICIAL:</strong> {comunicados[0].titulo} —{' '}
-            <Link href="/regulamento" className="underline font-bold hover:text-white transition-colors">
+            <Link href="/regulamento" className="underline font-bold hover:text-red-100 transition-colors">
               Leia o Comunicado
             </Link>
           </span>
