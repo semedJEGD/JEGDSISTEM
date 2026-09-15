@@ -12,6 +12,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { Escola, Atleta, ModalidadeConfig } from '@/types/jegd';
+import { JegdPdfGenerator } from '@/lib/pdf-generator';
 
 interface AbaEscolasLoteProps {
   progressoEscolas: {
@@ -295,15 +296,26 @@ export function AbaEscolasLote({
                           </div>
                         </div>
 
-                        {/* Botão Imprimir Modalidade Completa */}
-                        <button
-                          onClick={() => handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo)}
-                          className="px-4 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs shrink-0"
-                          title={`Imprimir ficha oficial e delegação de ${modalidade.nome}`}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Imprimir {modalidade.nome} (PDF)</span>
-                        </button>
+                        {/* Botões Imprimir Modalidade e Crachás da Modalidade */}
+                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          <button
+                            onClick={() => JegdPdfGenerator.gerarCrachasEmLote(escolaSelecionada, atletasNestaModalidade, modalidade.nome)}
+                            className="px-3.5 py-2 rounded-xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs"
+                            title={`Gerar crachás dobráveis de todos os atletas de ${modalidade.nome}`}
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>Crachás {modalidade.nome} (PDF)</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo)}
+                            className="px-3.5 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] border border-[#E2EAE5] font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs"
+                            title={`Imprimir ficha oficial e delegação de ${modalidade.nome}`}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Ficha Geral {modalidade.nome}</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Subgrupos por Categoria e Naipe */}
@@ -324,17 +336,31 @@ export function AbaEscolasLote({
                                 </span>
                               </div>
 
-                              <button
-                                onClick={() => {
-                                  const [catStr, sexStr] = grupoNome.split(' • ');
-                                  const sexFormatado = sexStr === 'Masculino' ? 'MASCULINO' : 'FEMININO';
-                                  handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo, catStr, sexFormatado);
-                                }}
-                                className="text-xs font-bold text-[#087A5B] hover:text-[#00A878] flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-[#E2EAE5] hover:border-[#00A878]/30 transition-all shadow-2xs"
-                              >
-                                <Printer className="w-3 h-3" />
-                                <span>Ficha desta Equipe</span>
-                              </button>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                  onClick={() => {
+                                    const [catStr] = grupoNome.split(' • ');
+                                    JegdPdfGenerator.gerarCrachasEmLote(escolaSelecionada, atletasDoGrupo, modalidade.nome, catStr);
+                                  }}
+                                  className="text-xs font-black text-[#087A5B] hover:text-white hover:bg-[#00A878] flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-[#00A878]/30 transition-all shadow-2xs"
+                                  title={`Imprimir crachás dobráveis de ${grupoNome}`}
+                                >
+                                  <QrCode className="w-3 h-3" />
+                                  <span>Crachás desta Categoria</span>
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    const [catStr, sexStr] = grupoNome.split(' • ');
+                                    const sexFormatado = sexStr === 'Masculino' ? 'MASCULINO' : 'FEMININO';
+                                    handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo, catStr, sexFormatado);
+                                  }}
+                                  className="text-xs font-bold text-[#4B5563] hover:text-[#17221D] flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-[#E2EAE5] hover:border-[#00A878]/30 transition-all shadow-2xs"
+                                >
+                                  <Printer className="w-3 h-3" />
+                                  <span>Ficha desta Equipe</span>
+                                </button>
+                              </div>
                             </div>
 
                             {/* Grade de Atletas do Subgrupo */}
