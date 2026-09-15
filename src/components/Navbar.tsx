@@ -149,7 +149,7 @@ export default function Navbar() {
               }`}
             >
               <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
-              <span>Crachá & Controle</span>
+              <span>Crachá Oficial</span>
             </Link>
           </nav>
 
@@ -267,7 +267,7 @@ export default function Navbar() {
                 }`}
               >
                 <QrCode className="w-4 h-4 text-[#00A878]" />
-                <span>Crachá & Controle Logístico</span>
+                <span>Crachá Oficial & Guia</span>
               </Link>
             </nav>
 

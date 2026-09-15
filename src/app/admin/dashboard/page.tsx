@@ -46,6 +46,7 @@ import { AbaHomologacao } from './components/AbaHomologacao';
 import { AbaAlertas } from './components/AbaAlertas';
 import { AbaSumulas } from './components/AbaSumulas';
 import { AbaComunicados } from './components/AbaComunicados';
+import { AbaCrachaLogistica } from './components/AbaCrachaLogistica';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -55,7 +56,7 @@ export default function AdminDashboardPage() {
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
   
-  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'AVISOS'>('ESCOLAS_LOTE');
+  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState<string>('');
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
   const [busca, setBusca] = useState('');
@@ -490,6 +491,18 @@ export default function AdminDashboardPage() {
         </button>
 
         <button
+          onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            abaAtiva === 'CRACHA_LOGISTICA'
+              ? 'bg-[#00A878] text-white shadow-xs'
+              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+          }`}
+        >
+          <QrCode className="w-4 h-4" />
+          <span>Crachá & Validação</span>
+        </button>
+
+        <button
           onClick={() => setAbaAtiva('AVISOS')}
           className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             abaAtiva === 'AVISOS'
@@ -554,6 +567,11 @@ export default function AdminDashboardPage() {
           handleGerarCadernoModalidade={handleGerarCadernoModalidade}
           handleGerarCadernoGeralArbitragem={handleGerarCadernoGeralArbitragem}
         />
+      )}
+
+      {/* ABA: VALIDAÇÃO DE CRACHÁS & LOGÍSTICA */}
+      {abaAtiva === 'CRACHA_LOGISTICA' && (
+        <AbaCrachaLogistica />
       )}
 
       {/* ABA: AVISOS */}
