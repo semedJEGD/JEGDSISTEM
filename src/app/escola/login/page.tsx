@@ -4,23 +4,18 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   School, 
-  Lock, 
-  ArrowRight, 
   ShieldCheck, 
-  User, 
-  Phone, 
-  CheckCircle, 
   AlertCircle, 
-  Eye, 
-  EyeOff, 
-  CreditCard, 
-  AlertTriangle,
-  KeyRound,
-  UserPlus,
-  LogIn
+  CheckCircle,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Escola, Usuario } from '@/types/jegd';
+import { FormLoginCpf } from './components/FormLoginCpf';
+import { FormCadastroProfessor } from './components/FormCadastroProfessor';
+import { FormLoginAdmin } from './components/FormLoginAdmin';
+import { ModalConfirmacaoEscola } from './components/ModalConfirmacaoEscola';
 
 function formatCPF(val: string): string {
   const digits = val.replace(/\D/g, '').slice(0, 11);
@@ -62,7 +57,7 @@ function LoginContent() {
   const [escolaConfirmada, setEscolaConfirmada] = useState(false);
   const [modalConfirmacaoEscola, setModalConfirmacaoEscola] = useState(false);
 
-  // Dados da Coordenação
+  // Dados da Coordenação SEMED
   const [adminCoordenador, setAdminCoordenador] = useState<'ELIAS_VELOSO' | 'HERBERT_SA'>('ELIAS_VELOSO');
   const [adminSenha, setAdminSenha] = useState('');
   const [mostrarSenhaAdmin, setMostrarSenhaAdmin] = useState(false);
@@ -78,12 +73,10 @@ function LoginContent() {
     }
   }, []);
 
-  // Quando o professor muda a seleção de escola no cadastro, reseta a confirmação prévia
   const handleSelecionarEscola = (escolaId: string) => {
     setCadEscolaId(escolaId);
     setEscolaConfirmada(false);
     
-    // Sugestão amigável de senha padrão baseada na escola
     const esc = escolas.find(e => e.id === escolaId);
     if (esc && !cadSenha) {
       const siglaLimpa = esc.sigla.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -109,7 +102,6 @@ function LoginContent() {
       return;
     }
 
-    // Busca o professor pelo CPF
     const usuarioEncontrado = JegdStorage.getUsuarioByCpf(cpfLimpo);
 
     if (!usuarioEncontrado) {
@@ -123,9 +115,6 @@ function LoginContent() {
       return;
     }
 
-    // Validação da Senha:
-    // 1. Senha mestra semed2026 sempre autorizada
-    // 2. Senha do usuário ou da escola
     const senhaUsuario = usuarioEncontrado.senhaHash?.toLowerCase();
     const senhaEscola = escola.senhaHash?.toLowerCase();
     const siglaSenha = `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
@@ -141,13 +130,12 @@ function LoginContent() {
       return;
     }
 
-    // Login com sucesso
     JegdStorage.setCurrentUser(usuarioEncontrado);
     JegdStorage.setCurrentEscola(escola);
     router.push('/escola/dashboard');
   };
 
-  // PRÉ-SUBMIT DE CADASTRO: DISPARA O MODAL DE CONFIRMAÇÃO DA ESCOLA
+  // PRÉ-SUBMIT DE CADASTRO
   const handleIniciarCadastro = (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
@@ -176,17 +164,15 @@ function LoginContent() {
       return;
     }
 
-    // Se ainda não confirmou explicitamente a escola no modal/trava
     if (!escolaConfirmada) {
       setModalConfirmacaoEscola(true);
       return;
     }
 
-    // Executa a finalização
     concluirCadastro();
   };
 
-  // FINALIZAÇÃO DO CADASTRO APÓS CONFIRMAÇÃO DA ESCOLA
+  // FINALIZAÇÃO DO CADASTRO
   const concluirCadastro = () => {
     const escola = escolas.find(e => e.id === cadEscolaId);
     if (!escola) {
@@ -197,7 +183,6 @@ function LoginContent() {
     const cpfLimpo = cadCpf.replace(/\D/g, '');
     const senhaTratada = cadSenha.trim().toLowerCase();
 
-    // Cria o usuário do professor
     const novoUsuario: Usuario = {
       id: `prof-${cpfLimpo}`,
       nome: cadNome.trim(),
@@ -210,7 +195,6 @@ function LoginContent() {
       createdAt: new Date().toISOString()
     };
 
-    // Atualiza a senha da escola se necessário
     if (!escola.senhaHash || escola.senhaHash === '123456' || escola.senhaHash === 'semed2026') {
       escola.senhaHash = senhaTratada;
       JegdStorage.saveEscola(escola);
@@ -257,7 +241,7 @@ function LoginContent() {
   return (
     <div className="relative min-h-[calc(100vh-70px)] flex items-center justify-center px-3 py-4 sm:py-8 overflow-hidden w-full">
       
-      {/* VÍDEO DE BACKGROUND EM LOOP */}
+      {/* VÍDEO DE BACKGROUND EM LOOP COM CACHE BUSTER */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <video
           autoPlay
@@ -336,7 +320,7 @@ function LoginContent() {
             </div>
           )}
 
-          {/* ÁREA DO PROFESSOR: SUB-ABAS (LOGIN COM CPF vs PRIMEIRO ACESSO) */}
+          {/* ÁREA DO PROFESSOR */}
           {tipoAcesso === 'ESCOLA' && (
             <div>
               <div className="flex border-b border-[#E2EAE5] mb-4">
@@ -366,312 +350,68 @@ function LoginContent() {
                 </button>
               </div>
 
-              {/* MODO 1: LOGIN DIRETO DO PROFESSOR (CPF + SENHA) */}
               {modoEscola === 'LOGIN' && (
-                <form onSubmit={handleLoginCpf} className="space-y-3 sm:space-y-3.5">
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                      CPF do Professor
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        maxLength={14}
-                        value={loginCpf}
-                        onChange={(e) => setLoginCpf(formatCPF(e.target.value))}
-                        placeholder="000.000.000-00"
-                        className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors tracking-wider"
-                      />
-                      <CreditCard className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
-                    </div>
-                    <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-                      O sistema identifica automaticamente sua escola através do CPF.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                      Senha de Acesso
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={mostrarSenhaLogin ? 'text' : 'password'}
-                        required
-                        maxLength={30}
-                        value={loginSenha}
-                        onChange={(e) => setLoginSenha(e.target.value)}
-                        placeholder="Digite sua senha"
-                        className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                      />
-                      <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarSenhaLogin(!mostrarSenhaLogin)}
-                        className="absolute right-3 top-3 text-[#4B5563] hover:text-[#17221D]"
-                      >
-                        {mostrarSenhaLogin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 px-5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
-                  >
-                    <span>Entrar no Painel da Escola</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => { setModoEscola('CADASTRO'); setErro(''); }}
-                      className="text-xs text-[#00A878] font-bold hover:underline"
-                    >
-                      Ainda não tem cadastro? Clique aqui para o primeiro acesso
-                    </button>
-                  </div>
-                </form>
+                <FormLoginCpf
+                  loginCpf={loginCpf}
+                  setLoginCpf={(v) => setLoginCpf(formatCPF(v))}
+                  loginSenha={loginSenha}
+                  setLoginSenha={setLoginSenha}
+                  mostrarSenhaLogin={mostrarSenhaLogin}
+                  setMostrarSenhaLogin={setMostrarSenhaLogin}
+                  onSubmit={handleLoginCpf}
+                  onAlternarModoCadastro={() => { setModoEscola('CADASTRO'); setErro(''); }}
+                />
               )}
 
-              {/* MODO 2: CADASTRO COM TRAVA DE ESCOLA */}
               {modoEscola === 'CADASTRO' && (
-                <form onSubmit={handleIniciarCadastro} className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                      1. Nome Completo do Professor
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        value={cadNome}
-                        onChange={(e) => setCadNome(e.target.value)}
-                        placeholder="Ex: Prof. Marcos Silva"
-                        className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                      />
-                      <User className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                        2. CPF (Login Único)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          required
-                          maxLength={14}
-                          value={cadCpf}
-                          onChange={(e) => setCadCpf(formatCPF(e.target.value))}
-                          placeholder="000.000.000-00"
-                          className="w-full px-3 py-2.5 pl-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                        />
-                        <CreditCard className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                        3. WhatsApp
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={cadTelefone}
-                          onChange={(e) => setCadTelefone(formatPhone(e.target.value))}
-                          placeholder="(99) 98888-0000"
-                          className="w-full px-3 py-2.5 pl-8 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                        />
-                        <Phone className="w-3.5 h-3.5 text-[#4B5563] absolute left-2.5 top-3" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SELEÇÃO DA ESCOLA COM DESTAQUE */}
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                      4. Selecione a sua Escola
-                    </label>
-                    <select
-                      value={cadEscolaId}
-                      onChange={(e) => handleSelecionarEscola(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                    >
-                      {escolas.map((esc) => (
-                        <option key={esc.id} value={esc.id}>
-                          {esc.nome} ({esc.sigla} • Rede {esc.rede})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* SENHA DE ACESSO */}
-                  <div>
-                    <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                      5. Senha de Acesso (para não esquecer)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={mostrarSenhaCad ? 'text' : 'password'}
-                        required
-                        maxLength={30}
-                        value={cadSenha}
-                        onChange={(e) => setCadSenha(e.target.value.toLowerCase())}
-                        placeholder="Ex: anisio2026"
-                        className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                      />
-                      <KeyRound className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarSenhaCad(!mostrarSenhaCad)}
-                        className="absolute right-3 top-3 text-[#4B5563] hover:text-[#17221D]"
-                      >
-                        {mostrarSenhaCad ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-                      Mínimo 4 caracteres (letras e números). Sugestão: nome da escola + 2026.
-                    </p>
-                  </div>
-
-                  {/* BOTÃO QUE ABRE A CONFIRMAÇÃO OBRIGATÓRIA DA ESCOLA */}
-                  <button
-                    type="submit"
-                    className="w-full py-3 px-5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
-                  >
-                    <span>Confirmar e Criar Acesso</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
+                <FormCadastroProfessor
+                  cadNome={cadNome}
+                  setCadNome={setCadNome}
+                  cadCpf={cadCpf}
+                  setCadCpf={(v) => setCadCpf(formatCPF(v))}
+                  cadTelefone={cadTelefone}
+                  setCadTelefone={(v) => setCadTelefone(formatPhone(v))}
+                  cadEscolaId={cadEscolaId}
+                  onSelecionarEscola={handleSelecionarEscola}
+                  escolas={escolas}
+                  cadSenha={cadSenha}
+                  setCadSenha={setCadSenha}
+                  mostrarSenhaCad={mostrarSenhaCad}
+                  setMostrarSenhaCad={setMostrarSenhaCad}
+                  onSubmit={handleIniciarCadastro}
+                />
               )}
             </div>
           )}
 
-          {/* FORMULÁRIO: COORDENAÇÃO SEMED */}
+          {/* FORMULÁRIO COORDENAÇÃO SEMED */}
           {tipoAcesso === 'ADMIN' && (
-            <form onSubmit={handleLoginAdmin} className="space-y-3.5">
-              <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                  Coordenador Responsável
-                </label>
-                <select
-                  value={adminCoordenador}
-                  onChange={(e) => setAdminCoordenador(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                >
-                  <option value="ELIAS_VELOSO">Elias Veloso (SEMED)</option>
-                  <option value="HERBERT_SA">Herbert de Sá (SEMED)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-                  Senha da Coordenação
-                </label>
-                <div className="relative">
-                  <input
-                    type={mostrarSenhaAdmin ? 'text' : 'password'}
-                    required
-                    maxLength={30}
-                    value={adminSenha}
-                    onChange={(e) => setAdminSenha(e.target.value.toLowerCase())}
-                    placeholder="Digite a senha institucional"
-                    className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
-                  />
-                  <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
-                  <button
-                    type="button"
-                    onClick={() => setMostrarSenhaAdmin(!mostrarSenhaAdmin)}
-                    className="absolute right-3 top-3 text-[#4B5563] hover:text-[#17221D]"
-                  >
-                    {mostrarSenhaAdmin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-                <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-                  Acesso restrito à Coordenação Geral SEMED
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 px-5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-xs sm:text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
-              >
-                <span>Acessar Painel da Coordenação</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
+            <FormLoginAdmin
+              adminCoordenador={adminCoordenador}
+              setAdminCoordenador={setAdminCoordenador}
+              adminSenha={adminSenha}
+              setAdminSenha={setAdminSenha}
+              mostrarSenhaAdmin={mostrarSenhaAdmin}
+              setMostrarSenhaAdmin={setMostrarSenhaAdmin}
+              onSubmit={handleLoginAdmin}
+            />
           )}
 
         </div>
-
       </div>
 
-      {/* MODAL DE TRAVA DE SEGURANÇA: CONFIRMAÇÃO EXPLÍCITA DA ESCOLA */}
-      {modalConfirmacaoEscola && escolaSelecionadaObj && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-[#00A878] transform scale-100 transition-all">
-            
-            <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-lg font-black text-[#17221D] text-center mb-1">
-              Confirmação de Escola
-            </h3>
-            
-            <p className="text-xs text-[#4B5563] text-center mb-4">
-              Para evitar erros e cruzamento de dados, confirme com atenção:
-            </p>
-
-            <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 mb-5 text-center">
-              <span className="text-[10px] font-black tracking-wider text-[#087A5B] uppercase block mb-1">
-                Você está se vinculando a:
-              </span>
-              <p className="text-base font-black text-[#17221D]">
-                {escolaSelecionadaObj.nome}
-              </p>
-              <p className="text-xs text-[#68756E] font-semibold mt-0.5">
-                {escolaSelecionadaObj.sigla} • Rede {escolaSelecionadaObj.rede}
-              </p>
-
-              <div className="mt-3 pt-3 border-t border-[#E2EAE5] text-left text-[11px] text-[#4B5563] space-y-1">
-                <p>👤 <strong>Professor:</strong> {cadNome}</p>
-                <p>🪪 <strong>CPF:</strong> {cadCpf}</p>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mb-5 font-medium leading-relaxed">
-              ⚠️ <strong>Importante:</strong> Todos os alunos, matrículas e equipes que você cadastrar ficarão salvos <strong>exclusivamente</strong> dentro desta escola.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              <button
-                type="button"
-                onClick={() => setModalConfirmacaoEscola(false)}
-                className="w-full py-2.5 px-4 rounded-xl border border-[#E2EAE5] text-[#4B5563] hover:bg-[#F7F9F8] text-xs font-bold transition-colors order-2 sm:order-1"
-              >
-                Trocar Escola
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEscolaConfirmada(true);
-                  concluirCadastro();
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-1.5 transition-all order-1 sm:order-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>Sim, Sou Desta Escola</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* MODAL DE TRAVA DE SEGURANÇA */}
+      <ModalConfirmacaoEscola
+        aberto={modalConfirmacaoEscola}
+        escola={escolaSelecionadaObj}
+        profNome={cadNome}
+        profCpf={cadCpf}
+        onConfirmar={() => {
+          setEscolaConfirmada(true);
+          concluirCadastro();
+        }}
+        onFechar={() => setModalConfirmacaoEscola(false)}
+      />
 
     </div>
   );
