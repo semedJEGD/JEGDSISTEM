@@ -257,6 +257,43 @@ export default function AdminDashboardPage() {
     setNovoAvisoConteudo('');
   };
 
+  const extrairCategoriasData = (mod: ModalidadeConfig) => {
+    const sexos = ['MASCULINO', 'FEMININO'];
+    const categoriasData: { categoria: string; sexo: string; atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] }[] = [];
+
+    mod.categoriasPermitidas.forEach(cat => {
+      sexos.forEach(sexo => {
+        const inscricoesCat = inscricoes.filter(
+          i => i.modalidadeCodigo === mod.codigo && i.categoria === cat && i.sexo === sexo
+        );
+        const atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] = [];
+        inscricoesCat.forEach(insc => {
+          const escolaObj = escolas.find(e => e.id === insc.escolaId);
+          if (escolaObj) {
+            insc.atletaIds.forEach(atlId => {
+              const atlObj = atletas.find(a => a.id === atlId);
+              if (atlObj) {
+                atletasComEscola.push({
+                  atleta: atlObj,
+                  escola: escolaObj,
+                  provas: insc.provasPorAtleta?.[atlId]
+                });
+              }
+            });
+          }
+        });
+
+        categoriasData.push({
+          categoria: cat,
+          sexo,
+          atletasComEscola
+        });
+      });
+    });
+
+    return categoriasData;
+  };
+
   const handleGerarListaChamada = async (mod: ModalidadeConfig, categoria: string, sexo: string) => {
     const inscricoesModalidade = inscricoes.filter(
       i => i.modalidadeCodigo === mod.codigo && i.categoria === categoria && i.sexo === sexo
@@ -292,6 +329,19 @@ export default function AdminDashboardPage() {
       new Date(mod.dataEvento).toLocaleDateString('pt-BR'),
       atletasComEscola
     );
+  };
+
+  const handleGerarCadernoModalidade = async (mod: ModalidadeConfig) => {
+    const categoriasData = extrairCategoriasData(mod);
+    await JegdPdfGenerator.gerarCadernoModalidadeCompleto(mod, categoriasData);
+  };
+
+  const handleGerarCadernoGeralArbitragem = async () => {
+    const modalidadesCompletas = modalidades.map(mod => ({
+      modalidade: mod,
+      categoriasData: extrairCategoriasData(mod)
+    }));
+    await JegdPdfGenerator.gerarCadernoGeralArbitragem(modalidadesCompletas);
   };
 
   const progressoEscolas = JegdStorage.getProgressoEscolas();
@@ -501,6 +551,8 @@ export default function AdminDashboardPage() {
         <AbaSumulas
           modalidades={modalidades}
           handleGerarListaChamada={handleGerarListaChamada}
+          handleGerarCadernoModalidade={handleGerarCadernoModalidade}
+          handleGerarCadernoGeralArbitragem={handleGerarCadernoGeralArbitragem}
         />
       )}
 

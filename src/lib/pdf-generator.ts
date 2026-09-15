@@ -48,6 +48,25 @@ export class JegdPdfGenerator {
   }
 
   /**
+   * Gera o Caderno Completo de uma Modalidade (Todas as Categorias em 1 só PDF)
+   */
+  public static async gerarCadernoModalidadeCompleto(
+    modalidade: any,
+    categoriasData: any[]
+  ): Promise<void> {
+    return SumulaChamadaService.gerarCadernoModalidadeCompleto(modalidade, categoriasData);
+  }
+
+  /**
+   * Gera o Caderno Geral de Arbitragem com todas as modalidades reunidas em 1 PDF
+   */
+  public static async gerarCadernoGeralArbitragem(
+    modalidadesCompletas: any[]
+  ): Promise<void> {
+    return SumulaChamadaService.gerarCadernoGeralArbitragem(modalidadesCompletas);
+  }
+
+  /**
    * Gera Crachá Individual em PDF (Formato Dobrável Frente e Verso)
    */
   public static async gerarCrachaIndividual(
