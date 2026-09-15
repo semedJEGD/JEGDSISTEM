@@ -3,7 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { School, ShieldCheck, QrCode, LogOut, BookOpen, Trophy, Menu, X, Home } from 'lucide-react';
+import { 
+  School, 
+  ShieldCheck, 
+  QrCode, 
+  LogOut, 
+  BookOpen, 
+  Trophy, 
+  Menu, 
+  X, 
+  Home, 
+  Users, 
+  ArrowRight,
+  UserCheck
+} from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Escola } from '@/types/jegd';
 
@@ -48,103 +61,122 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E2EAE5] text-[#17221D] shadow-xs w-full max-w-full">
-      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
+    <header className="sticky top-0 z-50 w-full pt-2.5 sm:pt-3 px-3 sm:px-6 lg:px-8 pb-1.5 transition-all">
+      <div className="max-w-7xl mx-auto">
+        {/* CONTAINER DO HEADER EM PAINEL FLUTUANTE PREMIUM */}
+        <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl sm:rounded-full px-3.5 sm:px-6 py-2 sm:py-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
           
-          {/* Logo Oficial e Título */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3.5 group shrink-0 min-w-0">
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] shadow-xs group-hover:scale-105 transition-transform duration-300 bg-white flex items-center justify-center shrink-0">
+          {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + JEGD | 2026 + SUBTÍTULO */}
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0 select-none">
+            {/* Logo Oficial Intacta */}
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300">
               <img 
                 src="/logo-jegd.png" 
-                alt="Logo JEGD 2026" 
+                alt="Logo Oficial JEGD 2026" 
                 className="w-full h-full object-contain p-0.5"
               />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-black text-xl sm:text-2xl tracking-tight text-[#087A5B]">
+
+            {/* Identidade Textual: JEGD | 2026 em Destaque */}
+            <div className="flex flex-col justify-center">
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
+                <span className="font-black text-xl sm:text-2xl tracking-tighter text-[#0B4B88] leading-none">
                   JEGD
                 </span>
-                <span className="bg-[#E8F7F1] text-[#087A5B] text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full border border-[#00A878]/25">
+                
+                {/* Divisória Vertical Elegante */}
+                <span className="text-slate-300 font-light text-xl sm:text-2xl leading-none select-none">
+                  |
+                </span>
+
+                {/* 2026 com Destaque e Presença Visual */}
+                <span className="font-black text-2xl sm:text-[28px] italic tracking-tight text-[#00A878] leading-none">
                   2026
                 </span>
               </div>
-              <p className="hidden sm:block text-xs text-[#4B5563] font-semibold tracking-wide uppercase truncate">
+
+              {/* Subtítulo Discreto e Institucional */}
+              <p className="hidden sm:block text-[8px] sm:text-[9.5px] font-bold tracking-widest text-[#6B7280] uppercase mt-0.5">
                 Jogos Escolares de Gonçalves Dias
               </p>
             </div>
           </Link>
 
-          {/* Navegação Central Desktop */}
-          <nav className="hidden md:flex items-center gap-1.5">
+          {/* NAVEGAÇÃO CENTRAL DESKTOP (CLEAN & OUTLINE) */}
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
             <Link
               href="/"
-              className={`px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname === '/'
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs'
+                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              Início
+              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <span>Início</span>
             </Link>
+
             <Link
               href="/modalidades"
-              className={`px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/modalidades')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs'
+                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              Modalidades
+              <Trophy className={`w-4 h-4 ${pathname.startsWith('/modalidades') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <span>Modalidades</span>
             </Link>
+
             <Link
               href="/regulamento"
-              className={`px-3.5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/regulamento')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs'
+                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              Regulamento
+              <BookOpen className={`w-4 h-4 ${pathname.startsWith('/regulamento') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <span>Regulamento</span>
             </Link>
+
             <Link
               href="/validar"
-              className={`px-3.5 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/validar')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs'
+                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <QrCode className="w-4 h-4 text-[#00A878]" />
-              Crachá & Controle
+              <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <span>Crachá & Controle</span>
             </Link>
           </nav>
 
-          {/* Área de Acesso Rápido / Portais & Hamburger Mobile */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* BOTÃO DE LOGIN / ÁREA AUTENTICADA & MENU MOBILE */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {escolaAtual ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   href="/escola/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#E8F7F1] hover:bg-[#d8f1e7] border border-[#00A878]/30 text-xs sm:text-sm font-bold text-[#087A5B] transition-all"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#E8F7F1] hover:bg-[#d8f1e7] border border-[#00A878]/30 text-xs sm:text-sm font-black text-[#087A5B] transition-all shadow-2xs"
                 >
-                  <School className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00A878]" />
-                  <span className="max-w-[70px] sm:max-w-none truncate">{escolaAtual.sigla || 'Painel'}</span>
+                  <School className="w-4 h-4 text-[#00A878]" />
+                  <span className="max-w-[100px] sm:max-w-none truncate">{escolaAtual.sigla || 'Painel'}</span>
                 </Link>
                 <button
                   onClick={handleLogoutEscola}
                   title="Sair da Escola"
-                  className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
+                  className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : isAdmin ? (
               <div className="flex items-center gap-1.5">
                 <Link
                   href="/admin/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-black shadow-xs hover:shadow-md transition-all"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>Painel SEMED</span>
@@ -152,7 +184,7 @@ export default function Navbar() {
                 <button
                   onClick={handleLogoutAdmin}
                   title="Sair do Painel SEMED"
-                  className="p-2 rounded-xl bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
+                  className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -160,10 +192,11 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/escola/login"
-                className="flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black tracking-wide shadow-xs hover:shadow-md transition-all active:scale-95 whitespace-nowrap"
+                className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-[13px] font-black tracking-wide shadow-[0_2px_12px_rgba(0,168,120,0.25)] hover:shadow-[0_4px_16px_rgba(0,168,120,0.35)] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap group/login"
               >
-                <School className="w-4 h-4 stroke-[2.5]" />
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                 <span>LOGIN PROFESSORES / SEMED</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover/login:translate-x-0.5 transition-transform" />
               </Link>
             )}
 
@@ -180,97 +213,89 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu Mobile Dropdown Drawer */}
+      {/* MENU MOBILE DROPDOWN DRAWER */}
       {menuMobileAberto && (
-        <div className="md:hidden bg-white border-b border-[#E2EAE5] px-4 py-4 space-y-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col space-y-1.5">
-            <Link
-              href="/"
-              onClick={() => setMenuMobileAberto(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                pathname === '/'
-                  ? 'bg-[#E8F7F1] text-[#087A5B]'
-                  : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-              }`}
-            >
-              <Home className="w-4 h-4 text-[#00A878]" />
-              <span>Início</span>
-            </Link>
-
-            <Link
-              href="/modalidades"
-              onClick={() => setMenuMobileAberto(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                pathname.startsWith('/modalidades')
-                  ? 'bg-[#E8F7F1] text-[#087A5B]'
-                  : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-              }`}
-            >
-              <Trophy className="w-4 h-4 text-[#00A878]" />
-              <span>Modalidades & Regras</span>
-            </Link>
-
-            <Link
-              href="/regulamento"
-              onClick={() => setMenuMobileAberto(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                pathname.startsWith('/regulamento')
-                  ? 'bg-[#E8F7F1] text-[#087A5B]'
-                  : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-[#00A878]" />
-              <span>Regulamento Geral</span>
-            </Link>
-
-            <Link
-              href="/validar"
-              onClick={() => setMenuMobileAberto(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                pathname.startsWith('/validar')
-                  ? 'bg-[#E8F7F1] text-[#087A5B]'
-                  : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-              }`}
-            >
-              <QrCode className="w-4 h-4 text-[#00A878]" />
-              <span>Crachá & Controle Logístico</span>
-            </Link>
-          </nav>
-
-          <div className="pt-3 border-t border-[#E2EAE5] space-y-2">
-            {!escolaAtual && !isAdmin && (
+        <div className="md:hidden max-w-7xl mx-auto mt-2">
+          <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl p-4 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col space-y-1.5">
               <Link
-                href="/escola/login"
+                href="/"
                 onClick={() => setMenuMobileAberto(false)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  pathname === '/'
+                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
+                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
+                }`}
               >
-                <School className="w-4 h-4" />
-                <span>LOGIN PROFESSORES / SEMED</span>
+                <Home className="w-4 h-4 text-[#00A878]" />
+                <span>Início</span>
               </Link>
-            )}
 
-            {isAdmin && (
-              <div className="flex items-center justify-between p-2 rounded-xl bg-amber-50 border border-amber-200">
+              <Link
+                href="/modalidades"
+                onClick={() => setMenuMobileAberto(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  pathname.startsWith('/modalidades')
+                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
+                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
+                }`}
+              >
+                <Trophy className="w-4 h-4 text-[#00A878]" />
+                <span>Modalidades & Regras</span>
+              </Link>
+
+              <Link
+                href="/regulamento"
+                onClick={() => setMenuMobileAberto(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  pathname.startsWith('/regulamento')
+                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
+                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
+                }`}
+              >
+                <BookOpen className="w-4 h-4 text-[#00A878]" />
+                <span>Regulamento Geral</span>
+              </Link>
+
+              <Link
+                href="/validar"
+                onClick={() => setMenuMobileAberto(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  pathname.startsWith('/validar')
+                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
+                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
+                }`}
+              >
+                <QrCode className="w-4 h-4 text-[#00A878]" />
+                <span>Crachá & Controle Logístico</span>
+              </Link>
+            </nav>
+
+            <div className="pt-3 border-t border-[#E2EAE5] space-y-2">
+              {!escolaAtual && !isAdmin && (
                 <Link
-                  href="/admin/dashboard"
+                  href="/escola/login"
                   onClick={() => setMenuMobileAberto(false)}
-                  className="flex items-center gap-2 text-xs font-bold text-amber-900"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
                 >
-                  <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>Painel Admin SEMED</span>
+                  <Users className="w-4 h-4" />
+                  <span>LOGIN PROFESSORES / SEMED</span>
                 </Link>
+              )}
+
+              {(escolaAtual || isAdmin) && (
                 <button
-                  onClick={handleLogoutAdmin}
-                  className="text-xs text-rose-600 font-bold px-2 py-1 bg-white rounded-lg border border-rose-200"
+                  onClick={escolaAtual ? handleLogoutEscola : handleLogoutAdmin}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold"
                 >
-                  Sair
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair da Sessão</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
     </header>
   );
 }
-
