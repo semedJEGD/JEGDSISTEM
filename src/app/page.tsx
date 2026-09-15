@@ -29,6 +29,12 @@ export default function HomePage() {
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
   const [totalAtletas, setTotalAtletas] = useState(0);
   const [totalInscricoes, setTotalInscricoes] = useState(0);
+  const [videoIndexAtual, setVideoIndexAtual] = useState(0);
+
+  const bannerVideos = [
+    '/VIDEOJEGDS.mp4?v=2026',
+    '/segundo-video-banner.mp4?v=2026'
+  ];
 
   useEffect(() => {
     JegdStorage.init();
@@ -59,24 +65,39 @@ export default function HomePage() {
       <section className="relative bg-white border-b border-[#E2EAE5] pt-6 pb-12 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           
-          {/* Hero Video Institucional Oficial JEGD 2026 */}
-          <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-[#17221D] relative">
+          {/* Hero Video Institucional Oficial JEGD 2026 com Playlist Contínua */}
+          <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-[#17221D] relative group">
             <video
+              key={bannerVideos[videoIndexAtual]}
               autoPlay
-              loop
               muted
               playsInline
+              onEnded={() => setVideoIndexAtual((prev) => (prev + 1) % bannerVideos.length)}
               poster="/banner-jegd.png"
               className="w-full h-auto max-h-[380px] object-cover object-center block"
             >
-              <source src="/VIDEOJEGDS.mp4?v=2026" type="video/mp4" />
-              <source src="/video-jegd.mp4?v=2026" type="video/mp4" />
+              <source src={bannerVideos[videoIndexAtual]} type="video/mp4" />
               <img
                 src="/banner-jegd.png"
                 alt="Banner Oficial JEGD 2026 - Mais que jogos, grandes valores para a vida"
                 className="w-full h-auto max-h-[380px] object-cover object-center block"
               />
             </video>
+
+            {/* Indicadores de Playlist do Banner */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/15 z-10 shadow-sm">
+              {bannerVideos.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setVideoIndexAtual(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    videoIndexAtual === idx ? 'w-5 bg-[#00A878]' : 'w-1.5 bg-white/40 hover:bg-white/80'
+                  }`}
+                  aria-label={`Ir para vídeo ${idx + 1}`}
+                  title={`Vídeo ${idx + 1} de ${bannerVideos.length}`}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Conteúdo Central Hero */}
