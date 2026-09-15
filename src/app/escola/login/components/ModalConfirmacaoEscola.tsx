@@ -47,7 +47,7 @@ export function ModalConfirmacaoEscola({
             {escola.nome}
           </p>
           <p className="text-xs text-[#68756E] font-semibold mt-0.5">
-            {escola.sigla} • Rede {escola.rede}
+            Rede {escola.rede === 'ESTADUAL' ? 'Estadual' : 'Municipal'} {escola.inep ? `• INEP: ${escola.inep}` : ''}
           </p>
 
           <div className="mt-3 pt-3 border-t border-[#E2EAE5] text-left text-[11px] text-[#4B5563] space-y-1">

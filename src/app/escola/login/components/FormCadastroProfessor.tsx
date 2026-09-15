@@ -100,11 +100,11 @@ export function FormCadastroProfessor({
         <select
           value={cadEscolaId}
           onChange={(e) => onSelecionarEscola(e.target.value)}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors cursor-pointer"
         >
           {escolas.map((esc) => (
             <option key={esc.id} value={esc.id}>
-              {esc.nome} ({esc.sigla} • Rede {esc.rede})
+              {esc.nome} — Rede {esc.rede === 'ESTADUAL' ? 'Estadual' : 'Municipal'}
             </option>
           ))}
         </select>
