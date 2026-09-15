@@ -18,6 +18,7 @@ interface FormCadastroProfessorProps {
   setCadSenha: (val: string) => void;
   mostrarSenhaCad: boolean;
   setMostrarSenhaCad: (val: boolean) => void;
+  sugestaoSenha?: string;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -35,6 +36,7 @@ export function FormCadastroProfessor({
   setCadSenha,
   mostrarSenhaCad,
   setMostrarSenhaCad,
+  sugestaoSenha,
   onSubmit
 }: FormCadastroProfessorProps) {
   return (
@@ -112,9 +114,16 @@ export function FormCadastroProfessor({
 
       {/* SENHA DE ACESSO */}
       <div>
-        <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-          5. Senha de Acesso (para não esquecer)
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider">
+            5. Senha de Acesso
+          </label>
+          {sugestaoSenha && (
+            <span className="text-[10px] font-bold text-[#087A5B] bg-[#E8F7F1] px-2 py-0.5 rounded-md border border-[#00A878]/20">
+              Padrão: {sugestaoSenha}
+            </span>
+          )}
+        </div>
         <div className="relative">
           <input
             type={mostrarSenhaCad ? 'text' : 'password'}
@@ -122,7 +131,7 @@ export function FormCadastroProfessor({
             maxLength={30}
             value={cadSenha}
             onChange={(e) => setCadSenha(e.target.value.toLowerCase())}
-            placeholder="Ex: anisio2026"
+            placeholder={`Ex: ${sugestaoSenha || 'escola2026'}`}
             className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
           />
           <KeyRound className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
@@ -135,7 +144,7 @@ export function FormCadastroProfessor({
           </button>
         </div>
         <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-          Mínimo 4 caracteres (letras e números). Sugestão: nome da escola + 2026.
+          A senha foi pré-definida com o nome da sua escola + 2026. Você pode mantê-la ou alterá-la.
         </p>
       </div>
 

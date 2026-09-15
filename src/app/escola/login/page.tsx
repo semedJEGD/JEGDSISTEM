@@ -16,6 +16,7 @@ import { FormLoginCpf } from './components/FormLoginCpf';
 import { FormCadastroProfessor } from './components/FormCadastroProfessor';
 import { FormLoginAdmin } from './components/FormLoginAdmin';
 import { ModalConfirmacaoEscola } from './components/ModalConfirmacaoEscola';
+import { gerarSugestaoSenhaEscola } from '@/lib/auth-helpers';
 
 function formatCPF(val: string): string {
   const digits = val.replace(/\D/g, '').slice(0, 11);
@@ -70,6 +71,7 @@ function LoginContent() {
     setEscolas(list);
     if (list.length > 0) {
       setCadEscolaId(list[0].id);
+      setCadSenha(gerarSugestaoSenhaEscola(list[0]));
     }
   }, []);
 
@@ -78,9 +80,8 @@ function LoginContent() {
     setEscolaConfirmada(false);
     
     const esc = escolas.find(e => e.id === escolaId);
-    if (esc && !cadSenha) {
-      const siglaLimpa = esc.sigla.toLowerCase().replace(/[^a-z0-9]/g, '');
-      setCadSenha(`${siglaLimpa}2026`);
+    if (esc) {
+      setCadSenha(gerarSugestaoSenhaEscola(esc));
     }
   };
 
@@ -118,12 +119,14 @@ function LoginContent() {
     const senhaUsuario = usuarioEncontrado.senhaHash?.toLowerCase();
     const senhaEscola = escola.senhaHash?.toLowerCase();
     const siglaSenha = `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
+    const sugestaoPadrao = gerarSugestaoSenhaEscola(escola);
 
     const senhaValida = 
       senhaTratada === 'semed2026' ||
       senhaTratada === senhaUsuario ||
       senhaTratada === senhaEscola ||
-      senhaTratada === siglaSenha;
+      senhaTratada === siglaSenha ||
+      senhaTratada === sugestaoPadrao;
 
     if (!senhaValida) {
       setErro('Senha incorreta para este CPF. Caso tenha esquecido, use a senha da sua escola ou contate a SEMED.');
@@ -378,6 +381,7 @@ function LoginContent() {
                   setCadSenha={setCadSenha}
                   mostrarSenhaCad={mostrarSenhaCad}
                   setMostrarSenhaCad={setMostrarSenhaCad}
+                  sugestaoSenha={gerarSugestaoSenhaEscola(escolaSelecionadaObj)}
                   onSubmit={handleIniciarCadastro}
                 />
               )}
