@@ -238,40 +238,88 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {modalidades.slice(0, 6).map((mod) => (
-              <div
-                key={mod.id}
-                className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/40 rounded-2xl p-6 transition-all duration-200 shadow-xs hover:shadow-md group"
-              >
-                <div className="flex items-center justify-between mb-3.5">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/20 uppercase">
-                    {mod.tipo}
-                  </span>
-                  <span className="text-xs text-[#00A878] font-bold">
-                    {mod.minAtletas} a {mod.maxAtletas} atletas
-                  </span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {modalidades.slice(0, 6).map((mod) => {
+              const modalidadeImgs: Record<string, string> = {
+                queimada: '/assets/modalidades/queimada.jpg',
+                tenis_mesa: '/assets/modalidades/tenis-mesa.jpg',
+                atletismo: '/assets/modalidades/atletismo.jpg',
+                beach_soccer: '/assets/modalidades/beach-soccer.jpg',
+                futsal: '/assets/modalidades/futsal.jpg',
+                xadrez: '/assets/modalidades/xadrez.jpg',
+                futebol_campo: '/assets/modalidades/futebol-campo.jpg',
+                voleibol: '/assets/modalidades/voleibol.jpg'
+              };
+              const imgSrc = modalidadeImgs[mod.codigo] || '/banner-jegd.png';
+              const isColetiva = mod.tipo === 'COLETIVA';
+              const generoTexto = mod.sexosPermitidos?.join(' / ') || 'MASCULINO / FEMININO';
 
-                <h3 className="text-lg font-bold text-[#17221D] group-hover:text-[#087A5B] transition-colors mb-1.5">
-                  {mod.nome}
-                </h3>
-                <p className="text-sm text-[#4B5563] mb-4 line-clamp-2 leading-relaxed">
-                  {mod.descricao}
-                </p>
+              return (
+                <div
+                  key={mod.id}
+                  className="group bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[210px] hover:-translate-y-1"
+                >
+                  {/* Fotografia Integrada com Gradientes */}
+                  <div className="absolute top-0 right-0 w-3/5 sm:w-2/3 h-28 sm:h-32 overflow-hidden pointer-events-none rounded-tr-3xl">
+                    <img
+                      src={imgSrc}
+                      alt={mod.nome}
+                      className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+                  </div>
 
-                <div className="pt-3.5 border-t border-[#E2EAE5] flex items-center justify-between text-xs text-[#4B5563]">
-                  <div className="flex items-center gap-1">
-                    <span className="px-2.5 py-0.5 rounded bg-[#F7F9F8] text-[#17221D] font-bold border border-[#E2EAE5]">
-                      {mod.categoriasPermitidas?.[0] || 'Infantil'}
+                  {/* Conteúdo Flutuante */}
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider border ${
+                          isColetiva
+                            ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
+                            : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
+                        }`}
+                      >
+                        {mod.tipo}
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline justify-between gap-2 pt-0.5">
+                      <h3 className="text-xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors leading-tight">
+                        {mod.nome}
+                      </h3>
+
+                      <span className="text-xs font-black text-[#00A878] shrink-0">
+                        {mod.minAtletas} a {mod.maxAtletas} atletas
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#4B5563] leading-relaxed line-clamp-2 font-medium">
+                      {mod.descricao}
+                    </p>
+                  </div>
+
+                  {/* Rodapé do Card */}
+                  <div className="relative z-10 pt-3 mt-3 border-t border-[#E2EAE5]/80 flex items-center justify-between text-xs">
+                    <div className="flex flex-wrap gap-1">
+                      {mod.categoriasPermitidas?.slice(0, 2).map((cat) => (
+                        <span
+                          key={cat}
+                          className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]/70 uppercase"
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                    </div>
+
+                    <span className="text-[11px] font-black text-[#00A878] uppercase tracking-wider text-right shrink-0">
+                      {generoTexto}
                     </span>
                   </div>
-                  <span className="text-[#087A5B] font-bold">
-                    {mod.sexosPermitidos?.join(' / ')}
-                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

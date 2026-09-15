@@ -129,7 +129,7 @@ export default function ModalidadesPage() {
         </button>
       </div>
 
-      {/* Grid de Cards das Modalidades */}
+      {/* Grid de Cards das Modalidades (3 cols desktop, 2 cols tablet, 1 col mobile) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {modalidadesFiltradas.map((mod) => {
           const asset = MODALIDADES_ASSETS[mod.codigo] || {
@@ -143,90 +143,93 @@ export default function ModalidadesPage() {
           return (
             <div
               key={mod.id}
-              className="bg-white border border-[#E2EAE5] hover:border-[#00A878]/60 rounded-3xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1"
+              className="group bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[220px] hover:-translate-y-1"
             >
-              {/* ÁREA SUPERIOR: FOTOGRAFIA COM ZOOM SUAVE NO HOVER (30-40% DO CARD) */}
-              <div className="relative w-full h-44 sm:h-48 overflow-hidden bg-[#F0FDF4]">
+              {/* FOTOGRAFIA INTEGRADA COM FUSÃO SUAVE NO TOPO / DIREITA (SEM CORTE RETANGULAR) */}
+              <div className="absolute top-0 right-0 w-3/5 sm:w-2/3 h-32 sm:h-36 overflow-hidden pointer-events-none rounded-tr-3xl">
                 <img
                   src={asset.img}
                   alt={asset.alt}
-                  className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
+                {/* Gradientes de Fusão Suave: Esquerda e Base */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
               </div>
 
-              {/* CORPO DO CARD COM AS INFORMAÇÕES OFICIAIS */}
-              <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between space-y-4">
-                <div className="space-y-3">
-                  
-                  {/* Linha de Identificação: Tipo e Limite de Atletas */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider border ${
-                        isColetiva
-                          ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
-                          : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
-                      }`}
-                    >
-                      {mod.tipo}
-                    </span>
+              {/* CONTEÚDO PRINCIPAL FLUTUANTE */}
+              <div className="relative z-10 space-y-3.5">
+                
+                {/* 1. Badge Tipo de Modalidade (Top-Left) */}
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border shadow-2xs ${
+                      isColetiva
+                        ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
+                        : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
+                    }`}
+                  >
+                    {mod.tipo}
+                  </span>
+                </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#00A878]">
-                      {isColetiva ? (
-                        <Users className="w-3.5 h-3.5 shrink-0" />
-                      ) : (
-                        <User className="w-3.5 h-3.5 shrink-0" />
-                      )}
-                      <span>
-                        {mod.minAtletas} a {mod.maxAtletas} atletas
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Nome da Modalidade */}
+                {/* 2. Nome da Modalidade + Quantidade de Atletas na Mesma Linha */}
+                <div className="flex items-baseline justify-between gap-2 pt-1">
                   <h3 className="text-xl sm:text-2xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors leading-tight">
                     {mod.nome}
                   </h3>
 
-                  {/* Descrição das Regras */}
-                  <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed line-clamp-3 font-normal">
-                    {mod.descricao}
-                  </p>
-                </div>
-
-                {/* Rodapé Interno: Divisor + Categorias e Gênero */}
-                <div className="pt-3.5 border-t border-[#E2EAE5] space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    {/* Categorias Permitidas */}
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {mod.categoriasPermitidas?.map((cat) => (
-                        <span
-                          key={cat}
-                          className="text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-[#EDF7F2] text-[#087A5B] border border-[#00A878]/15"
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Sexo / Gênero Permitido */}
-                    <span className="text-[10px] sm:text-xs font-black text-[#087A5B] uppercase tracking-wider text-right shrink-0">
-                      {generoTexto}
+                  <div className="flex items-center gap-1.5 text-xs font-black text-[#00A878] shrink-0">
+                    {isColetiva ? (
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {mod.minAtletas} a {mod.maxAtletas} atletas
                     </span>
                   </div>
-
-                  {/* Botão de Ação: Inscrever Equipe */}
-                  <Link
-                    href="/escola/inscricoes"
-                    className="w-full py-2.5 sm:py-3 rounded-xl bg-[#F0FDF4] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs sm:text-sm font-black border border-[#00A878]/25 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn mt-2"
-                  >
-                    <span>Inscrever equipe</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
-                  </Link>
                 </div>
 
+                {/* 3. Descrição das Regras */}
+                <p className="text-xs sm:text-[13px] text-[#4B5563] leading-relaxed line-clamp-2 font-medium">
+                  {mod.descricao}
+                </p>
               </div>
+
+              {/* 4. RODAPÉ INFERIOR: CATEGORIAS + GÊNERO + BOTÃO INSCREVER */}
+              <div className="relative z-10 pt-4 mt-3 border-t border-[#E2EAE5]/80 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Categorias Permitidas (Pills Claras) */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {mod.categoriasPermitidas?.map((cat) => (
+                      <span
+                        key={cat}
+                        className="text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]/70 uppercase tracking-wider"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Sexo / Gênero Permitido */}
+                  <span className="text-[11px] sm:text-xs font-black text-[#00A878] uppercase tracking-wider text-right shrink-0">
+                    {generoTexto}
+                  </span>
+                </div>
+
+                {/* Botão Oficial: Inscrever Equipe */}
+                <Link
+                  href="/escola/inscricoes"
+                  className="w-full py-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs sm:text-sm font-black border border-[#00A878]/25 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn mt-1"
+                >
+                  <span>Inscrever equipe</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+
             </div>
           );
         })}
