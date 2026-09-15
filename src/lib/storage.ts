@@ -341,17 +341,32 @@ export class JegdStorage {
     localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(list));
   }
 
-  public static getUsuarios(): any[] {
+  public static getUsuarios(): Usuario[] {
     if (!this.isClient()) return [];
     this.init();
     const data = localStorage.getItem(STORAGE_KEYS.USUARIOS);
     return data ? JSON.parse(data) : [];
   }
 
-  public static saveUsuario(user: any): void {
+  public static getUsuarioByCpf(cpf: string): Usuario | undefined {
+    const limpo = cpf.replace(/\D/g, '');
+    if (!limpo) return undefined;
+    return this.getUsuarios().find(u => {
+      const uCpf = (u.cpf || '').replace(/\D/g, '');
+      return uCpf === limpo;
+    });
+  }
+
+  public static saveUsuario(user: Usuario): void {
     if (!this.isClient()) return;
     const list = this.getUsuarios();
-    const idx = list.findIndex(u => u.id === user.id || u.email === user.email);
+    const userCpfLimpo = (user.cpf || '').replace(/\D/g, '');
+    const idx = list.findIndex(u => {
+      if (u.id === user.id) return true;
+      if (userCpfLimpo && (u.cpf || '').replace(/\D/g, '') === userCpfLimpo) return true;
+      if (user.email && u.email === user.email) return true;
+      return false;
+    });
     if (idx >= 0) list[idx] = user;
     else list.push(user);
     localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(list));

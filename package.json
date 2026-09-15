@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx tests/business-rules.test.ts && tsx tests/cracha-controle.test.ts",
+    "test": "tsx tests/business-rules.test.ts && tsx tests/cracha-controle.test.ts && tsx tests/multi-school-isolation.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts"
