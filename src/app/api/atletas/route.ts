@@ -113,3 +113,25 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID do atleta não informado' }, { status: 400 });
+    }
+
+    await prisma.atleta.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true, message: 'Atleta removido com sucesso' });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || 'Erro ao remover atleta' },
+      { status: 500 }
+    );
+  }
+}

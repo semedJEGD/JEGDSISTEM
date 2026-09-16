@@ -14,6 +14,7 @@ import {
 } from '@/types/jegd';
 import { JegdsRulesService } from '@/services/jegds-rules';
 import { LogisticaStorage } from './storage/logistica-storage';
+import { JegdCloudSync } from './storage/cloud-sync';
 
 export {
   MODALIDADES_OFICIAIS_JEGDS,
@@ -82,6 +83,20 @@ export class JegdStorage {
     if (!localStorage.getItem(STORAGE_KEYS.REGISTROS_CONTROLE)) {
       localStorage.setItem(STORAGE_KEYS.REGISTROS_CONTROLE, JSON.stringify([]));
     }
+
+    // Sincronização em tempo real com o banco de dados central (Neon PostgreSQL)
+    JegdCloudSync.carregarDadosCloud().then((data) => {
+      if (!data) return;
+      if (data.escolas && data.escolas.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(data.escolas));
+      }
+      if (data.atletas) {
+        localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(data.atletas));
+      }
+      if (data.registros) {
+        localStorage.setItem(STORAGE_KEYS.REGISTROS_CONTROLE, JSON.stringify(data.registros));
+      }
+    }).catch(() => {});
   }
 
   public static getEscolas(): Escola[] {
@@ -102,6 +117,7 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = escola;
     else list.push(escola);
     localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(list));
+    JegdCloudSync.syncEscola(escola).catch(() => {});
   }
 
   public static setCurrentEscola(escola: Escola | null): void {
@@ -162,12 +178,14 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = atleta;
     else list.unshift(atleta);
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
+    JegdCloudSync.syncAtleta(atleta).catch(() => {});
   }
 
   public static deleteAtleta(id: string): void {
     if (!this.isClient()) return;
     const list = this.getAtletas().filter(a => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
+    JegdCloudSync.deleteAtleta(id).catch(() => {});
 
     let inscricoes = this.getInscricoes();
     inscricoes = inscricoes.map(insc => {
@@ -234,6 +252,7 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = { ...insc, updatedAt: new Date().toISOString() };
     else list.unshift({ ...insc, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(list));
+    JegdCloudSync.syncInscricao(insc).catch(() => {});
   }
 
   public static syncAtletaComEquipes(escolaId: string, atleta: Atleta): void {
@@ -323,6 +342,7 @@ export class JegdStorage {
     if (!this.isClient()) return;
     const list = this.getInscricoes().filter(i => i.id !== id);
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(list));
+    JegdCloudSync.deleteInscricao(id).catch(() => {});
   }
 
   public static getComunicados(): ComunicadoAviso[] {

@@ -3,12 +3,19 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const [escolas, atletas, modalidades, registros, comunicados] = await Promise.all([
+    const [escolas, atletas, modalidades, registros, comunicados, inscricoes] = await Promise.all([
       prisma.escola.findMany({ orderBy: { nome: 'asc' } }),
-      prisma.atleta.findMany({ orderBy: { nomeCompleto: 'asc' } }),
+      prisma.atleta.findMany({
+        include: { escola: true },
+        orderBy: { nomeCompleto: 'asc' }
+      }),
       prisma.modalidade.findMany({ orderBy: { nome: 'asc' } }),
       prisma.registroControle.findMany({ orderBy: { timestamp: 'desc' } }),
-      prisma.comunicado.findMany({ orderBy: { dataPublicacao: 'desc' } })
+      prisma.comunicado.findMany({ orderBy: { dataPublicacao: 'desc' } }),
+      prisma.inscricao.findMany({
+        include: { atleta: true, modalidade: true, escola: true },
+        orderBy: { dataInscricao: 'desc' }
+      })
     ]);
 
     return NextResponse.json({
@@ -18,7 +25,8 @@ export async function GET() {
         atletas,
         modalidades,
         registros,
-        comunicados
+        comunicados,
+        inscricoes
       }
     });
   } catch (error: any) {

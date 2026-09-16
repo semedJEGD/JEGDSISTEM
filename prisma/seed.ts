@@ -1,7 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_65jIhrWDkPaU@ep-late-sea-acmakuqs-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl
+    }
+  }
+});
 
 async function main() {
   console.log('--- SEEDING JEGDS 2026 DATABASE ---');
@@ -162,7 +169,7 @@ async function main() {
         nome: `Prof. Responsável - ${esc.sigla}`,
         email: esc.loginEmail,
         senhaHash: senhaHashEscola,
-        papel: 'PROFESSOR',
+        papel: 'ESCOLA',
         escolaId: esc.id
       }
     });

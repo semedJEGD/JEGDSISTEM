@@ -1,7 +1,7 @@
 /**
- * Módulo de Sincronização em Nuvem (PostgreSQL / Railway)
- * Permite sincronização transparente entre o cache offline (localStorage)
- * e o banco de dados PostgreSQL central no Railway.
+ * Módulo de Sincronização em Nuvem (PostgreSQL / Neon)
+ * Permite sincronização transparente em tempo real entre o cliente
+ * e o banco de dados PostgreSQL central no Neon.
  */
 
 export class JegdCloudSync {
@@ -42,7 +42,71 @@ export class JegdCloudSync {
   }
 
   /**
-   * Tenta buscar dados atualizados do PostgreSQL na inicialização
+   * Remove um atleta do PostgreSQL
+   */
+  static async deleteAtleta(id: string): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch(`/api/atletas?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Sincroniza uma inscrição de equipe com o PostgreSQL
+   */
+  static async syncInscricao(inscricao: any): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch('/api/inscricoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inscricao)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Remove uma inscrição de equipe do PostgreSQL
+   */
+  static async deleteInscricao(id: string): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch(`/api/inscricoes?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Sincroniza dados da escola com o PostgreSQL
+   */
+  static async syncEscola(escola: any): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch('/api/escolas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(escola)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Busca todos os dados atualizados do PostgreSQL na inicialização ou reload
    */
   static async carregarDadosCloud(): Promise<any | null> {
     if (this.isSyncing) return null;
