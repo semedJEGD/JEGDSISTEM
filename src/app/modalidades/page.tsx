@@ -80,8 +80,8 @@ export default function ModalidadesPage() {
       
       {/* Cabeçalho da Página */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/25 text-[#087A5B] text-xs font-black tracking-wide">
-          <Sparkles className="w-3.5 h-3.5 text-[#00A878]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563] text-xs font-black tracking-wide">
+          <Sparkles className="w-3.5 h-3.5 text-[#6B7280]" />
           <span>JEGD 2026 • GUIA OFICIAL DE MODALIDADES</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
@@ -143,7 +143,7 @@ export default function ModalidadesPage() {
           return (
             <div
               key={mod.id}
-              className="group bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[220px] hover:-translate-y-1"
+              className="group bg-white border border-[#E2EAE5] hover:border-[#CBD5E1] rounded-3xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[220px] hover:-translate-y-1"
             >
               {/* FOTOGRAFIA INTEGRADA COM FUSÃO SUAVE NO TOPO / DIREITA (SEM CORTE RETANGULAR) */}
               <div className="absolute top-0 right-0 w-3/5 sm:w-2/3 h-32 sm:h-36 overflow-hidden pointer-events-none rounded-tr-3xl">
@@ -165,11 +165,7 @@ export default function ModalidadesPage() {
                 {/* 1. Badge Tipo de Modalidade (Top-Left) */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border shadow-2xs ${
-                      isColetiva
-                        ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
-                        : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
-                    }`}
+                    className="text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border border-[#E5E7EB] shadow-2xs bg-[#F3F4F6] text-[#6B7280]"
                   >
                     {mod.tipo}
                   </span>
@@ -177,11 +173,11 @@ export default function ModalidadesPage() {
 
                 {/* 2. Nome da Modalidade + Quantidade de Atletas na Mesma Linha */}
                 <div className="flex items-baseline justify-between gap-2 pt-1">
-                  <h3 className="text-xl sm:text-2xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors leading-tight">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#17221D] transition-colors leading-tight">
                     {mod.nome}
                   </h3>
 
-                  <div className="flex items-center gap-1.5 text-xs font-black text-[#00A878] shrink-0">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-[#374151] shrink-0">
                     {isColetiva ? (
                       <Users className="w-3.5 h-3.5 shrink-0" />
                     ) : (
@@ -207,7 +203,7 @@ export default function ModalidadesPage() {
                     {mod.categoriasPermitidas?.map((cat) => (
                       <span
                         key={cat}
-                        className="text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]/70 uppercase tracking-wider"
+                        className="text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-lg bg-[#EFF6FF] text-[#475569] border border-[#DBEAFE]/70 uppercase tracking-wider"
                       >
                         {cat}
                       </span>
@@ -215,7 +211,7 @@ export default function ModalidadesPage() {
                   </div>
 
                   {/* Sexo / Gênero Permitido */}
-                  <span className="text-[11px] sm:text-xs font-black text-[#00A878] uppercase tracking-wider text-right shrink-0">
+                  <span className="text-[11px] sm:text-xs font-black text-[#374151] uppercase tracking-wider text-right shrink-0">
                     {generoTexto}
                   </span>
                 </div>
