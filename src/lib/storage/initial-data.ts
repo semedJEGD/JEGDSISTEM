@@ -79,7 +79,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     minAtletas: 5,
     maxAtletas: 10,
     maxProvasPorAtleta: 1,
-    descricao: 'Máximo 10 atletas inscritos por equipe/categoria/sexo. Fase de grupos até finais.',
+    descricao: 'Permitido até 2 equipes por escola nos naipes Masculino e Feminino. Elenco com Min 5 e Max 10 atletas por equipe.',
     localPadrao: 'Ginásio Municipal Central'
   },
   {
@@ -105,11 +105,11 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     dataEvento: '2026-12-12',
     prazoInscricao: '2026-12-05',
     categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
-    sexosPermitidos: ['MASCULINO'],
+    sexosPermitidos: ['MASCULINO', 'FEMININO'],
     minAtletas: 11,
     maxAtletas: 20,
     maxProvasPorAtleta: 1,
-    descricao: 'Exclusivamente Masculino. Elenco com no máximo 20 atletas por equipe.',
+    descricao: 'Permitido até 2 equipes por escola nos naipes Masculino e Feminino. Elenco com Min 11 e Max 20 atletas por equipe.',
     localPadrao: 'Estádio Municipal de Gonçalves Dias'
   },
   {
@@ -258,15 +258,29 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-ce-sulamita-lucio',
-    nome: 'C.E Sulamita Lúcio',
-    sigla: 'C.E SULAMITA LÚCIO',
+    nome: 'C.E Sulamita Lúcio - SEDE',
+    sigla: 'SULAMITA SEDE',
     inep: '21004510',
     rede: 'ESTADUAL',
     bairro: 'Centro',
     endereco: 'Gonçalves Dias - MA',
     responsavelNome: 'Direção / Coordenação',
     responsavelTelefone: '(99) 98801-0010',
-    loginEmail: 'sulamitalucio@educacao.ma.gov.br',
+    loginEmail: 'sulamitasede@educacao.ma.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ce-sulamita-anexo1',
+    nome: 'C.E Sulamita Lúcio - Anexo I',
+    sigla: 'SULAMITA ANEXO I',
+    inep: '21004513',
+    rede: 'ESTADUAL',
+    bairro: 'Zona Rural',
+    endereco: 'Gonçalves Dias - MA',
+    responsavelNome: 'Direção / Coordenação',
+    responsavelTelefone: '(99) 98801-0013',
+    loginEmail: 'sulamitaanexo1@educacao.ma.gov.br',
     senhaHash: '123456',
     createdAt: new Date().toISOString()
   },

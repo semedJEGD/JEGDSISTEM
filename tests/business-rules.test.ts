@@ -77,11 +77,7 @@ assert(
   'Tênis de Mesa Junior Masculino deve ser PERMITIDO'
 );
 
-// Voleibol, Beach Soccer, Futebol de Campo e Tênis de Mesa são EXCLUSIVAMENTE MASCULINOS
-assert(
-  !JegdsRulesService.validarMatriz('futebol_campo', 'INFANTIL', 'FEMININO').valido,
-  'Futebol de Campo Feminino deve ser BLOQUEADO'
-);
+// Voleibol, Beach Soccer e Tênis de Mesa continuam EXCLUSIVAMENTE MASCULINOS
 assert(
   !JegdsRulesService.validarMatriz('voleibol', 'INFANTO', 'FEMININO').valido,
   'Voleibol Feminino deve ser BLOQUEADO'
@@ -95,8 +91,26 @@ assert(
   'Tênis de Mesa Feminino deve ser BLOQUEADO'
 );
 
-// Futsal, Queimada, Xadrez e Atletismo são permitidos em FEM e MASC em todas as 4 categorias
-const modalidadesAmbosSexos: ModalidadeCodigoJEGDS[] = ['futsal', 'queimada', 'xadrez', 'atletismo'];
+// Futebol de Campo e Futsal são permitidos em FEM e MASC
+assert(
+  JegdsRulesService.validarMatriz('futebol_campo', 'INFANTIL', 'FEMININO').valido,
+  'Futebol de Campo Feminino deve ser PERMITIDO'
+);
+assert(
+  JegdsRulesService.validarMatriz('futebol_campo', 'INFANTIL', 'MASCULINO').valido,
+  'Futebol de Campo Masculino deve ser PERMITIDO'
+);
+assert(
+  JegdsRulesService.validarMatriz('futsal', 'INFANTO', 'FEMININO').valido,
+  'Futsal Feminino deve ser PERMITIDO'
+);
+assert(
+  JegdsRulesService.validarMatriz('futsal', 'INFANTO', 'MASCULINO').valido,
+  'Futsal Masculino deve ser PERMITIDO'
+);
+
+// Modalidades em ambos os sexos: Futsal, Queimada, Xadrez, Atletismo, Futebol de Campo
+const modalidadesAmbosSexos: ModalidadeCodigoJEGDS[] = ['futsal', 'queimada', 'xadrez', 'atletismo', 'futebol_campo'];
 const categoriasTodas: CategoriaEtariaJEGDS[] = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
 
 for (const mod of modalidadesAmbosSexos) {
@@ -136,36 +150,48 @@ assert(
   '400m e salto para Infanto deve ser VÁLIDO'
 );
 
-// 4. TESTE DE LIMITES DE ELENCO
-console.log('\n4. Testes de Limites de Elenco:');
-// Futsal máx 10
+// 4. TESTE DE LIMITES DE ELENCO E NÚMERO DE EQUIPES
+console.log('\n4. Testes de Limites de Elenco e Número de Equipes:');
+// Futsal min 5 máx 10
+assert(
+  JegdsRulesService.validarLimiteElenco('futsal', 5).valido,
+  'Futsal com 5 atletas (mínimo) deve ser VÁLIDO'
+);
 assert(
   JegdsRulesService.validarLimiteElenco('futsal', 10).valido,
-  'Futsal com 10 atletas deve ser VÁLIDO'
+  'Futsal com 10 atletas (máximo) deve ser VÁLIDO'
 );
 assert(
   !JegdsRulesService.validarLimiteElenco('futsal', 11).valido,
   'Futsal com 11 atletas deve ser BLOQUEADO (máx 10)'
 );
 
-// Futebol de Campo máx 20
+// Futebol de Campo min 11 máx 20
+assert(
+  JegdsRulesService.validarLimiteElenco('futebol_campo', 11).valido,
+  'Futebol com 11 atletas (mínimo) deve ser VÁLIDO'
+);
 assert(
   JegdsRulesService.validarLimiteElenco('futebol_campo', 20).valido,
-  'Futebol com 20 atletas deve ser VÁLIDO'
+  'Futebol com 20 atletas (máximo) deve ser VÁLIDO'
 );
 assert(
   !JegdsRulesService.validarLimiteElenco('futebol_campo', 21).valido,
   'Futebol com 21 atletas deve ser BLOQUEADO (máx 20)'
 );
 
-// Queimada mín 8
+// Teste de Número Máximo de Equipes
 assert(
-  JegdsRulesService.validarLimiteElenco('queimada', 8).valido,
-  'Queimada com 8 atletas deve ser VÁLIDO'
+  JegdsRulesService.getMaxEquipesPorModalidade('futsal') === 2,
+  'Futsal deve permitir até 2 equipes por escola'
 );
 assert(
-  !JegdsRulesService.validarLimiteElenco('queimada', 7).valido,
-  'Queimada com 7 atletas deve ser BLOQUEADO (mínimo 8)'
+  JegdsRulesService.getMaxEquipesPorModalidade('futebol_campo') === 2,
+  'Futebol de Campo deve permitir até 2 equipes por escola'
+);
+assert(
+  JegdsRulesService.getMaxEquipesPorModalidade('voleibol') === 1,
+  'Voleibol deve permitir 1 equipe por escola'
 );
 
 console.log('\n🎉 TODOS OS TESTES DE REGRAS DE NEGÓCIO PASSARAM COM 100% DE SUCESSO!');

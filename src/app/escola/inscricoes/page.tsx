@@ -18,7 +18,11 @@ import {
   Sparkles,
   Download,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Image as ImageIcon,
+  Flame,
+  Zap,
+  Crown
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -37,6 +41,17 @@ import {
   MODALIDADES_JEGDS
 } from '@/services/jegds-rules';
 
+const LOGOS_PREDEFINIDOS = [
+  { id: 'escudo-ouro', label: '🛡️ Escudo Dourado', icon: '🛡️' },
+  { id: 'trovao', label: '⚡ Trovão Veloz', icon: '⚡' },
+  { id: 'fogo', label: '🔥 Chama Olímpica', icon: '🔥' },
+  { id: 'coroa', label: '👑 Soberanos', icon: '👑' },
+  { id: 'aguia', label: '🦅 Águias', icon: '🦅' },
+  { id: 'leao', label: '🦁 Leões', icon: '🦁' },
+  { id: 'estrela', label: '⭐ Estrelas GD', icon: '⭐' },
+  { id: 'trofeu', label: '🏆 Campeões', icon: '🏆' }
+];
+
 export default function EscolaInscricoesPage() {
   const router = useRouter();
   const [escola, setEscola] = useState<Escola | null>(null);
@@ -48,6 +63,9 @@ export default function EscolaInscricoesPage() {
   const [modalidadeSelCodigo, setModalidadeSelCodigo] = useState<ModalidadeCodigo>('futsal');
   const [categoriaSel, setCategoriaSel] = useState<CategoriaIdade>('INFANTIL');
   const [sexoSel, setSexoSel] = useState<Genero>('MASCULINO');
+  const [numeroEquipeSel, setNumeroEquipeSel] = useState<number>(1);
+  const [nomeEquipeSel, setNomeEquipeSel] = useState<string>('');
+  const [logoEquipeSel, setLogoEquipeSel] = useState<string>('🛡️');
   const [atletasSelecionadosIds, setAtletasSelecionadosIds] = useState<string[]>([]);
   const [provasPorAtleta, setProvasPorAtleta] = useState<Record<string, string[]>>({});
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
@@ -70,6 +88,9 @@ export default function EscolaInscricoesPage() {
   }, []);
 
   const modalidadeAtual = modalidades.find(m => m.codigo === modalidadeSelCodigo);
+  const maxEquipesPermitidas = modalidadeAtual
+    ? JegdsRulesService.getMaxEquipesPorModalidade(modalidadeAtual.codigo as any)
+    : 1;
 
   // Validação da Matriz
   const validacaoMatriz = JegdsRulesService.validarMatriz(modalidadeSelCodigo, categoriaSel, sexoSel);
@@ -135,7 +156,7 @@ export default function EscolaInscricoesPage() {
     }
 
     if (atletasSelecionadosIds.length < modalidadeAtual.minAtletas) {
-      alert(`A modalidade ${modalidadeAtual.nome} exige no mínimo ${modalidadeAtual.minAtletas} atleta(s).`);
+      alert(`A modalidade ${modalidadeAtual.nome} exige no mínimo ${modalidadeAtual.minAtletas} atleta(s) convocados.`);
       return;
     }
 
@@ -152,18 +173,29 @@ export default function EscolaInscricoesPage() {
       }
     }
 
-    // Verificar se já existe inscrição da mesma modalidade + categoria + sexo
+    // Verificar se já existe inscrição da mesma modalidade + categoria + sexo + numeroEquipe
     const existente = inscricoes.find(
-      i => i.modalidadeCodigo === modalidadeAtual.codigo && i.categoria === categoriaSel && i.sexo === sexoSel
+      i =>
+        i.modalidadeCodigo === modalidadeAtual.codigo &&
+        i.categoria === categoriaSel &&
+        i.sexo === sexoSel &&
+        (i.numeroEquipe === numeroEquipeSel || (!i.numeroEquipe && numeroEquipeSel === 1))
     );
 
+    const nomeFinal =
+      nomeEquipeSel.trim() ||
+      `${escola.sigla || escola.nome} ${maxEquipesPermitidas > 1 ? `- Equipe ${numeroEquipeSel}` : ''}`;
+
     const novaInscricao: InscricaoEquipe = {
-      id: existente ? existente.id : `insc-${Date.now()}`,
+      id: existente ? existente.id : `insc-${Date.now()}-${modalidadeAtual.codigo}-eq${numeroEquipeSel}`,
       escolaId: escola.id,
       modalidadeCodigo: modalidadeAtual.codigo,
       modalidadeNome: modalidadeAtual.nome,
       categoria: categoriaSel,
       sexo: sexoSel,
+      numeroEquipe: numeroEquipeSel,
+      nomeEquipe: nomeFinal,
+      logoUrl: logoEquipeSel,
       atletaIds: atletasSelecionadosIds,
       provasPorAtleta: modalidadeSelCodigo === 'atletismo' ? provasPorAtleta : undefined,
       comissaoIds: [],
@@ -180,9 +212,10 @@ export default function EscolaInscricoesPage() {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     } catch {}
 
-    alert(`Inscrição de ${modalidadeAtual.nome} (${categoriaSel} - ${sexoSel}) submetida com sucesso ao Comitê do JEGDS 2026!`);
+    alert(`Inscrição de ${nomeFinal} (${modalidadeAtual.nome} - ${categoriaSel} ${sexoSel}) submetida com sucesso!`);
     setAtletasSelecionadosIds([]);
     setProvasPorAtleta({});
+    setNomeEquipeSel('');
   };
 
   const handleGerarPdf = async (insc: InscricaoEquipe) => {
@@ -213,7 +246,7 @@ export default function EscolaInscricoesPage() {
       await JegdPdfGenerator.gerarCrachasEmLote(
         escola,
         atletasEquipe,
-        insc.modalidadeNome,
+        insc.nomeEquipe || insc.modalidadeNome,
         `${insc.categoria} (${insc.sexo})`
       );
     } catch (err) {
@@ -263,10 +296,10 @@ export default function EscolaInscricoesPage() {
           <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs">
             <h2 className="text-lg sm:text-xl font-black text-[#17221D] mb-1 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#00A878]" />
-              <span>Montar Nova Inscrição de Equipe</span>
+              <span>Montar Inscrição de Equipe</span>
             </h2>
             <p className="text-xs sm:text-sm text-[#4B5563] mb-5 sm:mb-6 font-medium">
-              Selecione a modalidade, categoria e convoque os atletas elegíveis conforme a Matriz Oficial do JEGDS 2026.
+              Selecione a modalidade, categoria, nomeie a equipe e convoque os atletas conforme as regras do JEGDS 2026.
             </p>
 
             <form onSubmit={handleSubmeterInscricao} className="space-y-5 sm:space-y-6">
@@ -274,17 +307,19 @@ export default function EscolaInscricoesPage() {
               {/* Seleção de Modalidade */}
               <div>
                 <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2.5">
-                  1. Selecione a Modalidade Esportiva (8 Oficiais)
+                  1. Selecione a Modalidade Esportiva
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                   {modalidades.map((mod) => {
                     const sel = modalidadeSelCodigo === mod.codigo;
+                    const maxEq = JegdsRulesService.getMaxEquipesPorModalidade(mod.codigo as any);
                     return (
                       <button
                         type="button"
                         key={mod.id}
                         onClick={() => {
                           setModalidadeSelCodigo(mod.codigo);
+                          setNumeroEquipeSel(1);
                           setAtletasSelecionadosIds([]);
                           setProvasPorAtleta({});
                         }}
@@ -296,7 +331,7 @@ export default function EscolaInscricoesPage() {
                       >
                         <p className="text-xs sm:text-sm font-black truncate">{mod.nome}</p>
                         <p className="text-[10px] sm:text-xs text-[#00A878] font-bold mt-0.5">
-                          Máx: {mod.maxAtletas}
+                          {mod.minAtletas}-{mod.maxAtletas} atletas {maxEq > 1 ? `• Até ${maxEq} times` : ''}
                         </p>
                       </button>
                     );
@@ -304,16 +339,98 @@ export default function EscolaInscricoesPage() {
                 </div>
               </div>
 
-              {/* Informação do Prazo da Modalidade Selecionada */}
+              {/* Seletor de Equipe 1 / Equipe 2 (Para Futebol e Futsal) */}
+              {maxEquipesPermitidas > 1 && (
+                <div className="bg-[#E8F7F1]/60 border border-[#00A878]/30 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-black text-[#087A5B] uppercase flex items-center gap-1.5">
+                      <Flame className="w-4 h-4 text-[#00A878]" />
+                      <span>Selecione qual equipe você está montando</span>
+                    </label>
+                    <span className="text-[11px] font-bold text-[#087A5B] bg-white px-2 py-0.5 rounded-md border border-[#00A878]/25">
+                      Permitido até 2 equipes
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNumeroEquipeSel(1)}
+                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                        numeroEquipeSel === 1
+                          ? 'bg-[#00A878] text-white shadow-sm'
+                          : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
+                      }`}
+                    >
+                      <span>🥇 Equipe 1 (Principal)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNumeroEquipeSel(2)}
+                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                        numeroEquipeSel === 2
+                          ? 'bg-[#00A878] text-white shadow-sm'
+                          : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
+                      }`}
+                    >
+                      <span>🥈 Equipe 2 (Secundária)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Customização: Nome da Equipe e Logo/Escudo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                    Nome da Equipe (Para Identificação)
+                  </label>
+                  <input
+                    type="text"
+                    value={nomeEquipeSel}
+                    onChange={(e) => setNomeEquipeSel(e.target.value)}
+                    placeholder={`Ex: ${escola.sigla} ${maxEquipesPermitidas > 1 ? `- Time ${numeroEquipeSel}` : 'A'}`}
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                    Escudo / Logo da Equipe
+                  </label>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {LOGOS_PREDEFINIDOS.map((badge) => (
+                      <button
+                        type="button"
+                        key={badge.id}
+                        onClick={() => setLogoEquipeSel(badge.icon)}
+                        title={badge.label}
+                        className={`w-10 h-10 rounded-xl text-lg flex items-center justify-center border transition-all ${
+                          logoEquipeSel === badge.icon
+                            ? 'bg-[#E8F7F1] border-[#00A878] scale-110 shadow-xs'
+                            : 'bg-[#F7F9F8] border-[#E2EAE5] hover:bg-white'
+                        }`}
+                      >
+                        {badge.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Informação do Prazo e Limites da Modalidade */}
               {modalidadeAtual && (
                 <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
                   <div>
-                    <span className="text-[#4B5563]">Data do Evento:</span>{' '}
-                    <strong className="text-[#17221D]">{new Date(modalidadeAtual.dataEvento).toLocaleDateString('pt-BR')}</strong>
+                    <span className="text-[#4B5563]">Elenco Exigido:</span>{' '}
+                    <strong className="text-[#17221D]">
+                      Mínimo {modalidadeAtual.minAtletas} e Máximo {modalidadeAtual.maxAtletas} alunos
+                    </strong>
                   </div>
                   <div className="flex items-center gap-1.5 text-amber-800 font-bold bg-amber-50 px-3 py-1 rounded-xl border border-amber-200 text-xs">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Prazo de Inscrição: {new Date(modalidadeAtual.prazoInscricao).toLocaleDateString('pt-BR')}</span>
+                    <span>Prazo: {new Date(modalidadeAtual.prazoInscricao).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
               )}
@@ -378,8 +495,13 @@ export default function EscolaInscricoesPage() {
                       4. Seleção de Alunos-Atletas
                     </label>
                     {modalidadeAtual && (
-                      <span className="text-xs font-black text-[#087A5B] bg-[#E8F7F1] px-3 py-1 rounded-full border border-[#00A878]/30">
-                        {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} inscritos (Mín: {modalidadeAtual.minAtletas})
+                      <span className={`text-xs font-black px-3 py-1 rounded-full border ${
+                        atletasSelecionadosIds.length >= modalidadeAtual.minAtletas &&
+                        atletasSelecionadosIds.length <= modalidadeAtual.maxAtletas
+                          ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} convocados (Mín: {modalidadeAtual.minAtletas})
                       </span>
                     )}
                   </div>
@@ -420,7 +542,7 @@ export default function EscolaInscricoesPage() {
                               <div className="flex items-center gap-3.5">
                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
                                   selecionado ? 'bg-[#00A878] border-[#00A878] text-white' : 'border-[#CBD5E1] bg-white'
-                                }`}>
+                                }}`}>
                                   {selecionado && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
                                 </div>
                                 <div>
@@ -486,12 +608,13 @@ export default function EscolaInscricoesPage() {
                   !validacaoMatriz.valido ||
                   prazoExpirado ||
                   !modalidadeAtual ||
-                  atletasSelecionadosIds.length < (modalidadeAtual?.minAtletas || 1)
+                  atletasSelecionadosIds.length < (modalidadeAtual?.minAtletas || 1) ||
+                  atletasSelecionadosIds.length > (modalidadeAtual?.maxAtletas || 99)
                 }
                 className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm sm:text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Sparkles className="w-5 h-5" />
-                <span>Confirmar e Enviar Inscrição para o Comitê JEGDS</span>
+                <span>Confirmar e Enviar Inscrição da Equipe</span>
               </button>
 
             </form>
@@ -501,7 +624,7 @@ export default function EscolaInscricoesPage() {
         {/* Resumo das Inscrições Efetuadas */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs space-y-4">
-            <h3 className="text-lg font-black text-[#17221D]">Inscrições Realizadas ({inscricoes.length})</h3>
+            <h3 className="text-lg font-black text-[#17221D]">Equipes Submetidas ({inscricoes.length})</h3>
 
             {inscricoes.length === 0 ? (
               <p className="text-sm text-[#4B5563] text-center py-8">
@@ -515,11 +638,18 @@ export default function EscolaInscricoesPage() {
                     className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 space-y-3"
                   >
                     <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-base font-black text-[#17221D]">{insc.modalidadeNome}</h4>
-                        <p className="text-xs text-[#4B5563] mt-0.5 font-medium">
-                          {insc.categoria} • {insc.sexo}
-                        </p>
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-9 h-9 rounded-xl bg-white border border-[#E2EAE5] flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                          {insc.logoUrl || '🛡️'}
+                        </span>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-[#17221D]">
+                            {insc.nomeEquipe || insc.modalidadeNome}
+                          </h4>
+                          <p className="text-xs text-[#4B5563] mt-0.5 font-medium">
+                            {insc.modalidadeNome} • {insc.categoria} • {insc.sexo}
+                          </p>
+                        </div>
                       </div>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
                         insc.status === 'VALIDADA'
@@ -564,7 +694,7 @@ export default function EscolaInscricoesPage() {
 
                       <button
                         type="button"
-                        onClick={() => handleExcluirInscricao(insc.id, insc.modalidadeNome)}
+                        onClick={() => handleExcluirInscricao(insc.id, insc.nomeEquipe || insc.modalidadeNome)}
                         className="p-2 rounded-xl bg-white hover:bg-red-50 text-[#4B5563] hover:text-red-600 border border-[#E2EAE5] hover:border-red-200 transition-colors shadow-2xs"
                         title="Remover"
                       >

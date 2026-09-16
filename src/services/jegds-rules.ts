@@ -158,7 +158,6 @@ export class JegdsRulesService {
 
     // Regra 2: Modalidades que são exclusivamente MASCULINAS
     const modalidadesApenasMasculino: ModalidadeCodigoJEGDS[] = [
-      'futebol_campo',
       'voleibol',
       'beach_soccer',
       'tenis_mesa'
@@ -171,8 +170,8 @@ export class JegdsRulesService {
       };
     }
 
-    // Regra 3: Modalidades mistas/ambos os sexos permitidas
-    const modalidadesMascFem: ModalidadeCodigoJEGDS[] = ['atletismo', 'xadrez', 'futsal', 'queimada'];
+    // Regra 3: Modalidades em ambos os sexos permitidas (Masc e Fem)
+    const modalidadesMascFem: ModalidadeCodigoJEGDS[] = ['atletismo', 'xadrez', 'futsal', 'queimada', 'futebol_campo'];
     if (modalidadesMascFem.includes(modalidade)) {
       return { valido: true };
     }
@@ -271,5 +270,16 @@ export class JegdsRulesService {
   ): boolean {
     const prazo = typeof prazoInscricao === 'string' ? new Date(`${prazoInscricao}T23:59:59`) : prazoInscricao;
     return dataAtual.getTime() > prazo.getTime();
+  }
+
+  /**
+   * Retorna o número máximo de equipes permitidas por escola para uma modalidade
+   * Futebol e Futsal permitem até 2 equipes por categoria e sexo.
+   */
+  public static getMaxEquipesPorModalidade(modalidade: ModalidadeCodigoJEGDS): number {
+    if (modalidade === 'futsal' || modalidade === 'futebol_campo') {
+      return 2;
+    }
+    return 1;
   }
 }

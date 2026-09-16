@@ -137,6 +137,9 @@ export interface InscricaoEquipe {
   modalidadeNome: string;
   categoria: CategoriaIdade;
   sexo: Genero;
+  nomeEquipe?: string; // Nome personalizado para diferenciar equipes da mesma escola (ex: "Sulamita SEDE A")
+  logoUrl?: string; // Logo / Escudo da equipe
+  numeroEquipe?: number; // 1 ou 2 para Futebol e Futsal
   atletaIds: string[];
   provasPorAtleta?: Record<string, string[]>; // Para atletismo: atletaId -> ["100m", "salto"]
   comissaoIds: string[];
