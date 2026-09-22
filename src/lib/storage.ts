@@ -426,6 +426,42 @@ export class JegdStorage {
     return this.isComiteAuth() || this.isSuperAdminAuth();
   }
 
+  public static logoutEscola(): void {
+    if (!this.isClient()) return;
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_AUTH_ESCOLA);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_AUTH_USER);
+    localStorage.removeItem('jegd_current_escola_auth');
+    localStorage.removeItem('jegds_current_escola_auth');
+    localStorage.removeItem('jegd_current_user_auth');
+    localStorage.removeItem('jegds_current_user_auth');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('jegd-auth-changed'));
+    }
+  }
+
+  public static logoutAdmin(): void {
+    if (!this.isClient()) return;
+    localStorage.removeItem(STORAGE_KEYS.COMITE_AUTH);
+    localStorage.removeItem(STORAGE_KEYS.SUPERADMIN_AUTH);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_AUTH_USER);
+    localStorage.removeItem('jegd_comite_auth');
+    localStorage.removeItem('jegds_comite_auth');
+    localStorage.removeItem('jegd_superadmin_auth');
+    localStorage.removeItem('jegds_superadmin_auth');
+    localStorage.removeItem('jegd_current_user_auth');
+    localStorage.removeItem('jegds_current_user_auth');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('jegd-auth-changed'));
+    }
+  }
+
+  public static logoutAll(): void {
+    this.logoutEscola();
+    this.logoutAdmin();
+  }
+
   // ==========================================
   // MODALIDADES
   // ==========================================

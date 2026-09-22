@@ -46,9 +46,11 @@ export default function Navbar() {
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('jegd-municipio-changed', handleMunicipioChange);
+    window.addEventListener('jegd-auth-changed', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('jegd-municipio-changed', handleMunicipioChange);
+      window.removeEventListener('jegd-auth-changed', handleStorageChange);
     };
   }, [pathname]);
 
@@ -57,18 +59,20 @@ export default function Navbar() {
     setMenuMobileAberto(false);
   }, [pathname]);
 
-  const handleLogoutEscola = () => {
-    JegdStorage.setCurrentEscola(null);
+  const handleLogoutEscola = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    JegdStorage.logoutEscola();
     setEscolaAtual(null);
     setMenuMobileAberto(false);
-    router.push('/escola/login');
+    window.location.href = '/escola/login';
   };
 
-  const handleLogoutAdmin = () => {
-    JegdStorage.setAdminAuth(false);
+  const handleLogoutAdmin = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    JegdStorage.logoutAdmin();
     setIsAdmin(false);
     setMenuMobileAberto(false);
-    router.push('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   const siglaEvento = municipioAtual?.siglaEvento || 'JEGD 2026';

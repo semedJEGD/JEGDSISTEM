@@ -17,7 +17,8 @@ import {
   Printer,
   ShieldAlert,
   Download,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -149,6 +150,18 @@ export default function EscolaDashboardPage() {
               <Trophy className="w-4 h-4 text-[#00A878]" />
               <span>Ver Equipes & Súmulas</span>
             </Link>
+
+            <button
+              onClick={() => {
+                JegdStorage.logoutEscola();
+                window.location.href = '/escola/login';
+              }}
+              title="Desconectar da escola e voltar ao login"
+              className="w-full sm:w-auto px-4 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 flex items-center justify-center gap-2 transition-all text-center shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sair / Trocar Escola</span>
+            </button>
           </div>
         </div>
       </div>

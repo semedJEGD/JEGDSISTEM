@@ -25,7 +25,8 @@ import {
   Square,
   Eye,
   MessageSquare,
-  QrCode
+  QrCode,
+  LogOut
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -569,6 +570,17 @@ export default function AdminDashboardPage() {
             >
               <Bell className="w-4 h-4" />
               <span>Publicar Aviso</span>
+            </button>
+            <button
+              onClick={() => {
+                JegdStorage.logoutAdmin();
+                window.location.href = '/admin/login';
+              }}
+              title="Desconectar do painel administrativo"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 flex items-center justify-center gap-2 transition-all shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sair do Painel</span>
             </button>
           </div>
         </div>
