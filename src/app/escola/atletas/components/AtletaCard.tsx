@@ -83,8 +83,8 @@ export function AtletaCard({
 
       {/* Ações */}
       <div className="pt-3 border-t border-[#E2EAE5] flex items-center justify-between text-xs text-[#4B5563]">
-        <span>
-          Matrícula: <strong className="text-[#17221D]">{atleta.matricula}</strong>
+        <span className="font-mono">
+          Código: <strong className="text-emerald-800 font-black">{atleta.matricula}</strong>
         </span>
 
         <div className="flex items-center gap-2">

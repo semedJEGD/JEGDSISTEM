@@ -297,28 +297,54 @@ export function ModalCadastroAtleta({
 
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-[#17221D] mb-1">
-                  Série / Turma
+                  Série / Turma *
                 </label>
-                <input
-                  type="text"
+                <select
                   value={serieTurma}
                   onChange={(e) => setSerieTurma(e.target.value)}
-                  placeholder="Ex: 8º Ano B"
-                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white"
-                />
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
+                >
+                  <optgroup label="Ensino Fundamental (1º ao 9º Ano)">
+                    {OPCOES_SERIE_TURMA.filter(s => s.includes('Fundamental')).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Ensino Médio (1º ao 3º Ano)">
+                    {OPCOES_SERIE_TURMA.filter(s => s.includes('Médio')).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Outro">
+                    <option value="EJA / Regular">EJA / Regular</option>
+                  </optgroup>
+                </select>
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-[#17221D] mb-1">
-                  Matrícula Escolar
-                </label>
-                <input
-                  type="text"
-                  value={matricula}
-                  onChange={(e) => setMatricula(e.target.value)}
-                  placeholder="Ex: MAT-2026"
-                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs sm:text-sm font-bold text-[#17221D]">
+                    Código de Inscrição *
+                  </label>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <QrCode className="w-3 h-3 text-emerald-700" />
+                    Crachá Oficial
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={matricula}
+                    placeholder="Gerado automaticamente"
+                    className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-50/60 border border-emerald-300 text-emerald-950 text-xs sm:text-sm font-mono font-black focus:outline-none cursor-default"
+                  />
+                  <span className="absolute right-3 top-3 text-[11px] font-bold text-emerald-700">
+                    Automático
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#68756E] mt-1">
+                  Identificador único gerado para o Crachá e QR Code do atleta.
+                </p>
               </div>
             </div>
 

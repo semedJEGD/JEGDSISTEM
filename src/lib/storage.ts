@@ -470,12 +470,54 @@ export class JegdStorage {
     return list.find(a => a.id === id);
   }
 
+  /**
+   * Gera o próximo Código de Inscrição Sequencial Oficial do JEGD (ex: JEGD-2026-0001, JEGD-2026-0002)
+   * Este mesmo código é o identificador único do aluno e do seu Crachá Oficial com QR Code.
+   */
+  public static gerarProximoCodigoInscricao(municipioId?: string): string {
+    if (!this.isClient()) return 'JEGD-2026-0001';
+    this.init();
+    const curMun = municipioId ? this.getMunicipioById(municipioId) : this.getCurrentMunicipio();
+    const siglaEvento = (curMun?.siglaEvento || 'JEGD 2026').replace(/\s+/g, '-').toUpperCase();
+
+    const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+    const todosAtletas: Atleta[] = data ? JSON.parse(data) : [];
+
+    let maxSeq = 0;
+    for (const a of todosAtletas) {
+      const code = a.matricula || a.crachaToken || '';
+      const match = code.match(/(\d{4,})$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+    const nextSeq = Math.max(maxSeq + 1, todosAtletas.length + 1);
+    const formattedNum = String(nextSeq).padStart(4, '0');
+    return `${siglaEvento}-${formattedNum}`;
+  }
+
   public static saveAtleta(atleta: Atleta): void {
     if (!this.isClient()) return;
     const curMun = this.getCurrentMunicipio();
+
+    // Código de Inscrição Único Sequencial
+    const codigoInscricao = atleta.matricula && atleta.matricula.trim() !== '' && !atleta.matricula.startsWith('MAT-')
+      ? atleta.matricula
+      : this.gerarProximoCodigoInscricao(atleta.municipioId || curMun.id);
+
+    // O código do crachá é exatamente o mesmo código de inscrição do aluno
+    const crachaToken = atleta.crachaToken && atleta.crachaToken.trim() !== ''
+      ? atleta.crachaToken
+      : codigoInscricao;
+
     const atletaToSave: Atleta = {
       ...atleta,
-      municipioId: atleta.municipioId || curMun.id
+      municipioId: atleta.municipioId || curMun.id,
+      matricula: codigoInscricao,
+      crachaToken
     };
     const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
     const list: Atleta[] = data ? JSON.parse(data) : [];

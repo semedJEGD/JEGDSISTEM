@@ -8,6 +8,22 @@ export type RedeEscolar = 'MUNICIPAL' | 'ESTADUAL' | 'PARTICULAR' | 'FEDERAL';
 
 export type StatusInscricao = 'PENDENTE' | 'VALIDADA' | 'REJEITADA';
 
+export const OPCOES_SERIE_TURMA = [
+  '1º Ano (Fundamental)',
+  '2º Ano (Fundamental)',
+  '3º Ano (Fundamental)',
+  '4º Ano (Fundamental)',
+  '5º Ano (Fundamental)',
+  '6º Ano (Fundamental)',
+  '7º Ano (Fundamental)',
+  '8º Ano (Fundamental)',
+  '9º Ano (Fundamental)',
+  '1º Ano (Ensino Médio)',
+  '2º Ano (Ensino Médio)',
+  '3º Ano (Ensino Médio)',
+  'EJA / Regular'
+] as const;
+
 export type ModalidadeCodigo =
   | 'atletismo'
   | 'xadrez'

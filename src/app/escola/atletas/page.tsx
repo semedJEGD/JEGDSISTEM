@@ -116,8 +116,9 @@ export default function EscolaAtletasPage() {
     setSexo('MASCULINO');
     setDocumentoTipo('RG');
     setDocumentoNumero('');
-    setMatricula(`MAT-${Math.floor(1000 + Math.random() * 9000)}`);
-    setSerieTurma('7º Ano A');
+    const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(escola?.municipioId);
+    setMatricula(proximoCodigo);
+    setSerieTurma('7º Ano (Fundamental)');
     setNomeMae('');
     setTelefoneContato('(99) 98888-0000');
     setTipoSanguineo('O+');
@@ -264,16 +265,22 @@ export default function EscolaAtletasPage() {
       };
     });
 
+    const codigoFinal = matricula && matricula.trim() !== '' && !matricula.startsWith('MAT-')
+      ? matricula
+      : (atletaEditando?.matricula || JegdStorage.gerarProximoCodigoInscricao(escola.municipioId));
+
     const atleta: Atleta = {
       id: atletaId,
       escolaId: escola.id,
+      municipioId: escola.municipioId,
       nomeCompleto: nomeCompleto.toUpperCase(),
       dataNascimento,
       sexo,
       documentoTipo,
       documentoNumero,
-      matricula: matricula || `MAT-${Math.floor(1000 + Math.random() * 9000)}`,
-      serieTurma: serieTurma || 'Regular',
+      matricula: codigoFinal,
+      crachaToken: atletaEditando?.crachaToken || codigoFinal,
+      serieTurma: serieTurma || '7º Ano (Fundamental)',
       nomeMae,
       telefoneContato,
       tipoSanguineo,

@@ -39,12 +39,18 @@ export class LogisticaStorage {
    * Obtém ou gera o token único de crachá para um atleta (ex: CR-ATL-01-sx2zbn)
    */
   public static gerarOuObterTokenCracha(atletaId: string): string {
-    if (!isClient()) return `cracha_${atletaId}_jegd2026`;
+    if (!isClient()) return `CR-${atletaId.toUpperCase()}`;
     const atletas = getStoredAtletas();
     const atleta = atletas.find(a => a.id === atletaId);
-    if (!atleta) return `cracha_${atletaId}_jegd2026`;
+    if (!atleta) return `CR-${atletaId.toUpperCase()}`;
 
     if (atleta.crachaToken && atleta.crachaToken.trim() !== '') {
+      return atleta.crachaToken;
+    }
+
+    if (atleta.matricula && atleta.matricula.trim() !== '') {
+      atleta.crachaToken = atleta.matricula;
+      saveStoredAtleta(atleta);
       return atleta.crachaToken;
     }
 
