@@ -1,13 +1,82 @@
 import {
+  Municipio,
   Escola,
   ModalidadeConfig,
   ComunicadoAviso,
   Usuario
 } from '@/types/jegd';
 
+export const MUNICIPIOS_INICIAIS: Municipio[] = [
+  {
+    id: 'goncalves-dias-ma',
+    nome: 'Gonçalves Dias',
+    sigla: 'GD',
+    uf: 'MA',
+    slug: 'goncalves-dias',
+    nomeEvento: 'Secretaria Municipal de Educação de Gonçalves Dias',
+    siglaEvento: 'JEGDS 2026',
+    subdominio: 'gd',
+    dominio: 'jegds.goncalvesdias.ma.gov.br',
+    dominiosAdicionais: ['jegds.com.br', 'jegds-gd.vercel.app', 'jegdsistem.vercel.app'],
+    brasaoUrl: '/icon.png',
+    contatoSemed: 'semed@goncalvesdias.ma.gov.br',
+    ativo: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'santo-antonio-dos-lopes-ma',
+    nome: 'Santo Antônio dos Lopes',
+    sigla: 'SAL',
+    uf: 'MA',
+    slug: 'santo-antonio-dos-lopes',
+    nomeEvento: 'Secretaria Municipal de Educação de Santo Antônio dos Lopes',
+    siglaEvento: 'JESAL 2026',
+    subdominio: 'sal',
+    dominio: 'jesal.santoantoniodoslopes.ma.gov.br',
+    dominiosAdicionais: ['jesal.com.br', 'jegds-sal.vercel.app', 'jesal-2026.vercel.app'],
+    brasaoUrl: '/icon.png',
+    contatoSemed: 'semed@santoantoniodoslopes.ma.gov.br',
+    ativo: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'governador-archer-ma',
+    nome: 'Governador Archer',
+    sigla: 'GA',
+    uf: 'MA',
+    slug: 'governador-archer',
+    nomeEvento: 'Secretaria Municipal de Educação de Governador Archer',
+    siglaEvento: 'JEGA 2026',
+    subdominio: 'archer',
+    dominio: 'jega.governadorarcher.ma.gov.br',
+    dominiosAdicionais: ['jega.com.br', 'jegds-archer.vercel.app'],
+    brasaoUrl: '/icon.png',
+    contatoSemed: 'semed@governadorarcher.ma.gov.br',
+    ativo: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'governador-eugenio-barros-ma',
+    nome: 'Governador Eugênio Barros',
+    sigla: 'GEB',
+    uf: 'MA',
+    slug: 'governador-eugenio-barros',
+    nomeEvento: 'Secretaria Municipal de Educação de Governador Eugênio Barros',
+    siglaEvento: 'JEGEB 2026',
+    subdominio: 'eugeniobarros',
+    dominio: 'jegeb.governadoreugeniobarros.ma.gov.br',
+    dominiosAdicionais: ['jegeb.com.br', 'jegds-eugeniobarros.vercel.app', 'jegds-geb.vercel.app'],
+    brasaoUrl: '/icon.png',
+    contatoSemed: 'semed@governadoreugeniobarros.ma.gov.br',
+    ativo: true,
+    createdAt: new Date().toISOString()
+  }
+];
+
 export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
   {
     id: 'queimada',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'queimada',
     nome: 'Queimada',
     tipo: 'COLETIVA',
@@ -19,10 +88,11 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     maxAtletas: 12,
     maxProvasPorAtleta: 1,
     descricao: 'Dinâmica de 8 atletas em quadra. Masculino e Feminino em todas as 4 categorias.',
-    localPadrao: 'Quadra Poliesportiva Municipal de Gonçalves Dias'
+    localPadrao: 'Quadra Poliesportiva Municipal'
   },
   {
     id: 'tenis_mesa',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'tenis_mesa',
     nome: 'Tênis de Mesa',
     tipo: 'INDIVIDUAL',
@@ -38,6 +108,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
   },
   {
     id: 'atletismo',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'atletismo',
     nome: 'Atletismo',
     tipo: 'INDIVIDUAL',
@@ -54,6 +125,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
   },
   {
     id: 'beach_soccer',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'beach_soccer',
     nome: 'Beach Soccer',
     tipo: 'COLETIVA',
@@ -65,10 +137,11 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     maxAtletas: 12,
     maxProvasPorAtleta: 1,
     descricao: 'Exclusivamente Masculino na areia a partir do Infantil (12 anos). Não existe Mirim.',
-    localPadrao: 'Arena de Areia de Gonçalves Dias'
+    localPadrao: 'Arena de Areia Municipal'
   },
   {
     id: 'futsal',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'futsal',
     nome: 'Futsal',
     tipo: 'COLETIVA',
@@ -84,6 +157,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
   },
   {
     id: 'xadrez',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'xadrez',
     nome: 'Xadrez',
     tipo: 'INDIVIDUAL',
@@ -99,6 +173,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
   },
   {
     id: 'futebol_campo',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'futebol_campo',
     nome: 'Futebol de Campo',
     tipo: 'COLETIVA',
@@ -110,10 +185,11 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     maxAtletas: 20,
     maxProvasPorAtleta: 1,
     descricao: 'Permitido até 2 equipes por escola nos naipes Masculino e Feminino. Elenco com Min 11 e Max 20 atletas por equipe.',
-    localPadrao: 'Estádio Municipal de Gonçalves Dias'
+    localPadrao: 'Estádio Municipal'
   },
   {
     id: 'voleibol',
+    municipioId: 'goncalves-dias-ma',
     codigo: 'voleibol',
     nome: 'Voleibol',
     tipo: 'COLETIVA',
@@ -130,8 +206,10 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
 ];
 
 export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
+  // 1. GONÇALVES DIAS - MA
   {
     id: 'esc-aldenora-araujo',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Aldenora Araújo',
     sigla: 'ALDENORA ARAÚJO',
     inep: '21004501',
@@ -146,6 +224,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-anisio-gomes',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Anísio Gomes',
     sigla: 'ANÍSIO GOMES',
     inep: '21004502',
@@ -160,6 +239,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-anita-furtado',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Anita Furtado',
     sigla: 'ANITA FURTADO',
     inep: '21004503',
@@ -174,6 +254,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-antonio-goncalves-dias',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Antônio Gonçalves Dias',
     sigla: 'ANTÔNIO GD',
     inep: '21004504',
@@ -188,6 +269,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-basilio-alves',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Basílio Alves',
     sigla: 'BASÍLIO ALVES',
     inep: '21004505',
@@ -202,6 +284,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-emilio-murad',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Emílio Murad',
     sigla: 'EMÍLIO MURAD',
     inep: '21004506',
@@ -216,6 +299,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-jose-correa-lima',
+    municipioId: 'goncalves-dias-ma',
     nome: 'José Corrêa Lima',
     sigla: 'JOSÉ CORRÊA',
     inep: '21004507',
@@ -230,6 +314,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-jose-goncalves-dias',
+    municipioId: 'goncalves-dias-ma',
     nome: 'José Gonçalves Dias',
     sigla: 'JOSÉ GD',
     inep: '21004508',
@@ -244,6 +329,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-raimundo-reis',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Raimundo Reis',
     sigla: 'RAIMUNDO REIS',
     inep: '21004509',
@@ -258,6 +344,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-ce-sulamita-lucio',
+    municipioId: 'goncalves-dias-ma',
     nome: 'C.E Sulamita Lúcio - SEDE',
     sigla: 'SULAMITA SEDE',
     inep: '21004510',
@@ -271,21 +358,8 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
     createdAt: new Date().toISOString()
   },
   {
-    id: 'esc-ce-sulamita-anexo1',
-    nome: 'C.E Sulamita Lúcio - Anexo I',
-    sigla: 'SULAMITA ANEXO I',
-    inep: '21004513',
-    rede: 'ESTADUAL',
-    bairro: 'Zona Rural',
-    endereco: 'Gonçalves Dias - MA',
-    responsavelNome: 'Direção / Coordenação',
-    responsavelTelefone: '(99) 98801-0013',
-    loginEmail: 'sulamitaanexo1@educacao.ma.gov.br',
-    senhaHash: '123456',
-    createdAt: new Date().toISOString()
-  },
-  {
     id: 'esc-ue-benta-vilanova',
+    municipioId: 'goncalves-dias-ma',
     nome: 'U.E Benta Vilanova',
     sigla: 'U.E BENTA VILANOVA',
     inep: '21004511',
@@ -300,6 +374,7 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
   },
   {
     id: 'esc-cietec',
+    municipioId: 'goncalves-dias-ma',
     nome: 'C.I.E.T.E.C',
     sigla: 'C.I.E.T.E.C',
     inep: '21004512',
@@ -311,33 +386,228 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
     loginEmail: 'cietec@semed.gd.gov.br',
     senhaHash: '123456',
     createdAt: new Date().toISOString()
+  },
+
+  // 2. SANTO ANTÔNIO DOS LOPES - MA
+  {
+    id: 'esc-sal-coracao-jesus',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'Unidade Mais Integral Coração de Jesus',
+    sigla: 'CORAÇÃO DE JESUS',
+    inep: '21109320',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Santo Antônio dos Lopes - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98802-0001',
+    loginEmail: 'coracaojesus@semed.sal.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sal-ananias-murad',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'U.I. Ananias Murad',
+    sigla: 'ANANIAS MURAD',
+    inep: '21109583',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Santo Antônio dos Lopes - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98802-0002',
+    loginEmail: 'ananiasmurad@semed.sal.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sal-castelo-branco',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'U.I. Marechal Castelo Branco',
+    sigla: 'CASTELO BRANCO',
+    inep: '21109621',
+    rede: 'MUNICIPAL',
+    bairro: 'Bairro Novo',
+    endereco: 'Santo Antônio dos Lopes - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98802-0003',
+    loginEmail: 'castelobranco@semed.sal.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sal-rui-barbosa',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'Unidade Integrada Rui Barbosa',
+    sigla: 'RUI BARBOSA',
+    inep: '21109974',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Santo Antônio dos Lopes - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98802-0004',
+    loginEmail: 'ruibarbosa@semed.sal.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sal-valdemir-rocha',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'U.M.I. Dr. Valdemir Pereira Rocha',
+    sigla: 'DR. VALDEMIR',
+    inep: '21110034',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Santo Antônio dos Lopes - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98802-0005',
+    loginEmail: 'drvaldemir@semed.sal.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+
+  // 3. GOVERNADOR ARCHER - MA
+  {
+    id: 'esc-ga-antonio-fialho',
+    municipioId: 'governador-archer-ma',
+    nome: 'E.M. Antônio Fialho',
+    sigla: 'ANTÔNIO FIALHO',
+    inep: '21129193',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Archer - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98803-0001',
+    loginEmail: 'antoniofialho@semed.archer.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ga-jose-lourenco',
+    municipioId: 'governador-archer-ma',
+    nome: 'U.E. José Lourenço',
+    sigla: 'JOSÉ LOURENÇO',
+    inep: '21129266',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Archer - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98803-0002',
+    loginEmail: 'joselourenco@semed.archer.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ga-aldenora-bello',
+    municipioId: 'governador-archer-ma',
+    nome: 'U.E. Aldenora Bello',
+    sigla: 'ALDENORA BELLO',
+    inep: '21129274',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Archer - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98803-0003',
+    loginEmail: 'aldenorabello@semed.archer.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-ga-julia-lima',
+    municipioId: 'governador-archer-ma',
+    nome: 'U.I. Professora Júlia Lima',
+    sigla: 'JÚLIA LIMA',
+    inep: '21129290',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Archer - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98803-0004',
+    loginEmail: 'julialima@semed.archer.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+
+  // 4. GOVERNADOR EUGÊNIO BARROS - MA
+  {
+    id: 'esc-geb-maria-cidinha',
+    municipioId: 'governador-eugenio-barros-ma',
+    nome: 'U.I. Professora Maria Cidinha',
+    sigla: 'MARIA CIDINHA',
+    inep: '21129703',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Eugênio Barros - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98804-0001',
+    loginEmail: 'mariacidinha@semed.eugeniobarros.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-geb-joaquim-gomes',
+    municipioId: 'governador-eugenio-barros-ma',
+    nome: 'U.E. Joaquim Gomes',
+    sigla: 'JOAQUIM GOMES',
+    inep: '21129770',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Eugênio Barros - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98804-0002',
+    loginEmail: 'joaquimgomes@semed.eugeniobarros.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-geb-raimunda-felix',
+    municipioId: 'governador-eugenio-barros-ma',
+    nome: 'U.I. Professora Raimunda Félix',
+    sigla: 'RAIMUNDA FÉLIX',
+    inep: '21130060',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Governador Eugênio Barros - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98804-0003',
+    loginEmail: 'raimundafelix@semed.eugeniobarros.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-geb-macario-oliveira',
+    municipioId: 'governador-eugenio-barros-ma',
+    nome: 'U.E. Macário Oliveira II',
+    sigla: 'MACÁRIO OLIVEIRA',
+    inep: '21203784',
+    rede: 'MUNICIPAL',
+    bairro: 'Zona Rural',
+    endereco: 'Governador Eugênio Barros - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98804-0004',
+    loginEmail: 'macario@semed.eugeniobarros.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
   }
 ];
 
 export const COMUNICADOS_JEGDS: ComunicadoAviso[] = [
   {
     id: 'aviso-01',
-    titulo: 'Regulamento Oficial do JEGDS 2026 - Gonçalves Dias Publicado',
-    conteudo: 'A SEMED e o Comitê Organizador convidam todas as 12 escolas oficiais a realizarem as inscrições de seus alunos nas 8 modalidades. O evento ocorre entre 21/11/2026 e 19/12/2026.',
+    municipioId: 'goncalves-dias-ma',
+    titulo: 'Regulamento Oficial dos Jogos Escolares 2026 Publicado',
+    conteudo: 'A SEMED e o Comitê Organizador convidam todas as escolas oficiais a realizarem as inscrições de seus alunos nas modalidades autorizadas.',
     categoria: 'REGULAMENTO',
     dataPublicacao: '14/09/2026',
     urgente: true,
-    autor: 'Comitê Organizador JEGDS 2026'
-  },
-  {
-    id: 'aviso-02',
-    titulo: 'Prazos de Inscrição: 7 dias de antecedência de cada modalidade',
-    conteudo: 'Atenção aos prazos de encerramento: Queimada e Tênis de Mesa encerram em 21/11; Atletismo e Beach Soccer em 28/11; Futsal, Xadrez, Futebol e Voleibol em 05/12.',
-    categoria: 'CRONOGRAMA',
-    dataPublicacao: '14/09/2026',
-    urgente: false,
-    autor: 'Coordenação Geral de Desporto'
+    autor: 'Comitê Organizador'
   }
 ];
 
 export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
+  // 1. Gonçalves Dias - MA
   {
     id: 'coord-elias-veloso',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Elias Veloso (SEMED)',
     email: 'elias.veloso@semed.gd.gov.br',
     telefone: '(99) 98801-1001',
@@ -346,10 +616,51 @@ export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
   },
   {
     id: 'coord-herbert-sa',
+    municipioId: 'goncalves-dias-ma',
     nome: 'Herbert de Sá (SEMED)',
     email: 'herbert.sa@semed.gd.gov.br',
     telefone: '(99) 98801-1002',
     papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  // 2. Santo Antônio dos Lopes - MA
+  {
+    id: 'coord-sal-semed',
+    municipioId: 'santo-antonio-dos-lopes-ma',
+    nome: 'Coordenação SEMED Santo Antônio dos Lopes',
+    email: 'semed@santoantoniodoslopes.ma.gov.br',
+    telefone: '(99) 98802-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  // 3. Governador Archer - MA
+  {
+    id: 'coord-ga-semed',
+    municipioId: 'governador-archer-ma',
+    nome: 'Coordenação SEMED Governador Archer',
+    email: 'semed@governadorarcher.ma.gov.br',
+    telefone: '(99) 98803-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  // 4. Governador Eugênio Barros - MA
+  {
+    id: 'coord-geb-semed',
+    municipioId: 'governador-eugenio-barros-ma',
+    nome: 'Coordenação SEMED Governador Eugênio Barros',
+    email: 'semed@governadoreugeniobarros.ma.gov.br',
+    telefone: '(99) 98804-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  // SuperAdmin Master Global
+  {
+    id: 'superadmin-master',
+    municipioId: null,
+    nome: 'Administrador Geral dos Jogos / IDEB na Prática',
+    email: 'superadmin@jogosescolares.gov.br',
+    telefone: '(99) 99999-9999',
+    papel: 'SUPERADMIN',
     createdAt: new Date().toISOString()
   }
 ];

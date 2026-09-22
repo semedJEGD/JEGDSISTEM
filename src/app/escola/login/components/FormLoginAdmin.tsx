@@ -1,40 +1,48 @@
 'use client';
 
 import React from 'react';
-import { Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Lock, Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { Usuario } from '@/types/jegd';
 
 interface FormLoginAdminProps {
-  adminCoordenador: 'ELIAS_VELOSO' | 'HERBERT_SA';
-  setAdminCoordenador: (val: 'ELIAS_VELOSO' | 'HERBERT_SA') => void;
+  coordenadores: Usuario[];
+  coordenadorSelecionadoId: string;
+  setCoordenadorSelecionadoId: (val: string) => void;
   adminSenha: string;
   setAdminSenha: (val: string) => void;
   mostrarSenhaAdmin: boolean;
   setMostrarSenhaAdmin: (val: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
+  nomeMunicipio?: string;
 }
 
 export function FormLoginAdmin({
-  adminCoordenador,
-  setAdminCoordenador,
+  coordenadores,
+  coordenadorSelecionadoId,
+  setCoordenadorSelecionadoId,
   adminSenha,
   setAdminSenha,
   mostrarSenhaAdmin,
   setMostrarSenhaAdmin,
-  onSubmit
+  onSubmit,
+  nomeMunicipio
 }: FormLoginAdminProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-3.5">
       <div>
         <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-          Coordenador Responsável
+          Coordenador Responsável ({nomeMunicipio || 'SEMED'})
         </label>
         <select
-          value={adminCoordenador}
-          onChange={(e) => setAdminCoordenador(e.target.value as any)}
+          value={coordenadorSelecionadoId}
+          onChange={(e) => setCoordenadorSelecionadoId(e.target.value)}
           className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
         >
-          <option value="ELIAS_VELOSO">Elias Veloso (SEMED)</option>
-          <option value="HERBERT_SA">Herbert de Sá (SEMED)</option>
+          {coordenadores.map((coord) => (
+            <option key={coord.id} value={coord.id}>
+              {coord.nome} {coord.papel === 'SUPERADMIN' ? '⭐ (SuperAdmin)' : ''}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -61,8 +69,9 @@ export function FormLoginAdmin({
             {mostrarSenhaAdmin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           </button>
         </div>
-        <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-          Acesso restrito à Coordenação Geral SEMED
+        <p className="text-[10px] text-[#4B5563] mt-1 font-medium flex items-center justify-between">
+          <span>Acesso restrito à Coordenação SEMED de {nomeMunicipio || 'Município'}</span>
+          <span className="text-[10px] text-emerald-700 font-bold">Padrao: semed2026</span>
         </p>
       </div>
 
@@ -70,6 +79,7 @@ export function FormLoginAdmin({
         type="submit"
         className="w-full py-3 px-5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-xs sm:text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
       >
+        <Shield className="w-4 h-4" />
         <span>Acessar Painel da Coordenação</span>
         <ArrowRight className="w-4 h-4" />
       </button>

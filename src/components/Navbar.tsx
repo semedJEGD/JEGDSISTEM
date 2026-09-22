@@ -18,7 +18,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
-import { Escola } from '@/types/jegd';
+import { Escola, Municipio } from '@/types/jegd';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -26,19 +26,30 @@ export default function Navbar() {
   const [escolaAtual, setEscolaAtual] = useState<Escola | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+  const [municipioAtual, setMunicipioAtual] = useState<Municipio | null>(null);
 
   useEffect(() => {
     JegdStorage.init();
     setEscolaAtual(JegdStorage.getCurrentEscola());
     setIsAdmin(JegdStorage.isAdminAuth());
+    setMunicipioAtual(JegdStorage.getCurrentMunicipio());
 
     const handleStorageChange = () => {
       setEscolaAtual(JegdStorage.getCurrentEscola());
       setIsAdmin(JegdStorage.isAdminAuth());
+      setMunicipioAtual(JegdStorage.getCurrentMunicipio());
+    };
+
+    const handleMunicipioChange = (e: any) => {
+      setMunicipioAtual(e.detail || JegdStorage.getCurrentMunicipio());
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('jegd-municipio-changed', handleMunicipioChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('jegd-municipio-changed', handleMunicipioChange);
+    };
   }, [pathname]);
 
   // Fecha o menu mobile quando a rota mudar
@@ -60,28 +71,34 @@ export default function Navbar() {
     router.push('/admin/login');
   };
 
+  const siglaEvento = municipioAtual?.siglaEvento || 'JEGD 2026';
+  const siglaPartes = siglaEvento.split(' ');
+  const siglaTexto = siglaPartes[0] || 'JEGD';
+  const anoTexto = siglaPartes[1] || '2026';
+  const nomeEvento = municipioAtual?.nomeEvento || `Jogos Escolares de ${municipioAtual?.nome || 'Gonçalves Dias'}`;
+
   return (
     <header className="sticky top-0 z-50 w-full pt-2.5 sm:pt-3 px-3 sm:px-6 lg:px-8 pb-1.5 transition-all">
       <div className="max-w-7xl mx-auto">
         {/* CONTAINER DO HEADER EM PAINEL FLUTUANTE PREMIUM */}
         <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl sm:rounded-full px-3.5 sm:px-6 py-2 sm:py-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
           
-          {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + JEGD | 2026 + SUBTÍTULO */}
+          {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + SIGLA | ANO + SUBTÍTULO */}
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0 select-none">
-            {/* Logo Oficial Intacta */}
+            {/* Logo Oficial */}
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300">
               <img 
-                src="/logo-jegd.png" 
-                alt="Logo Oficial JEGD 2026" 
+                src={municipioAtual?.logoUrl || municipioAtual?.brasaoUrl || "/logo-jegd.png"} 
+                alt={`Logo Oficial ${siglaEvento}`} 
                 className="w-full h-full object-contain p-0.5"
               />
             </div>
 
-            {/* Identidade Textual: JEGD | 2026 em Destaque */}
+            {/* Identidade Textual */}
             <div className="flex flex-col justify-center">
               <div className="flex items-baseline gap-1.5 sm:gap-2">
                 <span className="font-black text-xl sm:text-2xl tracking-tighter text-[#0B4B88] leading-none">
-                  JEGD
+                  {siglaTexto}
                 </span>
                 
                 {/* Divisória Vertical Elegante */}
@@ -89,15 +106,15 @@ export default function Navbar() {
                   |
                 </span>
 
-                {/* 2026 com Destaque e Presença Visual */}
+                {/* Ano */}
                 <span className="font-black text-2xl sm:text-[28px] italic tracking-tight text-[#00A878] leading-none">
-                  2026
+                  {anoTexto}
                 </span>
               </div>
 
               {/* Subtítulo Discreto e Institucional */}
-              <p className="hidden sm:block text-[8px] sm:text-[9.5px] font-bold tracking-widest text-[#6B7280] uppercase mt-0.5">
-                Jogos Escolares de Gonçalves Dias
+              <p className="hidden sm:block text-[8px] sm:text-[9.5px] font-bold tracking-widest text-[#6B7280] uppercase mt-0.5 max-w-[240px] truncate">
+                {nomeEvento}
               </p>
             </div>
           </Link>

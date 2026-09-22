@@ -282,4 +282,79 @@ export class JegdsRulesService {
     }
     return 1;
   }
+
+  /**
+   * Normaliza texto para comparação sem acentos, pontuação e maiúsculas
+   */
+  public static normalizarTexto(texto: string): string {
+    if (!texto) return '';
+    return texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Normaliza documento removendo pontuação
+   */
+  public static normalizarDocumento(doc: string): string {
+    if (!doc) return '';
+    return doc.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+  }
+
+  /**
+   * Avalia duplicidade de cadastro de estudante entre atletas cadastrados
+   */
+  public static compararDuplicidade(
+    novo: { nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string },
+    existente: { id: string; nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; escolaId: string }
+  ): { duplicado: boolean; motivo?: 'DOCUMENTO' | 'NOME_DATA_NASC' | 'MATRICULA'; descricao?: string } {
+    const docNovo = this.normalizarDocumento(novo.documentoNumero || '');
+    const docExistente = this.normalizarDocumento(existente.documentoNumero || '');
+
+    // 1. Coincidência estrita por Documento (RG / CPF / Certidão)
+    if (docNovo && docExistente && docNovo.length >= 4 && docNovo === docExistente) {
+      return {
+        duplicado: true,
+        motivo: 'DOCUMENTO',
+        descricao: `Documento idêntico já cadastrado (${existente.documentoNumero}).`
+      };
+    }
+
+    // 2. Coincidência por Nome Completo + Data de Nascimento
+    const nomeNovo = this.normalizarTexto(novo.nomeCompleto);
+    const nomeExistente = this.normalizarTexto(existente.nomeCompleto);
+
+    if (
+      nomeNovo &&
+      nomeExistente &&
+      nomeNovo === nomeExistente &&
+      novo.dataNascimento &&
+      existente.dataNascimento &&
+      novo.dataNascimento === existente.dataNascimento
+    ) {
+      return {
+        duplicado: true,
+        motivo: 'NOME_DATA_NASC',
+        descricao: `Nome completo e Data de Nascimento idênticos (${existente.nomeCompleto} - ${existente.dataNascimento}).`
+      };
+    }
+
+    // 3. Coincidência por Matrícula na mesma escola
+    const matNovo = this.normalizarTexto(novo.matricula || '');
+    const matExistente = this.normalizarTexto(existente.matricula || '');
+    if (matNovo && matExistente && matNovo.length >= 3 && matNovo === matExistente) {
+      return {
+        duplicado: true,
+        motivo: 'MATRICULA',
+        descricao: `Número de matrícula escolar idêntico (${existente.matricula}).`
+      };
+    }
+
+    return { duplicado: false };
+  }
 }
+

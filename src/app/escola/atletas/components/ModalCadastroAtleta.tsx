@@ -9,8 +9,19 @@ import {
   Trophy,
   Check
 } from 'lucide-react';
-import { Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade } from '@/types/jegd';
+import { Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade, Escola } from '@/types/jegd';
 import { JegdStorage } from '@/lib/storage';
+import { AlertCircle, ShieldAlert, Sparkles, UserCheck } from 'lucide-react';
+
+interface DiagnosticoDuplicidadeProps {
+  duplicado: boolean;
+  tipoConflito?: 'MESMA_ESCOLA' | 'OUTRA_ESCOLA';
+  atletaExistente?: Atleta;
+  escolaExistente?: Escola;
+  motivo?: 'DOCUMENTO' | 'NOME_DATA_NASC' | 'MATRICULA';
+  descricao?: string;
+  mensagemUsuario?: string;
+}
 
 interface ModalCadastroAtletaProps {
   isOpen: boolean;
@@ -45,6 +56,8 @@ interface ModalCadastroAtletaProps {
   handleAvancarParaEtapa2: (e: React.FormEvent) => void;
   handleSalvarAtleta: (continuar?: boolean) => void;
   escolaId: string;
+  diagnosticoDuplicidade?: DiagnosticoDuplicidadeProps;
+  onCarregarAtletaDuplicado?: (atleta: Atleta) => void;
 }
 
 export function ModalCadastroAtleta({
@@ -79,9 +92,13 @@ export function ModalCadastroAtleta({
   toggleProva,
   handleAvancarParaEtapa2,
   handleSalvarAtleta,
-  escolaId
+  escolaId,
+  diagnosticoDuplicidade,
+  onCarregarAtletaDuplicado
 }: ModalCadastroAtletaProps) {
   if (!isOpen) return null;
+
+  const bloqueadoPorOutraEscola = diagnosticoDuplicidade?.duplicado && diagnosticoDuplicidade.tipoConflito === 'OUTRA_ESCOLA';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
@@ -138,6 +155,46 @@ export function ModalCadastroAtleta({
         {/* ETAPA 1: DADOS DO ALUNO */}
         {etapaAtual === 1 && (
           <form onSubmit={handleAvancarParaEtapa2} className="space-y-4">
+
+            {/* Alerta de Duplicidade - Mesma Escola */}
+            {diagnosticoDuplicidade?.duplicado && diagnosticoDuplicidade.tipoConflito === 'MESMA_ESCOLA' && diagnosticoDuplicidade.atletaExistente && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fadeIn">
+                <div className="flex items-start gap-2.5">
+                  <UserCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-emerald-900">
+                      Estudante já cadastrado nesta escola!
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-emerald-800 mt-0.5">
+                      {diagnosticoDuplicidade.mensagemUsuario}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onCarregarAtletaDuplicado?.(diagnosticoDuplicidade.atletaExistente!)}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0 shadow-xs flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Gerenciar Modalidades</span>
+                </button>
+              </div>
+            )}
+
+            {/* Alerta de Duplicidade - Outra Escola */}
+            {diagnosticoDuplicidade?.duplicado && diagnosticoDuplicidade.tipoConflito === 'OUTRA_ESCOLA' && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 border border-rose-300 flex items-start gap-2.5 shadow-xs animate-fadeIn">
+                <ShieldAlert className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-rose-900">
+                    Bloqueio de Duplicidade — Conflito de Instituição
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-rose-800 mt-0.5">
+                    {diagnosticoDuplicidade.mensagemUsuario}
+                  </p>
+                </div>
+              </div>
+            )}
             
             {/* Upload Foto (Opcional) */}
             <div className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5]">
@@ -219,7 +276,7 @@ export function ModalCadastroAtleta({
                   onChange={(e) => setDocumentoTipo(e.target.value as TipoDocumento)}
                   className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
                 >
-                  <option value="RG">RG (Identidade)</option>
+                  <option value="RG">RG (Carteira de Identidade)</option>
                   <option value="CERTIDAO">Certidão de Nascimento</option>
                 </select>
               </div>
@@ -233,7 +290,7 @@ export function ModalCadastroAtleta({
                   required
                   value={documentoNumero}
                   onChange={(e) => setDocumentoNumero(e.target.value)}
-                  placeholder="Número obrigatório"
+                  placeholder="Ex: 0001234567-8"
                   className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
                 />
               </div>
@@ -275,7 +332,12 @@ export function ModalCadastroAtleta({
               </button>
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                disabled={bloqueadoPorOutraEscola}
+                className={`w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black shadow-md flex items-center justify-center gap-2 transition-all ${
+                  bloqueadoPorOutraEscola
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                    : 'bg-[#00A878] hover:bg-[#087A5B] text-white shadow-[#00A878]/20 hover:scale-[1.01]'
+                }`}
               >
                 <span>Avançar para Escolha da Modalidade (Etapa 2)</span>
                 <ArrowRight className="w-4 h-4" />

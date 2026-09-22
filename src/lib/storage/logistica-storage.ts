@@ -1,9 +1,9 @@
 import { Atleta, Escola, RegistroControle } from '@/types/jegd';
 
 export const STORAGE_KEYS_LOGISTICA = {
-  REGISTROS_CONTROLE: 'jegds_registros_controle_v5',
-  ATLETAS: 'jegds_atletas_v5',
-  ESCOLAS: 'jegds_escolas_v5'
+  REGISTROS_CONTROLE: 'jegds_registros_controle_v6',
+  ATLETAS: 'jegds_atletas_v6',
+  ESCOLAS: 'jegds_escolas_v6'
 };
 
 function isClient(): boolean {

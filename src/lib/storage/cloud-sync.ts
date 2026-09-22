@@ -89,6 +89,23 @@ export class JegdCloudSync {
   }
 
   /**
+   * Sincroniza dados do município com o PostgreSQL
+   */
+  static async syncMunicipio(municipio: any): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch('/api/municipios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(municipio)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Sincroniza dados da escola com o PostgreSQL
    */
   static async syncEscola(escola: any): Promise<boolean> {

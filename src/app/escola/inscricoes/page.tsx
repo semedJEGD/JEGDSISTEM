@@ -85,6 +85,22 @@ export default function EscolaInscricoesPage() {
     if (mods.length > 0) {
       setModalidadeSelCodigo(mods[0].codigo);
     }
+
+    const handleSync = () => {
+      setTodosAtletas(JegdStorage.getAtletas(atual.id));
+      setInscricoes(JegdStorage.getInscricoes(atual.id));
+      setModalidades(JegdStorage.getModalidades());
+    };
+    window.addEventListener('jegd-data-synced', handleSync);
+
+    const interval = setInterval(() => {
+      JegdStorage.sincronizarComNuvem().catch(() => {});
+    }, 4000);
+
+    return () => {
+      window.removeEventListener('jegd-data-synced', handleSync);
+      clearInterval(interval);
+    };
   }, []);
 
   const modalidadeAtual = modalidades.find(m => m.codigo === modalidadeSelCodigo);

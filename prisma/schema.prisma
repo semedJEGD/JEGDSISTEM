@@ -8,8 +8,9 @@ datasource db {
 }
 
 enum PapelUsuario {
-  ESCOLA
+  SUPERADMIN
   COMITE
+  ESCOLA
 }
 
 enum SexoAtleta {
@@ -35,8 +36,33 @@ enum StatusInscricao {
   REJEITADA
 }
 
+model Municipio {
+  id                String             @id @default(uuid())
+  nome              String
+  sigla             String?
+  uf                String             @default("MA")
+  slug              String             @unique
+  nomeEvento        String             // ex: "Jogos Escolares de Gonçalves Dias"
+  siglaEvento       String             // ex: "JEGDS"
+  logoUrl           String?
+  brasaoUrl         String?
+  contatoSemed      String?
+  ativo             Boolean            @default(true)
+  escolas           Escola[]
+  usuarios          Usuario[]
+  atletas           Atleta[]
+  modalidades       Modalidade[]
+  inscricoes        Inscricao[]
+  comunicados       Comunicado[]
+  registrosControle RegistroControle[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
 model Escola {
   id                  String       @id @default(uuid())
+  municipioId         String?
+  municipio           Municipio?   @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   nome                String
   sigla               String?
   inep                String?
@@ -51,18 +77,25 @@ model Escola {
   inscricoes          Inscricao[]
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
+
+  @@index([municipioId])
 }
 
 model Usuario {
-  id        String       @id @default(uuid())
-  nome      String
-  email     String       @unique
-  senhaHash String
-  papel     PapelUsuario @default(ESCOLA)
-  escolaId  String?
-  escola    Escola?      @relation(fields: [escolaId], references: [id], onDelete: Cascade)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id          String       @id @default(uuid())
+  municipioId String?
+  municipio   Municipio?   @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  nome        String
+  email       String       @unique
+  cpf         String?
+  senhaHash   String
+  papel       PapelUsuario @default(ESCOLA)
+  escolaId    String?
+  escola      Escola?      @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([municipioId])
 }
 
 enum TipoRegistroControle {
@@ -75,30 +108,37 @@ enum TipoRegistroControle {
 }
 
 model Atleta {
-  id                       String          @id @default(uuid())
+  id                       String             @id @default(uuid())
+  municipioId              String?
+  municipio                Municipio?         @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   nomeCompleto             String
   dataNascimento           DateTime
   sexo                     SexoAtleta
-  documentoTipo            DocumentoTipo   @default(RG)
+  documentoTipo            DocumentoTipo      @default(RG)
   documentoNumero          String
   documentoUrl             String?
   fotoUrl                  String?
-  crachaToken              String?         @unique
+  crachaToken              String?            @unique
   escolaId                 String
-  escola                   Escola          @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  escola                   Escola             @relation(fields: [escolaId], references: [id], onDelete: Cascade)
   categoria                CategoriaEtaria
-  consentimentoResponsavel Boolean         @default(true)
+  consentimentoResponsavel Boolean            @default(true)
   matricula                String?
   turma                    String?
   tipoSanguineo            String?
   inscricoes               Inscricao[]
   registrosControle        RegistroControle[]
-  createdAt                DateTime        @default(now())
-  updatedAt                DateTime        @updatedAt
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  @@index([municipioId])
+  @@index([escolaId])
 }
 
 model RegistroControle {
   id            String               @id @default(uuid())
+  municipioId   String?
+  municipio     Municipio?           @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   atletaId      String
   atleta        Atleta               @relation(fields: [atletaId], references: [id], onDelete: Cascade)
   tipo          TipoRegistroControle
@@ -109,13 +149,16 @@ model RegistroControle {
   detalhes      String?
   createdAt     DateTime             @default(now())
 
+  @@index([municipioId])
   @@index([atletaId])
   @@index([tipo])
 }
 
 model Modalidade {
   id                 String       @id @default(uuid())
-  codigo             String       @unique
+  municipioId        String?
+  municipio          Municipio?   @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  codigo             String
   nome               String
   tipo               String       @default("COLETIVA") // COLETIVA | INDIVIDUAL
   dataEvento         DateTime
@@ -128,10 +171,14 @@ model Modalidade {
   inscricoes         Inscricao[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
+
+  @@unique([municipioId, codigo])
 }
 
 model Inscricao {
   id             String          @id @default(uuid())
+  municipioId    String?
+  municipio      Municipio?      @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   atletaId       String
   atleta         Atleta          @relation(fields: [atletaId], references: [id], onDelete: Cascade)
   modalidadeId   String
@@ -148,14 +195,20 @@ model Inscricao {
   updatedAt      DateTime        @updatedAt
 
   @@unique([atletaId, modalidadeId, prova])
+  @@index([municipioId])
+  @@index([escolaId])
 }
 
 model Comunicado {
-  id             String   @id @default(uuid())
+  id             String     @id @default(uuid())
+  municipioId    String?
+  municipio      Municipio? @relation(fields: [municipioId], references: [id], onDelete: Cascade)
   titulo         String
   conteudo       String
-  categoria      String   @default("CRONOGRAMA")
-  urgente        Boolean  @default(false)
-  autor          String   @default("Comitê Organizador JEGDS 2026")
-  dataPublicacao DateTime @default(now())
+  categoria      String     @default("CRONOGRAMA")
+  urgente        Boolean    @default(false)
+  autor          String     @default("Comitê Organizador")
+  dataPublicacao DateTime   @default(now())
+
+  @@index([municipioId])
 }

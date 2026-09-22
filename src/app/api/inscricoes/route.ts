@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     // Localizar ou criar a Modalidade
-    let modalidade = await prisma.modalidade.findUnique({
+    let modalidade = await prisma.modalidade.findFirst({
       where: { codigo: modalidadeCodigo }
     });
 

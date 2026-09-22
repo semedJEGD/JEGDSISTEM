@@ -69,6 +69,18 @@ export default function EscolaAtletasPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const diagnosticoDuplicidade = React.useMemo(() => {
+    if (atletaEditando || !escola) return { duplicado: false };
+    if (!nomeCompleto.trim() && !documentoNumero.trim()) return { duplicado: false };
+    return JegdStorage.verificarDuplicidadeAtleta({
+      nomeCompleto,
+      dataNascimento,
+      documentoNumero,
+      matricula,
+      escolaIdAtual: escola.id
+    });
+  }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula]);
+
   useEffect(() => {
     JegdStorage.init();
     const atual = JegdStorage.getCurrentEscola();
@@ -79,6 +91,21 @@ export default function EscolaAtletasPage() {
     setEscola(atual);
     setAtletas(JegdStorage.getAtletas(atual.id));
     setModalidades(JegdStorage.getModalidades());
+
+    const handleSync = () => {
+      setAtletas(JegdStorage.getAtletas(atual.id));
+      setModalidades(JegdStorage.getModalidades());
+    };
+    window.addEventListener('jegd-data-synced', handleSync);
+
+    const interval = setInterval(() => {
+      JegdStorage.sincronizarComNuvem().catch(() => {});
+    }, 4000);
+
+    return () => {
+      window.removeEventListener('jegd-data-synced', handleSync);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleAbrirModalNovo = () => {
@@ -182,6 +209,29 @@ export default function EscolaAtletasPage() {
     if (!catCalc.categoria) {
       alert('A data de nascimento informada está fora da faixa etária oficial do JEGDS 2026 (9 a 20 anos).');
       return;
+    }
+
+    // Se estiver cadastrando novo (não editando), verifica duplicidade
+    if (!atletaEditando && escola) {
+      const diag = JegdStorage.verificarDuplicidadeAtleta({
+        nomeCompleto,
+        dataNascimento,
+        documentoNumero,
+        matricula,
+        escolaIdAtual: escola.id
+      });
+
+      if (diag.duplicado) {
+        if (diag.tipoConflito === 'OUTRA_ESCOLA') {
+          alert(diag.mensagemUsuario || 'Este estudante já se encontra cadastrado por outra escola.');
+          return;
+        } else if (diag.tipoConflito === 'MESMA_ESCOLA' && diag.atletaExistente) {
+          // Carrega os dados existentes e avança para a etapa de modalidades
+          handleAbrirModalEditar(diag.atletaExistente);
+          setEtapaAtual(2);
+          return;
+        }
+      }
     }
 
     // Se for primeira vez e só tem uma modalidade, pode auto-selecionar ou avançar
@@ -450,6 +500,11 @@ export default function EscolaAtletasPage() {
         handleAvancarParaEtapa2={handleAvancarParaEtapa2}
         handleSalvarAtleta={handleSalvarAtleta}
         escolaId={escola?.id || ''}
+        diagnosticoDuplicidade={diagnosticoDuplicidade}
+        onCarregarAtletaDuplicado={(atl) => {
+          handleAbrirModalEditar(atl);
+          setEtapaAtual(2);
+        }}
       />
 
     </div>

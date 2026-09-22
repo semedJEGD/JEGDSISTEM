@@ -30,6 +30,7 @@ import {
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
 import {
+  Municipio,
   Escola,
   Atleta,
   InscricaoEquipe,
@@ -50,6 +51,8 @@ import { AbaCrachaLogistica } from './components/AbaCrachaLogistica';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [municipioAtual, setMunicipioAtual] = useState<Municipio | null>(null);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
   const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
@@ -61,6 +64,14 @@ export default function AdminDashboardPage() {
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
   const [busca, setBusca] = useState('');
   const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  // Modal Nova Escola no Município
+  const [modalNovaEscolaAberto, setModalNovaEscolaAberto] = useState(false);
+  const [novaEscolaNome, setNovaEscolaNome] = useState('');
+  const [novaEscolaSigla, setNovaEscolaSigla] = useState('');
+  const [novaEscolaInep, setNovaEscolaInep] = useState('');
+  const [novaEscolaRede, setNovaEscolaRede] = useState<'MUNICIPAL' | 'ESTADUAL' | 'PARTICULAR' | 'FEDERAL'>('MUNICIPAL');
+  const [novaEscolaEmail, setNovaEscolaEmail] = useState('');
 
   // Filtros Avançados do Lote da Escola
   const [filtroModalidadeLote, setFiltroModalidadeLote] = useState<string>('TODAS');
@@ -87,25 +98,125 @@ export default function AdminDashboardPage() {
   const [novoAvisoCategoria, setNovoAvisoCategoria] = useState<'CRONOGRAMA' | 'REGULAMENTO' | 'ALERTA' | 'RESULTADOS'>('CRONOGRAMA');
   const [novoAvisoUrgente, setNovoAvisoUrgente] = useState(false);
 
+  const [sincronizandoOnline, setSincronizandoOnline] = useState(false);
+  const [ultimaSincronizacao, setUltimaSincronizacao] = useState<string>('Agora');
+
   useEffect(() => {
     JegdStorage.init();
-    if (!JegdStorage.isComiteAuth()) {
+    if (!JegdStorage.isAdminAuth()) {
       router.push('/admin/login');
       return;
     }
-    carregarTodosDados();
+    const munList = JegdStorage.getMunicipios();
+    setMunicipios(munList);
+
+    const currentUser = JegdStorage.getCurrentUser();
+    let curMun = JegdStorage.getCurrentMunicipio();
+
+    // Se for coordenador local, força o município atribuído ao seu usuário
+    if (currentUser && currentUser.papel === 'COORDENADOR' && currentUser.municipioId) {
+      const userMun = munList.find(m => m.id === currentUser.municipioId);
+      if (userMun) {
+        curMun = userMun;
+        JegdStorage.setCurrentMunicipio(userMun);
+      }
+    }
+
+    setMunicipioAtual(curMun);
+    carregarTodosDados(curMun?.id);
+
+    // Event listener para atualizações instantâneas de sincronização
+    const handleDataSynced = () => {
+      const targetMun = JegdStorage.getCurrentMunicipio();
+      carregarTodosDados(targetMun?.id);
+      setUltimaSincronizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+
+    window.addEventListener('jegd-data-synced', handleDataSynced);
+
+    // Polling ativo a cada 3.5 segundos com o banco de dados online
+    const interval = setInterval(() => {
+      JegdStorage.sincronizarComNuvem().catch(() => {});
+    }, 3500);
+
+    return () => {
+      window.removeEventListener('jegd-data-synced', handleDataSynced);
+      clearInterval(interval);
+    };
   }, []);
 
-  const carregarTodosDados = () => {
-    const escList = JegdStorage.getEscolas();
+  const handleForcarSincronizacao = async () => {
+    setSincronizandoOnline(true);
+    await JegdStorage.sincronizarComNuvem();
+    const curMun = JegdStorage.getCurrentMunicipio();
+    carregarTodosDados(curMun?.id);
+    setUltimaSincronizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    setTimeout(() => setSincronizandoOnline(false), 600);
+  };
+
+  const carregarTodosDados = (targetMunId?: string) => {
+    const curMun = targetMunId ? JegdStorage.getMunicipioById(targetMunId) : JegdStorage.getCurrentMunicipio();
+    const munId = curMun?.id;
+    if (curMun) setMunicipioAtual(curMun);
+
+    const escList = JegdStorage.getEscolas(munId);
     setEscolas(escList);
-    setAtletas(JegdStorage.getAtletas());
-    setInscricoes(JegdStorage.getInscricoes());
-    setModalidades(JegdStorage.getModalidades());
-    setComunicados(JegdStorage.getComunicados());
-    if (escList.length > 0 && !escolaSelecionadaId) {
+    setAtletas(JegdStorage.getAtletas(undefined, munId));
+    setInscricoes(JegdStorage.getInscricoes(undefined, munId));
+    setModalidades(JegdStorage.getModalidades(munId));
+    setComunicados(JegdStorage.getComunicados(munId));
+    if (escList.length > 0) {
       setEscolaSelecionadaId(escList[0].id);
+    } else {
+      setEscolaSelecionadaId('');
     }
+  };
+
+  const handleMudarMunicipio = (munId: string) => {
+    if (JegdStorage.isDomainLocked()) return;
+    const currentUser = JegdStorage.getCurrentUser();
+    if (currentUser?.papel === 'COORDENADOR' && !JegdStorage.isSuperAdminAuth()) return;
+
+    const munObj = municipios.find(m => m.id === munId);
+    if (munObj) {
+      JegdStorage.setCurrentMunicipio(munObj);
+      setMunicipioAtual(munObj);
+      carregarTodosDados(munId);
+    }
+  };
+
+  const handleCriarEscola = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novaEscolaNome.trim()) return;
+
+    const curMun = municipioAtual || JegdStorage.getCurrentMunicipio();
+    const cleanSigla = (novaEscolaSigla || novaEscolaNome).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const id = `esc-${cleanSigla}-${Date.now()}`;
+    const email = novaEscolaEmail.trim() || `${cleanSigla}@semed.${curMun.slug || 'municipal'}.gov.br`;
+
+    const novaEsc: Escola = {
+      id,
+      municipioId: curMun.id,
+      nome: novaEscolaNome.trim(),
+      sigla: (novaEscolaSigla || novaEscolaNome).toUpperCase().trim(),
+      inep: novaEscolaInep.trim() || '21000000',
+      rede: novaEscolaRede,
+      bairro: 'Centro',
+      endereco: `${curMun.nome} - ${curMun.uf}`,
+      responsavelNome: 'Direção / Coordenação',
+      responsavelTelefone: '(99) 98800-0000',
+      loginEmail: email,
+      senhaHash: '123456',
+      createdAt: new Date().toISOString()
+    };
+
+    JegdStorage.saveEscola(novaEsc);
+    carregarTodosDados(curMun.id);
+    setModalNovaEscolaAberto(false);
+    setNovaEscolaNome('');
+    setNovaEscolaSigla('');
+    setNovaEscolaInep('');
+    setNovaEscolaEmail('');
   };
 
   const toggleConferenciaAtleta = (atleta: Atleta) => {
@@ -375,9 +486,54 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 w-full max-w-full">
       
-      {/* Header Coordenadores SEMED */}
+      {/* Header Coordenadores SEMED com Contexto Municipal */}
       <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#00A878]/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+
+        {/* Seletor Rápido de Município no Painel */}
+        <div className="mb-4 bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-black text-emerald-950 flex-wrap">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <span>MUNICÍPIO ATIVO:</span>
+            <span className="bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-emerald-900 font-black">
+              {municipioAtual ? `${municipioAtual.nome} - ${municipioAtual.uf} (${municipioAtual.siglaEvento})` : 'Carregando...'}
+            </span>
+            <button
+              type="button"
+              onClick={handleForcarSincronizacao}
+              disabled={sincronizandoOnline}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-2xs transition-all disabled:opacity-60"
+              title="Sincronizar instantaneamente com o banco central"
+            >
+              <span className={sincronizandoOnline ? 'animate-spin inline-block' : 'inline-block'}>🔄</span>
+              <span>{sincronizandoOnline ? 'Sincronizando...' : `Online • Sinc: ${ultimaSincronizacao}`}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {JegdStorage.isSuperAdminAuth() && !JegdStorage.isDomainLocked() && (
+              <select
+                value={municipioAtual?.id || ''}
+                onChange={(e) => handleMudarMunicipio(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 text-ellipsis"
+              >
+                {municipios.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    Alternar p/ {m.nome} ({m.siglaEvento})
+                  </option>
+                ))}
+              </select>
+            )}
+            {JegdStorage.isSuperAdminAuth() && (
+              <Link
+                href="/admin/super"
+                className="px-3 py-1.5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white text-xs font-black shrink-0 transition-colors shadow-xs"
+              >
+                Central SuperAdmin
+              </Link>
+            )}
+          </div>
+        </div>
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
           <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
@@ -386,35 +542,44 @@ export default function AdminDashboardPage() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Painel da Coordenação SEMED</h1>
+                <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">
+                  Painel da Coordenação SEMED
+                </h1>
                 <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-black shrink-0">
-                  Elias Veloso & Herbert de Sá (SEMED)
+                  {municipioAtual ? municipioAtual.nomeEvento : 'Jogos Escolares'}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium break-words">
-                Conferência de lotes por escola, impressão oficial de delegações e monitoramento de inconsistências.
+                Conferência de lotes de {municipioAtual?.nome || 'Gonçalves Dias'}, emissão de crachás, súmulas e controle de vagas.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap sm:flex-nowrap">
+            <button
+              onClick={() => setModalNovaEscolaAberto(true)}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-white text-xs sm:text-sm font-bold shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0"
+            >
+              <PlusCircle className="w-4 h-4 text-[#00A878]" />
+              <span>Cadastrar Escola</span>
+            </button>
             <button
               onClick={() => setModalAvisoAberto(true)}
-              className="w-full lg:w-auto px-5 py-3 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all shrink-0"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all shrink-0"
             >
               <Bell className="w-4 h-4" />
-              <span>Publicar Comunicado</span>
+              <span>Publicar Aviso</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Estatísticas Gerais */}
+      {/* Estatísticas Gerais do Município Ativo */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
           <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Escolas</span>
           <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{escolas.length}</p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Gonçalves Dias</p>
+          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">{municipioAtual?.nome || 'Município'}</p>
         </div>
 
         <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
@@ -617,6 +782,117 @@ export default function AdminDashboardPage() {
         onClose={() => setModalAvisoAberto(false)}
         onSubmit={handleSalvarAviso}
       />
+
+      {/* Modal de Cadastro de Nova Escola no Município */}
+      {modalNovaEscolaAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#E2EAE5] shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E2EAE5] pb-3">
+              <div>
+                <h3 className="text-lg font-black text-[#17221D]">Cadastrar Nova Escola</h3>
+                <p className="text-xs text-[#68756E]">
+                  Adicionar ao município de <strong>{municipioAtual?.nome}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setModalNovaEscolaAberto(false)}
+                className="text-gray-400 hover:text-gray-700 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCriarEscola} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-[#17221D] mb-1">
+                  Nome da Escola *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={novaEscolaNome}
+                  onChange={(e) => setNovaEscolaNome(e.target.value)}
+                  placeholder="Ex: Escola Municipal Novo Horizonte"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold focus:outline-none focus:border-[#00A878]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
+                    Sigla / Nome Curto
+                  </label>
+                  <input
+                    type="text"
+                    value={novaEscolaSigla}
+                    onChange={(e) => setNovaEscolaSigla(e.target.value)}
+                    placeholder="Ex: NOVO HORIZONTE"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold focus:outline-none focus:border-[#00A878]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
+                    Código INEP
+                  </label>
+                  <input
+                    type="text"
+                    value={novaEscolaInep}
+                    onChange={(e) => setNovaEscolaInep(e.target.value)}
+                    placeholder="Ex: 21004599"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold focus:outline-none focus:border-[#00A878]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
+                    Rede de Ensino
+                  </label>
+                  <select
+                    value={novaEscolaRede}
+                    onChange={(e) => setNovaEscolaRede(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold focus:outline-none focus:border-[#00A878]"
+                  >
+                    <option value="MUNICIPAL">Municipal</option>
+                    <option value="ESTADUAL">Estadual</option>
+                    <option value="PARTICULAR">Particular</option>
+                    <option value="FEDERAL">Federal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17221D] mb-1">
+                    E-mail Institucional (Login)
+                  </label>
+                  <input
+                    type="email"
+                    value={novaEscolaEmail}
+                    onChange={(e) => setNovaEscolaEmail(e.target.value)}
+                    placeholder="escola@semed.gov.br"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold focus:outline-none focus:border-[#00A878]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2EAE5]">
+                <button
+                  type="button"
+                  onClick={() => setModalNovaEscolaAberto(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 text-[#17221D] font-bold text-xs hover:bg-gray-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs shadow-sm"
+                >
+                  Cadastrar Escola
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

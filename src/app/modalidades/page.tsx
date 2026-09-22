@@ -64,10 +64,13 @@ const MODALIDADES_ASSETS: Record<string, { img: string; alt: string }> = {
 export default function ModalidadesPage() {
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'COLETIVA' | 'INDIVIDUAL'>('TODOS');
+  const [siglaEvento, setSiglaEvento] = useState('JEGD 2026');
 
   useEffect(() => {
     JegdStorage.init();
     setModalidades(JegdStorage.getModalidades());
+    const curMun = JegdStorage.getCurrentMunicipio();
+    if (curMun) setSiglaEvento(curMun.siglaEvento);
   }, []);
 
   const modalidadesFiltradas = modalidades.filter(m => {
@@ -82,13 +85,13 @@ export default function ModalidadesPage() {
       <div className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563] text-xs font-black tracking-wide">
           <Sparkles className="w-3.5 h-3.5 text-[#6B7280]" />
-          <span>JEGD 2026 • GUIA OFICIAL DE MODALIDADES</span>
+          <span>{siglaEvento} • GUIA OFICIAL DE MODALIDADES</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
           Modalidades Esportivas
         </h1>
         <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed font-normal max-w-2xl mx-auto">
-          Consulte categorias, limites de atletas por equipe, faixas etárias e regras de participação do JEGDS 2026.
+          Consulte categorias, limites de atletas por equipe, faixas etárias e regras de participação do {siglaEvento}.
         </p>
       </div>
 

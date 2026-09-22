@@ -1,8 +1,42 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
+import { JegdStorage } from '@/lib/storage';
+import { Municipio } from '@/types/jegd';
 
 export default function Footer() {
+  const [municipioAtual, setMunicipioAtual] = useState<Municipio | null>(null);
+
+  useEffect(() => {
+    JegdStorage.init();
+    setMunicipioAtual(JegdStorage.getCurrentMunicipio());
+
+    const handleStorageChange = () => {
+      setMunicipioAtual(JegdStorage.getCurrentMunicipio());
+    };
+
+    const handleMunicipioChange = (e: any) => {
+      setMunicipioAtual(e.detail || JegdStorage.getCurrentMunicipio());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('jegd-municipio-changed', handleMunicipioChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('jegd-municipio-changed', handleMunicipioChange);
+    };
+  }, []);
+
+  const siglaEvento = municipioAtual?.siglaEvento || 'JEGD 2026';
+  const siglaPartes = siglaEvento.split(' ');
+  const siglaTexto = siglaPartes[0] || 'JEGD';
+  const anoTexto = siglaPartes[1] || '2026';
+  const nomeCidade = municipioAtual?.nome || 'Gonçalves Dias';
+  const ufCidade = municipioAtual?.uf || 'MA';
+  const nomeEvento = municipioAtual?.nomeEvento || `Jogos Escolares de ${nomeCidade}`;
+
   return (
     <footer className="bg-white border-t border-[#E2EAE5] text-[#374151] text-sm w-full max-w-full">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
@@ -14,17 +48,17 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0">
                 <img 
-                  src="/logo-jegd.png" 
-                  alt="Logo JEGD" 
+                  src={municipioAtual?.logoUrl || municipioAtual?.brasaoUrl || "/logo-jegd.png"} 
+                  alt={`Logo ${siglaTexto}`} 
                   className="w-full h-full object-contain p-0.5" 
                 />
               </div>
               <span className="font-black text-xl text-[#17221D] tracking-tight">
-                JEGD <span className="text-[#00A878]">2026</span>
+                {siglaTexto} <span className="text-[#00A878]">{anoTexto}</span>
               </span>
             </div>
             <p className="text-sm text-[#4B5563] leading-relaxed font-normal">
-              Sistema Oficial de Inscrições, Credenciamento e Gestão Esportiva Escolar do JEGDS 2026. SEMED • Secretaria Municipal de Educação de Gonçalves Dias - MA.
+              Sistema Oficial de Inscrições, Credenciamento e Gestão Esportiva Escolar do {siglaEvento}. SEMED • Secretaria Municipal de Educação de {nomeCidade} - {ufCidade}.
             </p>
           </div>
 
@@ -91,7 +125,7 @@ export default function Footer() {
 
         {/* Linha Final com Copyright e Acesso SEMED Admin */}
         <div className="pt-6 border-t border-[#E2EAE5] flex flex-col sm:flex-row items-center justify-between gap-3.5 text-xs sm:text-sm text-[#4B5563] text-center sm:text-left">
-          <p>© 2026 JEGD - Jogos Escolares de Gonçalves Dias. SEMED / Prefeitura Municipal.</p>
+          <p>© 2026 {siglaTexto} - {nomeEvento}. SEMED / Prefeitura Municipal.</p>
           <div className="flex items-center gap-3">
             <Link 
               href="/admin/login" 
@@ -106,4 +140,5 @@ export default function Footer() {
     </footer>
   );
 }
+
 

@@ -40,6 +40,20 @@ export default function EscolaDashboardPage() {
     }
     setEscola(atual);
     carregarDados(atual.id);
+
+    const handleSync = () => {
+      carregarDados(atual.id);
+    };
+    window.addEventListener('jegd-data-synced', handleSync);
+
+    const interval = setInterval(() => {
+      JegdStorage.sincronizarComNuvem().catch(() => {});
+    }, 4000);
+
+    return () => {
+      window.removeEventListener('jegd-data-synced', handleSync);
+      clearInterval(interval);
+    };
   }, []);
 
   const carregarDados = (escolaId: string) => {

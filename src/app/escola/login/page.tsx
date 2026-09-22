@@ -6,12 +6,16 @@ import {
   School, 
   ShieldCheck, 
   AlertCircle, 
-  CheckCircle,
-  LogIn,
-  UserPlus
+  CheckCircle, 
+  LogIn, 
+  UserPlus, 
+  MapPin, 
+  Settings, 
+  Sparkles 
 } from 'lucide-react';
+import Link from 'next/link';
 import { JegdStorage } from '@/lib/storage';
-import { Escola, Usuario } from '@/types/jegd';
+import { Escola, Usuario, Municipio } from '@/types/jegd';
 import { FormLoginCpf } from './components/FormLoginCpf';
 import { FormCadastroProfessor } from './components/FormCadastroProfessor';
 import { FormLoginAdmin } from './components/FormLoginAdmin';
@@ -41,7 +45,13 @@ function LoginContent() {
   const [tipoAcesso, setTipoAcesso] = useState<'ESCOLA' | 'ADMIN'>(initialTab);
   const [modoEscola, setModoEscola] = useState<'LOGIN' | 'CADASTRO'>('LOGIN');
   
+  // Estado Multi-Tenant
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [municipioSelecionadoId, setMunicipioSelecionadoId] = useState<string>('');
+  const [isDominioTravado, setIsDominioTravado] = useState(false);
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [coordenadores, setCoordenadores] = useState<Usuario[]>([]);
+  const [coordenadorSelecionadoId, setCoordenadorSelecionadoId] = useState<string>('');
   
   // Login Direto do Professor (CPF + Senha)
   const [loginCpf, setLoginCpf] = useState('');
@@ -59,21 +69,70 @@ function LoginContent() {
   const [modalConfirmacaoEscola, setModalConfirmacaoEscola] = useState(false);
 
   // Dados da Coordenação SEMED
-  const [adminCoordenador, setAdminCoordenador] = useState<'ELIAS_VELOSO' | 'HERBERT_SA'>('ELIAS_VELOSO');
   const [adminSenha, setAdminSenha] = useState('');
   const [mostrarSenhaAdmin, setMostrarSenhaAdmin] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
 
+  // Inicialização e Carga dos Municípios
   useEffect(() => {
     JegdStorage.init();
-    const list = JegdStorage.getEscolas();
+    const munList = JegdStorage.getMunicipios();
+    setMunicipios(munList);
+
+    const domainRes = JegdStorage.getDomainResolution();
+    setIsDominioTravado(domainRes.isDomainLocked);
+
+    let targetMun = domainRes.isDomainLocked && domainRes.municipio ? domainRes.municipio : null;
+
+    if (!targetMun) {
+      const mParam = searchParams.get('m') || searchParams.get('municipio');
+      if (mParam) {
+        const found = munList.find(m => m.slug === mParam || m.id === mParam);
+        if (found) targetMun = found;
+      }
+    }
+
+    if (!targetMun) {
+      targetMun = JegdStorage.getCurrentMunicipio() || munList[0];
+    }
+
+    if (targetMun) {
+      setMunicipioSelecionadoId(targetMun.id);
+      JegdStorage.setCurrentMunicipio(targetMun);
+      carregarDadosMunicipio(targetMun.id);
+    }
+  }, [searchParams]);
+
+  const carregarDadosMunicipio = (munId: string) => {
+    const list = JegdStorage.getEscolas(munId);
     setEscolas(list);
     if (list.length > 0) {
       setCadEscolaId(list[0].id);
       setCadSenha(gerarSugestaoSenhaEscola(list[0]));
+    } else {
+      setCadEscolaId('');
+      setCadSenha('');
     }
-  }, []);
+
+    const coords = JegdStorage.getUsuarios(munId).filter(u => u.papel === 'COORDENADOR' || u.papel === 'SUPERADMIN');
+    setCoordenadores(coords);
+    if (coords.length > 0) {
+      setCoordenadorSelecionadoId(coords[0].id);
+    }
+  };
+
+  const handleMudarMunicipio = (munId: string) => {
+    if (isDominioTravado) return;
+    setMunicipioSelecionadoId(munId);
+    const munObj = municipios.find(m => m.id === munId);
+    if (munObj) {
+      JegdStorage.setCurrentMunicipio(munObj);
+    }
+    carregarDadosMunicipio(munId);
+    setErro('');
+    setSucesso('');
+  };
 
   const handleSelecionarEscola = (escolaId: string) => {
     setCadEscolaId(escolaId);
@@ -103,22 +162,37 @@ function LoginContent() {
       return;
     }
 
-    const usuarioEncontrado = JegdStorage.getUsuarioByCpf(cpfLimpo);
+    // Busca primeiro se o CPF existe em QUALQUER município
+    const usuarioGlobal = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
 
-    if (!usuarioEncontrado) {
-      setErro('CPF não encontrado no sistema. Se este é o seu primeiro acesso, clique na aba "Primeiro Acesso / Cadastrar" abaixo.');
+    if (!usuarioGlobal) {
+      setErro(`CPF não encontrado no sistema. Se este é o seu primeiro acesso em ${municipioAtual?.nome || 'nossa cidade'}, clique na aba "Primeiro Acesso / Cadastrar" abaixo.`);
       return;
     }
 
-    const escola = escolas.find(e => e.id === usuarioEncontrado.escolaId);
+    // BLOQUEIO ESTRITO DE CROSS-TENANT / CROSS-DOMAIN:
+    if (usuarioGlobal.municipioId && usuarioGlobal.municipioId !== municipioSelecionadoId) {
+      const munOrigem = municipios.find(m => m.id === usuarioGlobal.municipioId);
+      setErro(`⛔ Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
+      return;
+    }
+
+    const escola = JegdStorage.getEscolaById(usuarioGlobal.escolaId || '');
     if (!escola) {
       setErro('Escola vinculada a este professor não foi encontrada. Entre em contato com a SEMED.');
       return;
     }
 
-    const senhaUsuario = usuarioEncontrado.senhaHash?.toLowerCase();
+    // Validação se a escola pertence ao município selecionado
+    if (escola.municipioId && escola.municipioId !== municipioSelecionadoId) {
+      const munEscola = municipios.find(m => m.id === escola.municipioId);
+      setErro(`⛔ Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
+      return;
+    }
+
+    const senhaUsuario = usuarioGlobal.senhaHash?.toLowerCase();
     const senhaEscola = escola.senhaHash?.toLowerCase();
-    const siglaSenha = `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
+    const siglaSenha = `${escola.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
     const sugestaoPadrao = gerarSugestaoSenhaEscola(escola);
 
     const senhaValida = 
@@ -133,8 +207,12 @@ function LoginContent() {
       return;
     }
 
-    JegdStorage.setCurrentUser(usuarioEncontrado);
-    JegdStorage.setCurrentEscola(escola);
+    const setEscolaOk = JegdStorage.setCurrentEscola(escola);
+    if (!setEscolaOk) {
+      setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
+      return;
+    }
+    JegdStorage.setCurrentUser(usuarioGlobal);
     router.push('/escola/dashboard');
   };
 
@@ -152,6 +230,18 @@ function LoginContent() {
     const cpfLimpo = cadCpf.replace(/\D/g, '');
     if (cpfLimpo.length !== 11) {
       setErro('Por favor, digite um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    // Verifica se o CPF já está cadastrado em outro município
+    const usuarioExistente = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
+    if (usuarioExistente) {
+      if (usuarioExistente.municipioId === municipioSelecionadoId) {
+        setErro('Este CPF já está cadastrado neste município. Acesse a aba "Entrar com CPF".');
+      } else {
+        const munOutro = municipios.find(m => m.id === usuarioExistente.municipioId);
+        setErro(`⛔ Este CPF já possui cadastro no município de ${munOutro?.nome || 'outro município'}. Caso deseje transferir, contate a SEMED.`);
+      }
       return;
     }
 
@@ -188,9 +278,10 @@ function LoginContent() {
 
     const novoUsuario: Usuario = {
       id: `prof-${cpfLimpo}`,
+      municipioId: municipioSelecionadoId,
       nome: cadNome.trim(),
       cpf: cadCpf,
-      email: `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}@semed.gd.gov.br`,
+      email: `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}@semed.gov.br`,
       telefone: cadTelefone.trim() || '(99) 98888-0000',
       senhaHash: senhaTratada,
       papel: 'PROFESSOR',
@@ -217,34 +308,52 @@ function LoginContent() {
     setErro('');
 
     const senhaTratada = adminSenha.trim().toLowerCase();
+    const coordSelecionado = coordenadores.find(c => c.id === coordenadorSelecionadoId);
 
-    if (senhaTratada === 'semed2026') {
-      JegdStorage.setComiteAuth(true);
-      const coordNome = adminCoordenador === 'ELIAS_VELOSO' ? 'Elias Veloso (SEMED)' : 'Herbert de Sá (SEMED)';
-      const coordEmail = adminCoordenador === 'ELIAS_VELOSO' ? 'elias.veloso@semed.gd.gov.br' : 'herbert.sa@semed.gd.gov.br';
-      
-      const adminUser: Usuario = {
-        id: `coord-${adminCoordenador.toLowerCase()}`,
-        nome: coordNome,
-        email: coordEmail,
+    // Se for o SuperAdmin
+    if (coordSelecionado?.papel === 'SUPERADMIN' || senhaTratada === 'superadmin2026') {
+      if (senhaTratada === 'superadmin2026' || senhaTratada === 'semed2026') {
+        JegdStorage.setSuperAdminAuth(true);
+        JegdStorage.setComiteAuth(true);
+        router.push('/admin/super');
+        return;
+      }
+    }
+
+    if (coordSelecionado && coordSelecionado.municipioId && coordSelecionado.municipioId !== municipioSelecionadoId) {
+      setErro('Este coordenador não pertence ao município selecionado.');
+      return;
+    }
+
+    if (senhaTratada === 'semed2026' || (coordSelecionado?.senhaHash && senhaTratada === coordSelecionado.senhaHash.toLowerCase())) {
+      const coordUser: Usuario = coordSelecionado || {
+        id: `coord-${municipioSelecionadoId}`,
+        municipioId: municipioSelecionadoId,
+        nome: `Coordenação SEMED (${municipioAtual?.nome || 'Municipal'})`,
+        email: `semed@${municipioAtual?.slug || 'municipal'}.gov.br`,
         telefone: '(99) 98801-1000',
         papel: 'COORDENADOR',
         createdAt: new Date().toISOString()
       };
-      
-      JegdStorage.setCurrentUser(adminUser);
+
+      const setAdminOk = JegdStorage.setComiteAuth(true, coordUser);
+      if (!setAdminOk) {
+        setErro('Acesso não autorizado para o domínio atual.');
+        return;
+      }
       router.push('/admin/dashboard');
     } else {
       setErro('Senha incorreta da Coordenação SEMED. Digite a senha institucional autorizada.');
     }
   };
 
+  const municipioAtual = municipios.find(m => m.id === municipioSelecionadoId) || municipios[0];
   const escolaSelecionadaObj = escolas.find(e => e.id === cadEscolaId);
 
   return (
     <div className="relative min-h-[calc(100vh-70px)] flex items-center justify-center px-3 py-4 sm:py-8 overflow-hidden w-full">
       
-      {/* VÍDEO DE BACKGROUND EM LOOP COM CACHE BUSTER */}
+      {/* VÍDEO DE BACKGROUND EM LOOP */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <video
           autoPlay
@@ -263,21 +372,54 @@ function LoginContent() {
       </div>
 
       {/* CARD DE LOGIN FLUTUANTE */}
-      <div className="relative z-10 max-w-[480px] w-full mx-auto my-auto">
+      <div className="relative z-10 max-w-[500px] w-full mx-auto my-auto">
         <div className="bg-white/98 backdrop-blur-md border border-white/70 sm:border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden transition-all duration-300">
           
+          {/* SELETOR DE MUNICÍPIO NO TOPO (OU DOMÍNIO OFICIAL TRAVADO) */}
+          {isDominioTravado ? (
+            <div className="mb-4 bg-emerald-50/90 border border-emerald-300 rounded-xl p-3 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2 text-emerald-950 font-bold text-xs">
+                <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>Domínio Oficial Travado:</span>
+              </div>
+              <div className="px-3 py-1 rounded-lg bg-emerald-700 text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-2xs truncate max-w-[240px]">
+                <span className="truncate">{municipioAtual?.nome} ({municipioAtual?.siglaEvento})</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-4 bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>Município:</span>
+              </div>
+              <select
+                value={municipioSelecionadoId}
+                onChange={(e) => handleMudarMunicipio(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-900 text-xs font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[230px] truncate"
+              >
+                {municipios.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome} - {m.uf} ({m.siglaEvento})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Logo & Título Institucional */}
           <div className="text-center mb-4 sm:mb-5">
             <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-2 shadow-xs shrink-0">
               <img 
                 src="/logo-jegd.png" 
-                alt="Logo JEGD" 
+                alt="Logo dos Jogos" 
                 className="w-full h-full object-contain p-0.5" 
               />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">Acesso ao Sistema</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">
+              {municipioAtual ? municipioAtual.nomeEvento : 'Acesso ao Sistema'}
+            </h1>
             <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium">
-              JEGDS 2026 • Jogos Escolares de Gonçalves Dias
+              {municipioAtual ? `${municipioAtual.siglaEvento} • ${municipioAtual.nome} - ${municipioAtual.uf}` : 'Jogos Escolares'}
             </p>
           </div>
 
@@ -391,15 +533,29 @@ function LoginContent() {
           {/* FORMULÁRIO COORDENAÇÃO SEMED */}
           {tipoAcesso === 'ADMIN' && (
             <FormLoginAdmin
-              adminCoordenador={adminCoordenador}
-              setAdminCoordenador={setAdminCoordenador}
+              coordenadores={coordenadores}
+              coordenadorSelecionadoId={coordenadorSelecionadoId}
+              setCoordenadorSelecionadoId={setCoordenadorSelecionadoId}
               adminSenha={adminSenha}
               setAdminSenha={setAdminSenha}
               mostrarSenhaAdmin={mostrarSenhaAdmin}
               setMostrarSenhaAdmin={setMostrarSenhaAdmin}
               onSubmit={handleLoginAdmin}
+              nomeMunicipio={municipioAtual?.nome}
             />
           )}
+
+          {/* Rodapé Institucional com Link SuperAdmin */}
+          <div className="mt-5 pt-3 border-t border-[#E2EAE5] flex items-center justify-between text-[11px] text-[#68756E]">
+            <span>Portal Multi-Municípios v2.0</span>
+            <Link 
+              href="/admin/super" 
+              className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-900 transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>SuperAdmin Master</span>
+            </Link>
+          </div>
 
         </div>
       </div>

@@ -21,9 +21,11 @@ import {
   FileText
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
-import { Escola, ModalidadeConfig, ComunicadoAviso } from '@/types/jegd';
+import { Escola, ModalidadeConfig, ComunicadoAviso, Municipio } from '@/types/jegd';
 
 export default function HomePage() {
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [municipioAtual, setMunicipioAtual] = useState<Municipio | null>(null);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
@@ -38,12 +40,32 @@ export default function HomePage() {
 
   useEffect(() => {
     JegdStorage.init();
-    setEscolas(JegdStorage.getEscolas());
-    setModalidades(JegdStorage.getModalidades());
-    setComunicados(JegdStorage.getComunicados());
-    setTotalAtletas(JegdStorage.getAtletas().length);
-    setTotalInscricoes(JegdStorage.getInscricoes().length);
+    const munList = JegdStorage.getMunicipios();
+    setMunicipios(munList);
+    const curMun = JegdStorage.getCurrentMunicipio();
+    setMunicipioAtual(curMun);
+    carregarDados(curMun?.id);
   }, []);
+
+  const carregarDados = (targetMunId?: string) => {
+    const mun = targetMunId ? JegdStorage.getMunicipioById(targetMunId) : JegdStorage.getCurrentMunicipio();
+    const munId = mun?.id;
+    if (mun) setMunicipioAtual(mun);
+    setEscolas(JegdStorage.getEscolas(munId));
+    setModalidades(JegdStorage.getModalidades(munId));
+    setComunicados(JegdStorage.getComunicados(munId));
+    setTotalAtletas(JegdStorage.getAtletas(undefined, munId).length);
+    setTotalInscricoes(JegdStorage.getInscricoes(undefined, munId).length);
+  };
+
+  const handleMudarMunicipio = (munId: string) => {
+    const munObj = municipios.find(m => m.id === munId);
+    if (munObj) {
+      JegdStorage.setCurrentMunicipio(munObj);
+      setMunicipioAtual(munObj);
+      carregarDados(munId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F9F8] text-[#17221D] flex flex-col">
@@ -102,17 +124,31 @@ export default function HomePage() {
 
           {/* Conteúdo Central Hero */}
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs sm:text-sm font-bold shadow-2xs">
-              <Sparkles className="w-4 h-4 text-[#00A878]" />
-              <span>SEMED • PREFEITURA DE GONÇALVES DIAS - MA</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs sm:text-sm font-bold shadow-2xs flex-wrap justify-center">
+              <Sparkles className="w-4 h-4 text-[#00A878] shrink-0" />
+              <span>SEMED • {municipioAtual ? `PREFEITURA DE ${municipioAtual.nome.toUpperCase()} - ${municipioAtual.uf}` : 'PREFEITURA MUNICIPAL'}</span>
+              
+              {!JegdStorage.isDomainLocked() && municipios.length > 1 && (
+                <select
+                  value={municipioAtual?.id || ''}
+                  onChange={(e) => handleMudarMunicipio(e.target.value)}
+                  className="ml-1 bg-white border border-[#00A878]/40 rounded-lg px-2 py-0.5 text-xs text-[#087A5B] font-black focus:outline-none cursor-pointer"
+                >
+                  {municipios.map(m => (
+                    <option key={m.id} value={m.id}>
+                      📍 {m.nome} - {m.uf}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#17221D] leading-tight">
-              Sistema de Inscrições & Gestão Esportiva Escolar
+              {municipioAtual ? municipioAtual.nomeEvento : 'Sistema de Inscrições & Gestão Esportiva Escolar'}
             </h1>
 
             <p className="text-base sm:text-lg text-[#374151] leading-relaxed font-normal max-w-2xl mx-auto">
-              Plataforma oficial para diretores e professores cadastrarem atletas, gerenciarem equipes e emitirem crachás com QR Code para os Jogos Escolares 2026.
+              Plataforma oficial para diretores e professores de {municipioAtual?.nome || 'nossa cidade'} cadastrarem atletas, gerenciarem equipes e emitirem crachás com QR Code para os Jogos Escolares 2026.
             </p>
 
             {/* Ações Hero */}

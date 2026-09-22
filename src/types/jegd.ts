@@ -18,8 +18,27 @@ export type ModalidadeCodigo =
   | 'beach_soccer'
   | 'tenis_mesa';
 
+export interface Municipio {
+  id: string;
+  nome: string;
+  sigla?: string;
+  uf: string;
+  slug: string;
+  nomeEvento: string;
+  siglaEvento: string;
+  logoUrl?: string;
+  brasaoUrl?: string;
+  contatoSemed?: string;
+  dominio?: string;             // Ex: "jesal.santoantoniodoslopes.ma.gov.br" ou "sal.jegdsistem.com"
+  subdominio?: string;          // Ex: "sal", "gd", "archer", "eugeniobarros"
+  dominiosAdicionais?: string[]; // Ex: ["jegds-sal.vercel.app", "jesal.com.br"]
+  ativo: boolean;
+  createdAt: string;
+}
+
 export interface ModalidadeConfig {
   id: string;
+  municipioId?: string;
   codigo: ModalidadeCodigo;
   nome: string;
   tipo: 'COLETIVA' | 'INDIVIDUAL';
@@ -35,7 +54,7 @@ export interface ModalidadeConfig {
   localPadrao?: string;
 }
 
-export type PapelUsuario = 'PROFESSOR' | 'COORDENADOR' | 'MESARIO' | 'APOIO' | 'ARBITRO';
+export type PapelUsuario = 'SUPERADMIN' | 'COORDENADOR' | 'PROFESSOR' | 'MESARIO' | 'APOIO' | 'ARBITRO';
 
 export type TipoRegistroControle =
   | 'ELEGIBILIDADE'
@@ -47,6 +66,7 @@ export type TipoRegistroControle =
 
 export interface RegistroControle {
   id: string;
+  municipioId?: string;
   atletaId: string;
   tipo: TipoRegistroControle;
   timestamp: string; // ISO 8601
@@ -58,6 +78,7 @@ export interface RegistroControle {
 
 export interface Usuario {
   id: string;
+  municipioId?: string | null;
   nome: string;
   email: string;
   cpf?: string;
@@ -77,6 +98,7 @@ export interface DocumentosAluno {
 
 export interface Atleta {
   id: string;
+  municipioId?: string;
   escolaId: string;
   nomeCompleto: string;
   dataNascimento: string; // YYYY-MM-DD
@@ -106,6 +128,7 @@ export interface Atleta {
 
 export interface MembroComissao {
   id: string;
+  municipioId?: string;
   escolaId: string;
   nomeCompleto: string;
   funcao: 'TECNICO' | 'AUXILIAR' | 'DELEGADO' | 'MASSAGISTA_FISIO';
@@ -117,6 +140,7 @@ export interface MembroComissao {
 
 export interface Escola {
   id: string;
+  municipioId?: string;
   nome: string;
   sigla: string;
   inep: string;
@@ -132,6 +156,7 @@ export interface Escola {
 
 export interface InscricaoEquipe {
   id: string;
+  municipioId?: string;
   escolaId: string;
   modalidadeCodigo: ModalidadeCodigo;
   modalidadeNome: string;
@@ -154,6 +179,7 @@ export interface InscricaoEquipe {
 
 export interface ComunicadoAviso {
   id: string;
+  municipioId?: string;
   titulo: string;
   conteudo: string;
   categoria: 'REGULAMENTO' | 'CRONOGRAMA' | 'ALERTA' | 'RESULTADOS';
@@ -161,4 +187,3 @@ export interface ComunicadoAviso {
   urgente: boolean;
   autor: string;
 }
-
