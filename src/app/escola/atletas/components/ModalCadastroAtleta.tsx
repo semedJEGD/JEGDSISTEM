@@ -7,11 +7,15 @@ import {
   Upload,
   ArrowRight,
   Trophy,
-  Check
+  Check,
+  QrCode,
+  AlertCircle,
+  ShieldAlert,
+  Sparkles,
+  UserCheck
 } from 'lucide-react';
-import { Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade, Escola } from '@/types/jegd';
+import { Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade, Escola, OPCOES_SERIE_TURMA } from '@/types/jegd';
 import { JegdStorage } from '@/lib/storage';
-import { AlertCircle, ShieldAlert, Sparkles, UserCheck } from 'lucide-react';
 
 interface DiagnosticoDuplicidadeProps {
   duplicado: boolean;
