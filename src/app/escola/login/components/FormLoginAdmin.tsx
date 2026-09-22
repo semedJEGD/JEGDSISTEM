@@ -69,9 +69,8 @@ export function FormLoginAdmin({
             {mostrarSenhaAdmin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           </button>
         </div>
-        <p className="text-[10px] text-[#4B5563] mt-1 font-medium flex items-center justify-between">
-          <span>Acesso restrito à Coordenação SEMED de {nomeMunicipio || 'Município'}</span>
-          <span className="text-[10px] text-emerald-700 font-bold">Padrao: semed2026</span>
+        <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
+          Acesso restrito à Coordenação SEMED de {nomeMunicipio || 'Município'}
         </p>
       </div>
 

@@ -191,9 +191,6 @@ export default function SuperAdminPage() {
                 />
                 <Lock className="w-4 h-4 text-[#68756E] absolute left-3 top-3" />
               </div>
-              <p className="text-[10px] text-[#68756E] mt-1">
-                Padrão inicial: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">superadmin2026</code>
-              </p>
             </div>
 
             <button
