@@ -68,6 +68,12 @@ export async function POST(request: Request) {
       ? new Date(body.dataNascimento)
       : new Date('2010-01-01');
 
+    let municipioId = body.municipioId;
+    if (!municipioId && body.escolaId) {
+      const esc = await prisma.escola.findUnique({ where: { id: body.escolaId } });
+      if (esc) municipioId = esc.municipioId;
+    }
+
     const atleta = await prisma.atleta.upsert({
       where: { id: body.id || `atl-${Date.now()}` },
       update: {
@@ -83,6 +89,7 @@ export async function POST(request: Request) {
         fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
         documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
         escolaId: body.escolaId,
+        municipioId: municipioId || undefined,
         categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
         consentimentoResponsavel: body.consentimentoResponsavel ?? true,
       },
@@ -100,6 +107,7 @@ export async function POST(request: Request) {
         fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
         documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
         escolaId: body.escolaId,
+        municipioId: municipioId || undefined,
         categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
         consentimentoResponsavel: body.consentimentoResponsavel ?? true,
       }

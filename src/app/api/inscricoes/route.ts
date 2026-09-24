@@ -39,10 +39,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Dados incompletos para inscrição da equipe' }, { status: 400 });
     }
 
+    // Localizar município da escola se não enviado
+    let municipioId = body.municipioId;
+    if (!municipioId && escolaId) {
+      const esc = await prisma.escola.findUnique({ where: { id: escolaId } });
+      if (esc) municipioId = esc.municipioId;
+    }
+
     // Localizar ou criar a Modalidade
     let modalidade = await prisma.modalidade.findFirst({
-      where: { codigo: modalidadeCodigo }
+      where: { 
+        codigo: modalidadeCodigo,
+        ...(municipioId ? { municipioId } : {})
+      }
     });
+
+    if (!modalidade) {
+      modalidade = await prisma.modalidade.findFirst({
+        where: { codigo: modalidadeCodigo }
+      });
+    }
 
     if (!modalidade) {
       modalidade = await prisma.modalidade.create({
@@ -51,7 +67,8 @@ export async function POST(request: Request) {
           nome: modalidadeNome || modalidadeCodigo,
           tipo: 'COLETIVA',
           dataEvento: new Date('2026-12-12T00:00:00Z'),
-          prazoInscricao: new Date('2026-12-05T00:00:00Z')
+          prazoInscricao: new Date('2026-12-05T00:00:00Z'),
+          municipioId: municipioId || undefined
         }
       });
     }
@@ -75,13 +92,15 @@ export async function POST(request: Request) {
           motivoRejeicao: motivoRejeicao || null,
           categoria: categoria as any,
           sexo: sexo as any,
-          equipe: id || undefined
+          equipe: id || undefined,
+          municipioId: municipioId || undefined
         },
         create: {
           id: `${id || 'insc'}-${atletaId}`,
           atletaId,
           modalidadeId: modalidade.id,
           escolaId,
+          municipioId: municipioId || undefined,
           categoria: categoria as any,
           sexo: sexo as any,
           prova: provaStr || '',
