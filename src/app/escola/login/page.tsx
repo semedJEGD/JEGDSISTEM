@@ -173,7 +173,7 @@ function LoginContent() {
     // BLOQUEIO ESTRITO DE CROSS-TENANT / CROSS-DOMAIN:
     if (usuarioGlobal.municipioId && usuarioGlobal.municipioId !== municipioSelecionadoId) {
       const munOrigem = municipios.find(m => m.id === usuarioGlobal.municipioId);
-      setErro(`⛔ Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
+      setErro(`Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
       return;
     }
 
@@ -186,7 +186,7 @@ function LoginContent() {
     // Validação se a escola pertence ao município selecionado
     if (escola.municipioId && escola.municipioId !== municipioSelecionadoId) {
       const munEscola = municipios.find(m => m.id === escola.municipioId);
-      setErro(`⛔ Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
+      setErro(`Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
       return;
     }
 
@@ -240,7 +240,7 @@ function LoginContent() {
         setErro('Este CPF já está cadastrado neste município. Acesse a aba "Entrar com CPF".');
       } else {
         const munOutro = municipios.find(m => m.id === usuarioExistente.municipioId);
-        setErro(`⛔ Este CPF já possui cadastro no município de ${munOutro?.nome || 'outro município'}. Caso deseje transferir, contate a SEMED.`);
+        setErro(`Este CPF já possui cadastro no município de ${munOutro?.nome || 'outro município'}. Caso deseje transferir, contate a SEMED.`);
       }
       return;
     }

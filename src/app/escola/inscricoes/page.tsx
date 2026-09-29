@@ -15,14 +15,15 @@ import {
   Printer,
   Shield,
   Clock,
-  Sparkles,
   Download,
   Calendar,
   AlertTriangle,
-  Image as ImageIcon,
   Flame,
   Zap,
-  Crown
+  Crown,
+  Medal,
+  Award,
+  Star
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -42,15 +43,42 @@ import {
 } from '@/services/jegds-rules';
 
 const LOGOS_PREDEFINIDOS = [
-  { id: 'escudo-ouro', label: '🛡️ Escudo Dourado', icon: '🛡️' },
-  { id: 'trovao', label: '⚡ Trovão Veloz', icon: '⚡' },
-  { id: 'fogo', label: '🔥 Chama Olímpica', icon: '🔥' },
-  { id: 'coroa', label: '👑 Soberanos', icon: '👑' },
-  { id: 'aguia', label: '🦅 Águias', icon: '🦅' },
-  { id: 'leao', label: '🦁 Leões', icon: '🦁' },
-  { id: 'estrela', label: '⭐ Estrelas GD', icon: '⭐' },
-  { id: 'trofeu', label: '🏆 Campeões', icon: '🏆' }
+  { id: 'shield', label: 'Escudo Clássico', iconName: 'shield', Icon: Shield, color: 'text-emerald-600' },
+  { id: 'zap', label: 'Trovão Veloz', iconName: 'zap', Icon: Zap, color: 'text-amber-500' },
+  { id: 'flame', label: 'Chama Olímpica', iconName: 'flame', Icon: Flame, color: 'text-orange-500' },
+  { id: 'crown', label: 'Soberanos', iconName: 'crown', Icon: Crown, color: 'text-yellow-600' },
+  { id: 'trophy', label: 'Campeões', iconName: 'trophy', Icon: Trophy, color: 'text-amber-600' },
+  { id: 'medal', label: 'Medalha de Honra', iconName: 'medal', Icon: Medal, color: 'text-teal-600' },
+  { id: 'award', label: 'Destaque Esportivo', iconName: 'award', Icon: Award, color: 'text-blue-600' },
+  { id: 'star', label: 'Estrelas GD', iconName: 'star', Icon: Star, color: 'text-amber-500' }
 ];
+
+function renderEmblemaEquipe(logo?: string) {
+  const map: Record<string, React.ReactNode> = {
+    shield: <Shield className="w-5 h-5 text-emerald-600" aria-hidden="true" />,
+    'escudo-ouro': <Shield className="w-5 h-5 text-emerald-600" aria-hidden="true" />,
+    '🛡️': <Shield className="w-5 h-5 text-emerald-600" aria-hidden="true" />,
+    zap: <Zap className="w-5 h-5 text-amber-500" aria-hidden="true" />,
+    trovao: <Zap className="w-5 h-5 text-amber-500" aria-hidden="true" />,
+    '⚡': <Zap className="w-5 h-5 text-amber-500" aria-hidden="true" />,
+    flame: <Flame className="w-5 h-5 text-orange-500" aria-hidden="true" />,
+    fogo: <Flame className="w-5 h-5 text-orange-500" aria-hidden="true" />,
+    '🔥': <Flame className="w-5 h-5 text-orange-500" aria-hidden="true" />,
+    crown: <Crown className="w-5 h-5 text-yellow-600" aria-hidden="true" />,
+    coroa: <Crown className="w-5 h-5 text-yellow-600" aria-hidden="true" />,
+    '👑': <Crown className="w-5 h-5 text-yellow-600" aria-hidden="true" />,
+    trophy: <Trophy className="w-5 h-5 text-amber-600" aria-hidden="true" />,
+    trofeu: <Trophy className="w-5 h-5 text-amber-600" aria-hidden="true" />,
+    '🏆': <Trophy className="w-5 h-5 text-amber-600" aria-hidden="true" />,
+    medal: <Medal className="w-5 h-5 text-teal-600" aria-hidden="true" />,
+    award: <Award className="w-5 h-5 text-blue-600" aria-hidden="true" />,
+    star: <Star className="w-5 h-5 text-amber-500" aria-hidden="true" />,
+    estrela: <Star className="w-5 h-5 text-amber-500" aria-hidden="true" />,
+    '⭐': <Star className="w-5 h-5 text-amber-500" aria-hidden="true" />
+  };
+
+  return map[logo || 'shield'] || <Shield className="w-5 h-5 text-emerald-600" aria-hidden="true" />;
+}
 
 export default function EscolaInscricoesPage() {
   const router = useRouter();
@@ -65,7 +93,7 @@ export default function EscolaInscricoesPage() {
   const [sexoSel, setSexoSel] = useState<Genero>('MASCULINO');
   const [numeroEquipeSel, setNumeroEquipeSel] = useState<number>(1);
   const [nomeEquipeSel, setNomeEquipeSel] = useState<string>('');
-  const [logoEquipeSel, setLogoEquipeSel] = useState<string>('🛡️');
+  const [logoEquipeSel, setLogoEquipeSel] = useState<string>('shield');
   const [atletasSelecionadosIds, setAtletasSelecionadosIds] = useState<string[]>([]);
   const [provasPorAtleta, setProvasPorAtleta] = useState<Record<string, string[]>>({});
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
@@ -378,7 +406,7 @@ export default function EscolaInscricoesPage() {
                           : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
                       }`}
                     >
-                      <span>🥇 Equipe 1 (Principal)</span>
+                      <span>Equipe 1 (Principal)</span>
                     </button>
 
                     <button
@@ -390,7 +418,7 @@ export default function EscolaInscricoesPage() {
                           : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
                       }`}
                     >
-                      <span>🥈 Equipe 2 (Secundária)</span>
+                      <span>Equipe 2 (Secundária)</span>
                     </button>
                   </div>
                 </div>
@@ -416,21 +444,25 @@ export default function EscolaInscricoesPage() {
                     Escudo / Logo da Equipe
                   </label>
                   <div className="flex flex-wrap gap-2 items-center">
-                    {LOGOS_PREDEFINIDOS.map((badge) => (
-                      <button
-                        type="button"
-                        key={badge.id}
-                        onClick={() => setLogoEquipeSel(badge.icon)}
-                        title={badge.label}
-                        className={`w-10 h-10 rounded-xl text-lg flex items-center justify-center border transition-all ${
-                          logoEquipeSel === badge.icon
-                            ? 'bg-[#E8F7F1] border-[#00A878] scale-110 shadow-xs'
-                            : 'bg-[#F7F9F8] border-[#E2EAE5] hover:bg-white'
-                        }`}
-                      >
-                        {badge.icon}
-                      </button>
-                    ))}
+                    {LOGOS_PREDEFINIDOS.map((badge) => {
+                      const BadgeIcon = badge.Icon;
+                      return (
+                        <button
+                          type="button"
+                          key={badge.id}
+                          onClick={() => setLogoEquipeSel(badge.id)}
+                          title={badge.label}
+                          aria-label={badge.label}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+                            logoEquipeSel === badge.id
+                              ? 'bg-[#E8F7F1] border-[#00A878] ring-2 ring-[#00A878]/30 scale-105 shadow-xs'
+                              : 'bg-[#F7F9F8] border-[#E2EAE5] hover:bg-white'
+                          }`}
+                        >
+                          <BadgeIcon className={`w-5 h-5 ${badge.color}`} aria-hidden="true" />
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -629,7 +661,7 @@ export default function EscolaInscricoesPage() {
                 }
                 className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm sm:text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Sparkles className="w-5 h-5" />
+                <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
                 <span>Confirmar e Enviar Inscrição da Equipe</span>
               </button>
 
@@ -655,8 +687,8 @@ export default function EscolaInscricoesPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
-                        <span className="w-9 h-9 rounded-xl bg-white border border-[#E2EAE5] flex items-center justify-center text-xl shrink-0 shadow-2xs">
-                          {insc.logoUrl || '🛡️'}
+                        <span className="w-9 h-9 rounded-xl bg-white border border-[#E2EAE5] flex items-center justify-center shrink-0 shadow-2xs">
+                          {renderEmblemaEquipe(insc.logoUrl)}
                         </span>
                         <div>
                           <h4 className="text-sm sm:text-base font-black text-[#17221D]">

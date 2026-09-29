@@ -8,6 +8,7 @@ import {
   Utensils,
   Bus,
   ShieldCheck,
+  CheckCircle2,
   FileSpreadsheet,
   Filter
 } from 'lucide-react';
@@ -140,8 +141,15 @@ export function RelatorioLogisticoAgregado({
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div className="bg-sky-500 h-full rounded-full transition-all" style={{ width: `${percAgua}%` }} />
                       </div>
-                      <p className="text-[10px] text-slate-500 text-right">
-                        {item.pendenteAgua > 0 ? `Faltam ${item.pendenteAgua} atletas` : '✅ Todos atendidos'}
+                      <p className="text-[10px] text-slate-500 text-right flex items-center justify-end gap-1">
+                        {item.pendenteAgua > 0 ? (
+                          `Faltam ${item.pendenteAgua} atletas`
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" aria-hidden="true" />
+                            <span className="text-emerald-700 font-bold">Todos atendidos</span>
+                          </>
+                        )}
                       </p>
                     </div>
 
@@ -149,15 +157,22 @@ export function RelatorioLogisticoAgregado({
                     <div className="bg-white p-3 rounded-xl border border-[#E2EAE5] space-y-1.5">
                       <div className="flex justify-between font-bold">
                         <span className="text-amber-700 flex items-center gap-1">
-                          <Utensils className="w-3.5 h-3.5" /> Lanches Entregues
+                          <Utensils className="w-3.5 h-3.5" aria-hidden="true" /> Lanches Entregues
                         </span>
                         <span className="text-slate-800">{item.lanche}/{item.totalAtletas} ({percLanche}%)</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div className="bg-amber-500 h-full rounded-full transition-all" style={{ width: `${percLanche}%` }} />
                       </div>
-                      <p className="text-[10px] text-slate-500 text-right">
-                        {item.pendenteLanche > 0 ? `Faltam ${item.pendenteLanche} atletas` : '✅ Todos atendidos'}
+                      <p className="text-[10px] text-slate-500 text-right flex items-center justify-end gap-1">
+                        {item.pendenteLanche > 0 ? (
+                          `Faltam ${item.pendenteLanche} atletas`
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" aria-hidden="true" />
+                            <span className="text-emerald-700 font-bold">Todos atendidos</span>
+                          </>
+                        )}
                       </p>
                     </div>
 

@@ -4,7 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
+  Shield,
   ShieldCheck,
+  Building2,
+  CheckCheck,
+  ClipboardList,
+  IdCard,
+  Megaphone,
+  RefreshCw,
   School,
   Users,
   Trophy,
@@ -506,7 +513,7 @@ export default function AdminDashboardPage() {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-2xs transition-all disabled:opacity-60"
               title="Sincronizar instantaneamente com o banco central"
             >
-              <span className={sincronizandoOnline ? 'animate-spin inline-block' : 'inline-block'}>🔄</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${sincronizandoOnline ? 'animate-spin' : ''}`} aria-hidden="true" />
               <span>{sincronizandoOnline ? 'Sincronizando...' : `Online • Sinc: ${ultimaSincronizacao}`}</span>
             </button>
           </div>
@@ -539,7 +546,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
           <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] shadow-2xs shrink-0">
-              <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.2]" />
+              <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2]" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -561,14 +568,14 @@ export default function AdminDashboardPage() {
               onClick={() => setModalNovaEscolaAberto(true)}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-white text-xs sm:text-sm font-bold shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0"
             >
-              <PlusCircle className="w-4 h-4 text-[#00A878]" />
+              <PlusCircle className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
               <span>Cadastrar Escola</span>
             </button>
             <button
               onClick={() => setModalAvisoAberto(true)}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all shrink-0"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4" aria-hidden="true" />
               <span>Publicar Aviso</span>
             </button>
             <button
@@ -577,9 +584,10 @@ export default function AdminDashboardPage() {
                 window.location.href = '/admin/login';
               }}
               title="Desconectar do painel administrativo"
+              aria-label="Desconectar do painel administrativo"
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 flex items-center justify-center gap-2 transition-all shrink-0"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" aria-hidden="true" />
               <span>Sair do Painel</span>
             </button>
           </div>
@@ -625,69 +633,74 @@ export default function AdminDashboardPage() {
       <div className="flex items-center gap-2 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'ESCOLAS_LOTE'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Lotes por Escola & Conferência
+          <Building2 className="w-4 h-4" aria-hidden="true" />
+          <span>Lotes por Escola & Conferência</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'HOMOLOGACAO'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Homologação ({inscricoes.length})
+          <CheckCheck className="w-4 h-4" aria-hidden="true" />
+          <span>Homologação ({inscricoes.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('ALERTAS')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'ALERTAS'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Alertas ({alertasInconsistencia.length})
+          <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+          <span>Alertas ({alertasInconsistencia.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'LISTAS_CHAMADA'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Súmulas & Listas
+          <ClipboardList className="w-4 h-4" aria-hidden="true" />
+          <span>Súmulas & Listas</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'CRACHA_LOGISTICA'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <QrCode className="w-4 h-4" />
+          <IdCard className="w-4 h-4" aria-hidden="true" />
           <span>Crachá & Validação</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'AVISOS'
               ? 'bg-[#00A878] text-white shadow-xs'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          Comunicados ({comunicados.length})
+          <Megaphone className="w-4 h-4" aria-hidden="true" />
+          <span>Comunicados ({comunicados.length})</span>
         </button>
       </div>
 

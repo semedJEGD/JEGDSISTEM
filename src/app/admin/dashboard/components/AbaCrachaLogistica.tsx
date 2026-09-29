@@ -162,7 +162,7 @@ export function AbaCrachaLogistica() {
 
     setFeedbackMsg({
       tipo: 'sucesso',
-      texto: `✅ ${labels[tipo] || 'Evento'} com sucesso para ${atletaEncontrado.nomeCompleto.split(' ')[0]}!`
+      texto: `${labels[tipo] || 'Evento'} registrado com sucesso para ${atletaEncontrado.nomeCompleto.split(' ')[0]}!`
     });
 
     setTimeout(() => {

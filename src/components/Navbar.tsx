@@ -5,17 +5,15 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   School, 
-  ShieldCheck, 
+  Shield, 
   QrCode, 
   LogOut, 
   BookOpen, 
-  Trophy, 
+  Medal, 
   Menu, 
   X, 
   Home, 
-  Users, 
-  ArrowRight,
-  UserCheck
+  LogIn 
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Escola, Municipio } from '@/types/jegd';
@@ -124,7 +122,7 @@ export default function Navbar() {
           </Link>
 
           {/* NAVEGAÇÃO CENTRAL DESKTOP (CLEAN & OUTLINE) */}
-          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2" aria-label="Navegação Principal">
             <Link
               href="/"
               className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
@@ -133,7 +131,7 @@ export default function Navbar() {
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Início</span>
             </Link>
 
@@ -145,7 +143,7 @@ export default function Navbar() {
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <Trophy className={`w-4 h-4 ${pathname.startsWith('/modalidades') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <Medal className={`w-4 h-4 ${pathname.startsWith('/modalidades') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Modalidades</span>
             </Link>
 
@@ -157,7 +155,7 @@ export default function Navbar() {
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <BookOpen className={`w-4 h-4 ${pathname.startsWith('/regulamento') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <BookOpen className={`w-4 h-4 ${pathname.startsWith('/regulamento') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Regulamento</span>
             </Link>
 
@@ -169,7 +167,7 @@ export default function Navbar() {
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} />
+              <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Crachá Oficial</span>
             </Link>
           </nav>
@@ -182,15 +180,16 @@ export default function Navbar() {
                   href="/escola/dashboard"
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#E8F7F1] hover:bg-[#d8f1e7] border border-[#00A878]/30 text-xs sm:text-sm font-black text-[#087A5B] transition-all shadow-2xs"
                 >
-                  <School className="w-4 h-4 text-[#00A878]" />
+                  <School className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                   <span className="max-w-[100px] sm:max-w-none truncate">{escolaAtual.sigla || 'Painel'}</span>
                 </Link>
                 <button
                   onClick={handleLogoutEscola}
                   title="Sair da Escola"
+                  aria-label="Sair da Escola"
                   className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             ) : isAdmin ? (
@@ -199,25 +198,25 @@ export default function Navbar() {
                   href="/admin/dashboard"
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-black shadow-xs hover:shadow-md transition-all"
                 >
-                  <ShieldCheck className="w-4 h-4" />
+                  <Shield className="w-4 h-4" aria-hidden="true" />
                   <span>Painel SEMED</span>
                 </Link>
                 <button
                   onClick={handleLogoutAdmin}
                   title="Sair do Painel SEMED"
+                  aria-label="Sair do Painel SEMED"
                   className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             ) : (
               <Link
                 href="/escola/login"
-                className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-[13px] font-black tracking-wide shadow-[0_2px_12px_rgba(0,168,120,0.25)] hover:shadow-[0_4px_16px_rgba(0,168,120,0.35)] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap group/login"
+                className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-[13px] font-black tracking-wide shadow-[0_2px_12px_rgba(0,168,120,0.25)] hover:shadow-[0_4px_16px_rgba(0,168,120,0.35)] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
               >
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                <LogIn className="w-4 h-4" aria-hidden="true" />
                 <span>LOGIN PROFESSORES / SEMED</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover/login:translate-x-0.5 transition-transform" />
               </Link>
             )}
 
@@ -225,9 +224,9 @@ export default function Navbar() {
             <button
               onClick={() => setMenuMobileAberto(!menuMobileAberto)}
               className="md:hidden p-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-[#E8F7F1] transition-colors flex items-center justify-center"
-              aria-label="Abrir Menu de Navegação"
+              aria-label={menuMobileAberto ? 'Fechar Menu de Navegação' : 'Abrir Menu de Navegação'}
             >
-              {menuMobileAberto ? <X className="w-5 h-5 text-[#087A5B]" /> : <Menu className="w-5 h-5 text-[#17221D]" />}
+              {menuMobileAberto ? <X className="w-5 h-5 text-[#087A5B]" aria-hidden="true" /> : <Menu className="w-5 h-5 text-[#17221D]" aria-hidden="true" />}
             </button>
           </div>
 
@@ -238,7 +237,7 @@ export default function Navbar() {
       {menuMobileAberto && (
         <div className="md:hidden max-w-7xl mx-auto mt-2">
           <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl p-4 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col space-y-1.5">
+            <nav className="flex flex-col space-y-1.5" aria-label="Navegação Mobile">
               <Link
                 href="/"
                 onClick={() => setMenuMobileAberto(false)}
@@ -248,7 +247,7 @@ export default function Navbar() {
                     : 'text-[#4B5563] hover:bg-[#F7F9F8]'
                 }`}
               >
-                <Home className="w-4 h-4 text-[#00A878]" />
+                <Home className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                 <span>Início</span>
               </Link>
 
@@ -261,7 +260,7 @@ export default function Navbar() {
                     : 'text-[#4B5563] hover:bg-[#F7F9F8]'
                 }`}
               >
-                <Trophy className="w-4 h-4 text-[#00A878]" />
+                <Medal className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                 <span>Modalidades & Regras</span>
               </Link>
 
@@ -274,7 +273,7 @@ export default function Navbar() {
                     : 'text-[#4B5563] hover:bg-[#F7F9F8]'
                 }`}
               >
-                <BookOpen className="w-4 h-4 text-[#00A878]" />
+                <BookOpen className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                 <span>Regulamento Geral</span>
               </Link>
 
@@ -287,7 +286,7 @@ export default function Navbar() {
                     : 'text-[#4B5563] hover:bg-[#F7F9F8]'
                 }`}
               >
-                <QrCode className="w-4 h-4 text-[#00A878]" />
+                <QrCode className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                 <span>Crachá Oficial & Guia</span>
               </Link>
             </nav>
@@ -299,7 +298,7 @@ export default function Navbar() {
                   onClick={() => setMenuMobileAberto(false)}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
                 >
-                  <Users className="w-4 h-4" />
+                  <LogIn className="w-4 h-4" aria-hidden="true" />
                   <span>LOGIN PROFESSORES / SEMED</span>
                 </Link>
               )}
@@ -307,9 +306,10 @@ export default function Navbar() {
               {(escolaAtual || isAdmin) && (
                 <button
                   onClick={escolaAtual ? handleLogoutEscola : handleLogoutAdmin}
+                  aria-label="Sair da Sessão"
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
                   <span>Sair da Sessão</span>
                 </button>
               )}

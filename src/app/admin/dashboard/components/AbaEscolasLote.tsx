@@ -9,7 +9,9 @@ import {
   QrCode,
   CheckSquare,
   Square,
-  MessageSquare
+  MessageSquare,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Escola, Atleta, ModalidadeConfig } from '@/types/jegd';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -170,24 +172,26 @@ export function AbaEscolasLote({
                 <button
                   type="button"
                   onClick={() => setModoVisualizacaoLote('CARDS')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                     modoVisualizacaoLote === 'CARDS'
                       ? 'bg-[#00A878] text-white shadow-xs'
                       : 'text-[#4B5563] hover:text-[#17221D]'
                   }`}
                 >
-                  🗂️ Cards por Modalidade
+                  <LayoutGrid className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Cards por Modalidade</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setModoVisualizacaoLote('TABELA')}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                     modoVisualizacaoLote === 'TABELA'
                       ? 'bg-[#00A878] text-white shadow-xs'
                       : 'text-[#4B5563] hover:text-[#17221D]'
                   }`}
                 >
-                  📋 Tabela Geral
+                  <List className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Tabela Geral</span>
                 </button>
               </div>
             </div>

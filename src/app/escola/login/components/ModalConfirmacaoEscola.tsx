@@ -51,14 +51,17 @@ export function ModalConfirmacaoEscola({
           </p>
 
           <div className="mt-3 pt-3 border-t border-[#E2EAE5] text-left text-[11px] text-[#4B5563] space-y-1">
-            <p>👤 <strong>Professor:</strong> {profNome}</p>
-            <p>🪪 <strong>CPF:</strong> {profCpf}</p>
+            <p><strong className="text-[#17221D]">Professor:</strong> {profNome}</p>
+            <p><strong className="text-[#17221D]">CPF:</strong> {profCpf}</p>
           </div>
         </div>
 
-        <p className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mb-5 font-medium leading-relaxed">
-          ⚠️ <strong>Importante:</strong> Todos os alunos, matrículas e equipes que você cadastrar ficarão salvos <strong>exclusivamente</strong> dentro desta escola.
-        </p>
+        <div className="flex items-start gap-2 text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 mb-5 font-medium leading-relaxed">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+          <p>
+            <strong>Importante:</strong> Todos os alunos, matrículas e equipes que você cadastrar ficarão salvos <strong>exclusivamente</strong> dentro desta escola.
+          </p>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-2.5">
           <button

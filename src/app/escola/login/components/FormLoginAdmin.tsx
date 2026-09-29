@@ -40,7 +40,7 @@ export function FormLoginAdmin({
         >
           {coordenadores.map((coord) => (
             <option key={coord.id} value={coord.id}>
-              {coord.nome} {coord.papel === 'SUPERADMIN' ? '⭐ (SuperAdmin)' : ''}
+              {coord.nome} {coord.papel === 'SUPERADMIN' ? '(SuperAdmin)' : ''}
             </option>
           ))}
         </select>

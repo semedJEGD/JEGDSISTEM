@@ -7,6 +7,7 @@ import {
   School,
   Users,
   Trophy,
+  GraduationCap,
   FileText,
   UserPlus,
   ArrowUpRight,
@@ -17,7 +18,6 @@ import {
   Printer,
   ShieldAlert,
   Download,
-  Sparkles,
   LogOut
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
@@ -139,7 +139,7 @@ export default function EscolaDashboardPage() {
               href="/escola/atletas"
               className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 text-center shrink-0"
             >
-              <Sparkles className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" aria-hidden="true" />
               <span>+ Cadastrar Aluno & Formar Equipe</span>
             </Link>
 
@@ -147,7 +147,7 @@ export default function EscolaDashboardPage() {
               href="/escola/inscricoes"
               className="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs sm:text-sm font-bold border border-[#E2EAE5] flex items-center justify-center gap-2 transition-all text-center shrink-0"
             >
-              <Trophy className="w-4 h-4 text-[#00A878]" />
+              <Users className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
               <span>Ver Equipes & Súmulas</span>
             </Link>
 
@@ -157,9 +157,10 @@ export default function EscolaDashboardPage() {
                 window.location.href = '/escola/login';
               }}
               title="Desconectar da escola e voltar ao login"
+              aria-label="Desconectar da escola e voltar ao login"
               className="w-full sm:w-auto px-4 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 flex items-center justify-center gap-2 transition-all text-center shrink-0"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" aria-hidden="true" />
               <span>Sair / Trocar Escola</span>
             </button>
           </div>
@@ -175,11 +176,11 @@ export default function EscolaDashboardPage() {
         >
           <div className="flex items-center justify-between text-[#4B5563] mb-3">
             <span className="text-xs font-black uppercase tracking-wider">Alunos Cadastrados</span>
-            <Users className="w-5 h-5 text-[#00A878] group-hover:scale-110 transition-transform" />
+            <Users className="w-5 h-5 text-[#00A878] group-hover:scale-110 transition-transform" aria-hidden="true" />
           </div>
           <p className="text-4xl font-black text-[#17221D]">{atletas.length}</p>
           <p className="text-xs text-[#00A878] mt-2 flex items-center gap-1 font-bold">
-            Cadastrar ou gerenciar <ArrowUpRight className="w-3.5 h-3.5" />
+            Cadastrar ou gerenciar <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
           </p>
         </Link>
 
@@ -189,11 +190,11 @@ export default function EscolaDashboardPage() {
         >
           <div className="flex items-center justify-between text-[#4B5563] mb-3">
             <span className="text-xs font-black uppercase tracking-wider">Comissão Técnica</span>
-            <School className="w-5 h-5 text-[#00A878] group-hover:scale-110 transition-transform" />
+            <GraduationCap className="w-5 h-5 text-[#00A878] group-hover:scale-110 transition-transform" aria-hidden="true" />
           </div>
           <p className="text-4xl font-black text-[#17221D]">{comissao.length}</p>
           <p className="text-xs text-[#00A878] mt-2 flex items-center gap-1 font-bold">
-            Técnicos & Professores <ArrowUpRight className="w-3.5 h-3.5" />
+            Técnicos & Professores <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
           </p>
         </Link>
 
@@ -203,18 +204,18 @@ export default function EscolaDashboardPage() {
         >
           <div className="flex items-center justify-between text-[#4B5563] mb-3">
             <span className="text-xs font-black uppercase tracking-wider">Equipes em Disputa</span>
-            <Trophy className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
+            <Trophy className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" aria-hidden="true" />
           </div>
           <p className="text-4xl font-black text-[#17221D]">{inscricoes.length}</p>
           <p className="text-xs text-[#087A5B] mt-2 flex items-center gap-1 font-bold">
-            Formadas automaticamente <ArrowUpRight className="w-3.5 h-3.5" />
+            Formadas automaticamente <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
           </p>
         </Link>
 
         <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs">
           <div className="flex items-center justify-between text-[#4B5563] mb-3">
             <span className="text-xs font-black uppercase tracking-wider">Homologações</span>
-            <CheckCircle2 className="w-5 h-5 text-[#00A878]" />
+            <CheckCircle2 className="w-5 h-5 text-[#00A878]" aria-hidden="true" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-black text-[#00A878]">{totalValidadas}</span>
@@ -249,7 +250,7 @@ export default function EscolaDashboardPage() {
 
         {inscricoes.length === 0 ? (
           <div className="text-center py-12 border-2 border-dashed border-[#E2EAE5] rounded-3xl bg-[#F7F9F8]">
-            <Trophy className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" />
+            <Trophy className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" aria-hidden="true" />
             <p className="text-base font-bold text-[#17221D]">Nenhuma equipe formada ainda.</p>
             <p className="text-sm text-[#4B5563] max-w-md mx-auto mt-1 mb-5">
               Ao cadastrar seu primeiro aluno na Etapa 1 e escolher a modalidade na Etapa 2, sua equipe será criada automaticamente!
@@ -258,7 +259,7 @@ export default function EscolaDashboardPage() {
               href="/escola/atletas"
               className="px-6 py-3 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm inline-flex items-center gap-2 shadow-xs"
             >
-              <Sparkles className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" aria-hidden="true" />
               <span>Cadastrar Aluno & Iniciar Equipe</span>
             </Link>
           </div>

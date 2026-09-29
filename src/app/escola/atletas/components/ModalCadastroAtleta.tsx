@@ -6,6 +6,8 @@ import {
   Camera,
   Upload,
   ArrowRight,
+  ArrowLeft,
+  UserPlus,
   Trophy,
   Check,
   QrCode,
@@ -493,18 +495,20 @@ export function ModalCadastroAtleta({
               <button
                 type="button"
                 onClick={() => setEtapaAtual(1)}
-                className="w-full sm:w-auto px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-gray-100 text-xs sm:text-sm font-bold text-[#4B5563] text-center"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-gray-100 text-xs sm:text-sm font-bold text-[#4B5563] flex items-center justify-center gap-1.5 transition-all"
               >
-                ← Voltar aos Dados
+                <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                <span>Voltar aos Dados</span>
               </button>
 
               <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => handleSalvarAtleta(true)}
-                  className="w-full sm:w-auto px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#E8F7F1] hover:bg-[#d8f1e7] text-[#087A5B] font-bold text-xs sm:text-sm border border-[#00A878]/30 transition-all text-center"
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#E8F7F1] hover:bg-[#d8f1e7] text-[#087A5B] font-bold text-xs sm:text-sm border border-[#00A878]/30 flex items-center justify-center gap-2 transition-all"
                 >
-                  ⚡ Salvar e Próximo Aluno
+                  <UserPlus className="w-4 h-4" aria-hidden="true" />
+                  <span>Salvar e Próximo Aluno</span>
                 </button>
 
                 <button
@@ -512,7 +516,7 @@ export function ModalCadastroAtleta({
                   onClick={() => handleSalvarAtleta(false)}
                   className="w-full sm:w-auto px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4" aria-hidden="true" />
                   <span>Concluir Inscrição</span>
                 </button>
               </div>

@@ -19,7 +19,8 @@ import {
   Search,
   Sparkles,
   MapPin,
-  FileCheck
+  FileCheck,
+  Globe
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Municipio, Escola, Usuario } from '@/types/jegd';
@@ -312,8 +313,9 @@ export default function SuperAdminPage() {
                       Subdomínio: {mun.subdominio || mun.slug}
                     </span>
                     {mun.dominio && (
-                      <span className="px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold">
-                        🌐 {mun.dominio}
+                      <span className="px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold flex items-center gap-1">
+                        <Globe className="w-3 h-3" aria-hidden="true" />
+                        <span>{mun.dominio}</span>
                       </span>
                     )}
                   </div>

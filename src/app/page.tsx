@@ -136,7 +136,7 @@ export default function HomePage() {
                 >
                   {municipios.map(m => (
                     <option key={m.id} value={m.id}>
-                      📍 {m.nome} - {m.uf}
+                      {m.nome} - {m.uf}
                     </option>
                   ))}
                 </select>
