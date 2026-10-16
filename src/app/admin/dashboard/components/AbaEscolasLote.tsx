@@ -4,6 +4,7 @@ import React from 'react';
 import {
   School,
   Trophy,
+  Users,
   Printer,
   Download,
   QrCode,
@@ -432,6 +433,109 @@ export function AbaEscolasLote({
                     </div>
                   );
                 })}
+
+              {/* Card de Atletas Cadastrados na Escola */}
+              {(() => {
+                const atletasNaoAlocados = atletasDaEscolaSelecionada.filter(a => {
+                  if (filtroCategoriaLote !== 'TODAS' && a.categoriaCalculada !== filtroCategoriaLote) return false;
+                  if (filtroSexoLote !== 'TODOS' && a.sexo !== filtroSexoLote) return false;
+                  if (filtroModalidadeLote !== 'TODAS') return false;
+                  return !a.modalidadesInscritas || a.modalidadesInscritas.length === 0;
+                });
+
+                if (atletasNaoAlocados.length === 0) return null;
+
+                const gruposMap: Record<string, Atleta[]> = {};
+                atletasNaoAlocados.forEach(a => {
+                  const cat = a.categoriaCalculada || 'N/A';
+                  const sex = a.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino';
+                  const chave = `${cat} • ${sex}`;
+                  if (!gruposMap[chave]) gruposMap[chave] = [];
+                  gruposMap[chave].push(a);
+                });
+
+                return (
+                  <div className="bg-white border-2 border-emerald-500/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#E2EAE5]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#E8F7F1] border border-[#00A878]/30 text-[#00A878] flex items-center justify-center font-black">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-base sm:text-lg font-black text-[#17221D]">Atletas Cadastrados na Escola</h4>
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/20">
+                              {atletasNaoAlocados.length} {atletasNaoAlocados.length === 1 ? 'Atleta' : 'Atletas'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#4B5563] mt-0.5">Estudantes cadastrados pelos professores prontos para homologação e emissão de crachás.</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        <button
+                          onClick={() => handleGerarCrachasEscola(escolaSelecionada)}
+                          className="px-3.5 py-2 rounded-xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 font-black text-xs flex items-center gap-1.5 transition-all shadow-2xs"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>Baixar Crachás da Escola (PDF)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                      {Object.entries(gruposMap).map(([grupoNome, atletasDoGrupo]) => (
+                        <div key={grupoNome} className="space-y-3">
+                          <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+                            <span className="text-xs font-black uppercase text-[#087A5B] flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-[#00A878]"></span>
+                              {grupoNome} ({atletasDoGrupo.length})
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {atletasDoGrupo.map(atleta => (
+                              <div
+                                key={atleta.id}
+                                className="p-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] flex items-center justify-between gap-3 hover:bg-white transition-all shadow-2xs"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-xs font-black text-[#17221D] truncate">{atleta.nomeCompleto}</p>
+                                  <p className="text-[11px] text-[#68756E] mt-0.5">
+                                    DOC: <strong>{atleta.documentoNumero}</strong> • Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}
+                                  </p>
+                                  <p className="text-[10px] text-emerald-800 font-bold mt-0.5">
+                                    Código/Crachá: {atleta.crachaToken || atleta.matricula}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
+                                    title="Gerar crachá individual em PDF"
+                                    className="p-2 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#087A5B] border border-[#E2EAE5] shadow-2xs transition-all"
+                                  >
+                                    <QrCode className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleConferenciaAtleta(atleta)}
+                                    className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                                      atleta.conferidoPeloCoordenador
+                                        ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
+                                        : 'bg-white text-[#4B5563] border-[#E2EAE5]'
+                                    }`}
+                                  >
+                                    {atleta.conferidoPeloCoordenador ? <CheckSquare className="w-3.5 h-3.5 text-[#00A878]" /> : <Square className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             /* VISUALIZAÇÃO EM TABELA GERAL */

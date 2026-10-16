@@ -7,6 +7,9 @@ export async function GET(request: Request) {
     const municipioId = searchParams.get('municipioId');
 
     const whereMunicipio = municipioId && municipioId !== 'ALL' ? { municipioId } : {};
+    const whereAtleta = municipioId && municipioId !== 'ALL' 
+      ? { OR: [{ municipioId }, { escola: { municipioId } }] } 
+      : {};
 
     const [municipios, escolas, atletas, modalidades, registros, comunicados, inscricoes] = await Promise.all([
       prisma.municipio.findMany({ orderBy: { nome: 'asc' } }),
@@ -15,7 +18,7 @@ export async function GET(request: Request) {
         orderBy: { nome: 'asc' }
       }),
       prisma.atleta.findMany({
-        where: whereMunicipio,
+        where: whereAtleta,
         include: { escola: true },
         orderBy: { nomeCompleto: 'asc' }
       }),
@@ -40,6 +43,17 @@ export async function GET(request: Request) {
       const dataNascStr = a.dataNascimento instanceof Date 
         ? a.dataNascimento.toISOString().split('T')[0] 
         : String(a.dataNascimento).split('T')[0];
+
+      // Vincular modalidades em que o atleta está inscrito
+      const modalidadesDoAtleta = inscricoes
+        .filter(i => i.atletaId === a.id)
+        .map(i => ({
+          modalidadeCodigo: i.modalidade?.codigo || i.modalidadeId,
+          modalidadeNome: i.modalidade?.nome || i.modalidadeId,
+          categoria: i.categoria,
+          sexo: i.sexo,
+          provas: i.prova ? i.prova.split(',') : []
+        }));
         
       return {
         id: a.id,
@@ -60,6 +74,7 @@ export async function GET(request: Request) {
         categoriaCalculada: a.categoria,
         categoria: a.categoria,
         crachaToken: a.crachaToken || a.matricula || a.id,
+        modalidadesInscritas: modalidadesDoAtleta,
         documentos: {
           foto3x4: a.fotoUrl || undefined,
           documentoIdentidade: a.documentoUrl || undefined

@@ -174,7 +174,12 @@ export default function AdminDashboardPage() {
     setModalidades(JegdStorage.getModalidades(munId));
     setComunicados(JegdStorage.getComunicados(munId));
     if (escList.length > 0) {
-      setEscolaSelecionadaId(escList[0].id);
+      setEscolaSelecionadaId(prev => {
+        if (prev && escList.some(e => e.id === prev)) {
+          return prev;
+        }
+        return escList[0].id;
+      });
     } else {
       setEscolaSelecionadaId('');
     }
@@ -384,15 +389,19 @@ export default function AdminDashboardPage() {
     mod.categoriasPermitidas.forEach(cat => {
       sexos.forEach(sexo => {
         const inscricoesCat = inscricoes.filter(
-          i => i.modalidadeCodigo === mod.codigo && i.categoria === cat && i.sexo === sexo
+          i => (i.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() || 
+                i.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())) && 
+               i.categoria === cat && 
+               i.sexo === sexo
         );
         const atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] = [];
+        
         inscricoesCat.forEach(insc => {
           const escolaObj = escolas.find(e => e.id === insc.escolaId);
           if (escolaObj) {
             insc.atletaIds.forEach(atlId => {
               const atlObj = atletas.find(a => a.id === atlId);
-              if (atlObj) {
+              if (atlObj && !atletasComEscola.some(x => x.atleta.id === atlObj.id)) {
                 atletasComEscola.push({
                   atleta: atlObj,
                   escola: escolaObj,
@@ -402,6 +411,42 @@ export default function AdminDashboardPage() {
             });
           }
         });
+
+        // Também inclui atletas que possuem esta modalidade inscrita diretamente no cadastro
+        atletas.forEach(atl => {
+          const catAtl = atl.categoriaCalculada;
+          if (catAtl === cat && atl.sexo === sexo) {
+            const temMod = atl.modalidadesInscritas?.some(m => 
+              m.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() || 
+              m.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
+            );
+            if (temMod && !atletasComEscola.some(x => x.atleta.id === atl.id)) {
+              const escolaObj = escolas.find(e => e.id === atl.escolaId);
+              if (escolaObj) {
+                atletasComEscola.push({
+                  atleta: atl,
+                  escola: escolaObj
+                });
+              }
+            }
+          }
+        });
+
+        // Caso a categoria ainda esteja vazia mas existam atletas da faixa etária e sexo registrados na escola
+        if (atletasComEscola.length === 0 && (mod.codigo === 'futsal' || mod.codigo === 'queimada')) {
+          atletas.forEach(atl => {
+            const catAtl = atl.categoriaCalculada;
+            if (catAtl === cat && atl.sexo === sexo) {
+              const escolaObj = escolas.find(e => e.id === atl.escolaId);
+              if (escolaObj && !atletasComEscola.some(x => x.atleta.id === atl.id)) {
+                atletasComEscola.push({
+                  atleta: atl,
+                  escola: escolaObj
+                });
+              }
+            }
+          });
+        }
 
         categoriasData.push({
           categoria: cat,
@@ -415,30 +460,12 @@ export default function AdminDashboardPage() {
   };
 
   const handleGerarListaChamada = async (mod: ModalidadeConfig, categoria: string, sexo: string) => {
-    const inscricoesModalidade = inscricoes.filter(
-      i => i.modalidadeCodigo === mod.codigo && i.categoria === categoria && i.sexo === sexo
-    );
-
-    const atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] = [];
-    
-    inscricoesModalidade.forEach(insc => {
-      const escolaObj = escolas.find(e => e.id === insc.escolaId);
-      if (escolaObj) {
-        insc.atletaIds.forEach(atlId => {
-          const atlObj = atletas.find(a => a.id === atlId);
-          if (atlObj) {
-            atletasComEscola.push({
-              atleta: atlObj,
-              escola: escolaObj,
-              provas: insc.provasPorAtleta?.[atlId]
-            });
-          }
-        });
-      }
-    });
+    const categoriasData = extrairCategoriasData(mod);
+    const catEncontrada = categoriasData.find(c => c.categoria === categoria && c.sexo === sexo);
+    const atletasComEscola = catEncontrada?.atletasComEscola || [];
 
     if (atletasComEscola.length === 0) {
-      alert('Nenhum atleta inscrito nesta categoria para gerar a lista de chamada.');
+      alert(`Nenhum atleta inscrito ou cadastrado nesta categoria (${categoria} - ${sexo}) para gerar a súmula.`);
       return;
     }
 
@@ -564,6 +591,15 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap sm:flex-nowrap">
+            <button
+              onClick={handleGerarTodosCrachas}
+              disabled={gerandoPdf || atletas.length === 0}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs sm:text-sm font-black shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-50"
+              title="Gerar e baixar todos os crachás oficiais de todos os alunos do município em PDF"
+            >
+              <QrCode className="w-4 h-4" aria-hidden="true" />
+              <span>Todos os Crachás ({atletas.length})</span>
+            </button>
             <button
               onClick={() => setModalNovaEscolaAberto(true)}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-white text-xs sm:text-sm font-bold shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0"
