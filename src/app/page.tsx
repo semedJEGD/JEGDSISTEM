@@ -42,9 +42,35 @@ export default function HomePage() {
     JegdStorage.init();
     const munList = JegdStorage.getMunicipios();
     setMunicipios(munList);
-    const curMun = JegdStorage.getCurrentMunicipio();
+
+    let curMun = JegdStorage.getCurrentMunicipio();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mParam = params.get('m') || params.get('municipio');
+      if (mParam) {
+        const found = munList.find(m => m.slug === mParam || m.id === mParam);
+        if (found) {
+          curMun = found;
+          JegdStorage.setCurrentMunicipio(found);
+        }
+      }
+    }
+
     setMunicipioAtual(curMun);
     carregarDados(curMun?.id);
+
+    const handleStorageChange = (e?: any) => {
+      const updated = e?.detail || JegdStorage.getCurrentMunicipio();
+      setMunicipioAtual(updated);
+      carregarDados(updated?.id);
+    };
+
+    window.addEventListener('jegd-municipio-changed', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('jegd-municipio-changed', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const carregarDados = (targetMunId?: string) => {

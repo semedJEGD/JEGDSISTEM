@@ -99,47 +99,76 @@ export default function PortalMunicipiosPage() {
 
         {/* Grid de Municípios */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 w-full text-left">
-          {municipiosFiltrados.map((mun) => (
-            <div
-              key={mun.id}
-              onClick={() => handleAcessarMunicipio(mun)}
-              className="group bg-[#061224]/80 hover:bg-[#0A1B36] border border-white/10 hover:border-[#3B82F6]/50 rounded-2xl sm:rounded-3xl p-6 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-900/20 cursor-pointer relative overflow-hidden backdrop-blur-md flex flex-col justify-between"
-            >
-              {/* Glow interno no hover */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6]/0 group-hover:bg-[#3B82F6]/10 rounded-full blur-2xl transition-all duration-500 pointer-events-none" />
+          {municipiosFiltrados.map((mun) => {
+            const totalEscolas = JegdStorage.getEscolas(mun.id).length;
+            const siglaEvento = mun.siglaEvento || 'JOGOS 2026';
 
-              <div>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-inner">
-                    <MapPin className="w-5 h-5" />
+            return (
+              <div
+                key={mun.id}
+                onClick={() => handleAcessarMunicipio(mun)}
+                className="group bg-[#061224]/85 hover:bg-[#0A1B36] border border-white/10 hover:border-[#3B82F6]/60 rounded-2xl sm:rounded-3xl p-6 sm:p-7 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-900/30 cursor-pointer relative overflow-hidden backdrop-blur-md flex flex-col justify-between"
+              >
+                {/* Glow interno no hover */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#3B82F6]/0 to-[#60A5FA]/0 group-hover:from-[#3B82F6]/15 group-hover:to-teal-500/10 rounded-full blur-2xl transition-all duration-500 pointer-events-none" />
+
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/15 to-emerald-500/10 border border-blue-400/25 flex items-center justify-center text-blue-400 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-emerald-600 group-hover:text-white transition-all shadow-inner">
+                        <MapPin className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-blue-200 transition-colors">
+                            {mun.nome}
+                          </h2>
+                          <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/15 text-slate-300 text-[10px] font-black uppercase tracking-wider">
+                            {mun.uf}
+                          </span>
+                        </div>
+                        <span className="text-xs text-blue-400/90 font-medium">
+                          {mun.subdominio}.idebnapratica.com.br
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Badge do Evento Esportivo Oficial */}
+                    <div className="shrink-0 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-black tracking-wide shadow-xs">
+                      {siglaEvento}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg sm:text-xl font-black text-white group-hover:text-blue-300 transition-colors">
-                      {mun.nome}
-                    </h2>
-                    <span className="px-2 py-0.5 rounded-md bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-black uppercase tracking-wider">
-                      {mun.uf}
+
+                  <p className="text-xs sm:text-sm text-slate-300/80 font-normal mb-5 leading-relaxed line-clamp-2">
+                    {mun.nomeEvento || `Secretaria Municipal de Educação de ${mun.nome}`}
+                  </p>
+
+                  {/* Informações Complementares: Escolas e Status */}
+                  <div className="flex flex-wrap items-center gap-2 mb-6 text-[11px] font-semibold text-slate-400">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/5">
+                      <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                      <span>{totalEscolas} {totalEscolas === 1 ? 'Escola' : 'Escolas'} Cadastradas</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Inscrições Abertas</span>
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs sm:text-sm text-slate-400 font-medium mb-6 line-clamp-2">
-                  {mun.nomeEvento || `Secretaria Municipal de Educação de ${mun.nome}`}
-                </p>
+                {/* Botão Inferior do Card */}
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs sm:text-sm">
+                  <span className="text-slate-400 group-hover:text-slate-200 transition-colors font-medium">
+                    Portal da SEMED & Escolas
+                  </span>
+                  <span className="text-blue-400 group-hover:text-blue-300 font-black flex items-center gap-2 transition-all group-hover:translate-x-1.5">
+                    <span>Acessar {siglaEvento}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
               </div>
-
-              {/* Botão Inferior do Card */}
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
-                <span className="text-slate-400 group-hover:text-slate-300 transition-colors font-medium">
-                  Acessar Semed Digital
-                </span>
-                <span className="text-blue-400 group-hover:text-blue-300 font-black flex items-center gap-1.5 transition-all group-hover:translate-x-1">
-                  <span>Ir para o Portal</span>
-                  <ArrowRight className="w-4 h-4" />
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {municipiosFiltrados.length === 0 && (

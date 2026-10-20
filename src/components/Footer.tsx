@@ -93,6 +93,11 @@ export default function Footer() {
                   Crachá & Controle Logístico
                 </Link>
               </li>
+              <li>
+                <Link href="/portal" className="text-[#0B4B88] hover:text-[#00A878] font-bold transition-colors flex items-center gap-1">
+                  <span>Portal de Municípios (Cidades)</span>
+                </Link>
+              </li>
             </ul>
           </div>
 

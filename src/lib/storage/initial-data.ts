@@ -70,6 +70,22 @@ export const MUNICIPIOS_INICIAIS: Municipio[] = [
     contatoSemed: 'semed@governadoreugeniobarros.ma.gov.br',
     ativo: true,
     createdAt: new Date().toISOString()
+  },
+  {
+    id: 'senador-alexandre-costa-ma',
+    nome: 'Senador Alexandre Costa',
+    sigla: 'SAC',
+    uf: 'MA',
+    slug: 'senador-alexandre-costa',
+    nomeEvento: 'Secretaria Municipal de Educação de Senador Alexandre Costa',
+    siglaEvento: 'JESAC 2026',
+    subdominio: 'sac',
+    dominio: 'jesac.senadoralexandrecosta.ma.gov.br',
+    dominiosAdicionais: ['jesac.com.br', 'jegds-sac.vercel.app', 'jesac-2026.vercel.app'],
+    brasaoUrl: '/icon.png',
+    contatoSemed: 'semed@senadoralexandrecosta.ma.gov.br',
+    ativo: true,
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -587,6 +603,83 @@ export const ESCOLAS_GONCALVES_DIAS: Escola[] = [
     loginEmail: 'macario@semed.eugeniobarros.gov.br',
     senhaHash: '123456',
     createdAt: new Date().toISOString()
+  },
+
+  // 5. SENADOR ALEXANDRE COSTA - MA (JESAC 2026)
+  {
+    id: 'esc-sac-alcides-cesar',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'Centro de Ensino Alcides César Meneses',
+    sigla: 'ALCIDES CÉSAR',
+    inep: '21129990',
+    rede: 'ESTADUAL',
+    bairro: 'Centro',
+    endereco: 'Rua Principal, Centro, Senador Alexandre Costa - MA',
+    responsavelNome: 'Direção Escolar',
+    responsavelTelefone: '(99) 98805-0001',
+    loginEmail: 'alcidescesar@educacao.ma.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sac-gastao-vieira',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'U.I. Deputado Gastão Vieira',
+    sigla: 'GASTÃO VIEIRA',
+    inep: '21130001',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Senador Alexandre Costa - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98805-0002',
+    loginEmail: 'gastaovieira@semed.sac.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sac-sao-raimundo',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'U.E. São Raimundo Nonato',
+    sigla: 'SÃO RAIMUNDO',
+    inep: '21130015',
+    rede: 'MUNICIPAL',
+    bairro: 'Bairro Novo',
+    endereco: 'Senador Alexandre Costa - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98805-0003',
+    loginEmail: 'saoraimundo@semed.sac.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sac-senador-alexandre',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'U.I. Senador Alexandre Costa',
+    sigla: 'SENADOR ALEXANDRE',
+    inep: '21130028',
+    rede: 'MUNICIPAL',
+    bairro: 'Centro',
+    endereco: 'Senador Alexandre Costa - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98805-0004',
+    loginEmail: 'senadoralexandre@semed.sac.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'esc-sac-maria-rosa',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'U.E. Maria Rosa',
+    sigla: 'MARIA ROSA',
+    inep: '21130042',
+    rede: 'MUNICIPAL',
+    bairro: 'Povoado Santana (Zona Rural)',
+    endereco: 'Zona Rural, Senador Alexandre Costa - MA',
+    responsavelNome: 'Direção SEMED',
+    responsavelTelefone: '(99) 98805-0005',
+    loginEmail: 'mariarosa@semed.sac.gov.br',
+    senhaHash: '123456',
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -600,6 +693,16 @@ export const COMUNICADOS_JEGDS: ComunicadoAviso[] = [
     dataPublicacao: '14/09/2026',
     urgente: true,
     autor: 'Comitê Organizador'
+  },
+  {
+    id: 'aviso-sac-01',
+    municipioId: 'senador-alexandre-costa-ma',
+    titulo: 'Regulamento Oficial dos Jogos Escolares de Senador Alexandre Costa (JESAC 2026)',
+    conteudo: 'A Secretaria Municipal de Educação (SEMED) e a Comissão Organizadora do JESAC 2026 convidam todas as escolas da rede municipal e estadual a cadastrarem seus atletas nas modalidades oficiais.',
+    categoria: 'REGULAMENTO',
+    dataPublicacao: '20/10/2026',
+    urgente: true,
+    autor: 'Coordenação Geral JESAC'
   }
 ];
 
@@ -650,6 +753,16 @@ export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
     nome: 'Coordenação SEMED Governador Eugênio Barros',
     email: 'semed@governadoreugeniobarros.ma.gov.br',
     telefone: '(99) 98804-1001',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  // 5. Senador Alexandre Costa - MA (JESAC 2026)
+  {
+    id: 'coord-sac-semed',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'Coordenação Geral SEMED / JESAC (Senador Alexandre Costa)',
+    email: 'semed@senadoralexandrecosta.ma.gov.br',
+    telefone: '(99) 98805-1001',
     papel: 'COORDENADOR',
     createdAt: new Date().toISOString()
   },

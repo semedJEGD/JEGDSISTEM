@@ -13,7 +13,8 @@ import {
   Menu, 
   X, 
   Home, 
-  LogIn 
+  LogIn,
+  MapPin 
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Escola, Municipio } from '@/types/jegd';
@@ -170,6 +171,18 @@ export default function Navbar() {
               <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Crachá Oficial</span>
             </Link>
+
+            <Link
+              href="/portal"
+              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+                pathname.startsWith('/portal')
+                  ? 'bg-blue-50 text-blue-700 shadow-2xs font-black'
+                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+              }`}
+            >
+              <MapPin className={`w-4 h-4 ${pathname.startsWith('/portal') ? 'text-blue-600' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <span>Municípios</span>
+            </Link>
           </nav>
 
           {/* BOTÃO DE LOGIN / ÁREA AUTENTICADA & MENU MOBILE */}
@@ -288,6 +301,19 @@ export default function Navbar() {
               >
                 <QrCode className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
                 <span>Crachá Oficial & Guia</span>
+              </Link>
+
+              <Link
+                href="/portal"
+                onClick={() => setMenuMobileAberto(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  pathname.startsWith('/portal')
+                    ? 'bg-blue-50 text-blue-700 font-black'
+                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
+                }`}
+              >
+                <MapPin className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                <span>Portal de Municípios</span>
               </Link>
             </nav>
 

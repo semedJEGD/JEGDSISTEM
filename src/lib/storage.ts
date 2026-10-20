@@ -116,6 +116,20 @@ export class JegdStorage {
 
     if (!localStorage.getItem(STORAGE_KEYS.ESCOLAS)) {
       localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(ESCOLAS_GONCALVES_DIAS));
+    } else {
+      try {
+        const storedEscolas: Escola[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ESCOLAS) || '[]');
+        let updatedEscolas = false;
+        ESCOLAS_GONCALVES_DIAS.forEach(initialEscola => {
+          if (!storedEscolas.some(e => e.id === initialEscola.id)) {
+            storedEscolas.push(initialEscola);
+            updatedEscolas = true;
+          }
+        });
+        if (updatedEscolas) {
+          localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(storedEscolas));
+        }
+      } catch {}
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.MODALIDADES)) {
@@ -124,10 +138,38 @@ export class JegdStorage {
 
     if (!localStorage.getItem(STORAGE_KEYS.COMUNICADOS)) {
       localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(COMUNICADOS_JEGDS));
+    } else {
+      try {
+        const storedAvisos: ComunicadoAviso[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMUNICADOS) || '[]');
+        let updatedAvisos = false;
+        COMUNICADOS_JEGDS.forEach(initialAviso => {
+          if (!storedAvisos.some(a => a.id === initialAviso.id)) {
+            storedAvisos.push(initialAviso);
+            updatedAvisos = true;
+          }
+        });
+        if (updatedAvisos) {
+          localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(storedAvisos));
+        }
+      } catch {}
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.USUARIOS)) {
       localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(COORDENADORES_OFICIAIS_SEMED));
+    } else {
+      try {
+        const storedUsers: Usuario[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.USUARIOS) || '[]');
+        let updatedUsers = false;
+        COORDENADORES_OFICIAIS_SEMED.forEach(initialUser => {
+          if (!storedUsers.some(u => u.id === initialUser.id || (initialUser.email && u.email?.toLowerCase() === initialUser.email.toLowerCase()))) {
+            storedUsers.push(initialUser);
+            updatedUsers = true;
+          }
+        });
+        if (updatedUsers) {
+          localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(storedUsers));
+        }
+      } catch {}
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.ATLETAS)) {
