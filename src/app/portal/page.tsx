@@ -13,12 +13,20 @@ import {
   Sparkles,
   Lock
 } from 'lucide-react';
-import { JegdStorage } from '@/lib/storage';
+import { JegdStorage, MUNICIPIOS_INICIAIS } from '@/lib/storage';
 import { Municipio } from '@/types/jegd';
 
 export default function PortalMunicipiosPage() {
   const router = useRouter();
-  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        JegdStorage.init();
+        return JegdStorage.getMunicipios();
+      } catch {}
+    }
+    return MUNICIPIOS_INICIAIS;
+  });
   const [busca, setBusca] = useState('');
 
   useEffect(() => {

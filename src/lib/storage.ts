@@ -359,7 +359,12 @@ export class JegdStorage {
   // ==========================================
 
   public static getEscolas(municipioId?: string): Escola[] {
-    if (!this.isClient()) return ESCOLAS_GONCALVES_DIAS;
+    if (!this.isClient()) {
+      if (municipioId && municipioId !== 'ALL') {
+        return ESCOLAS_GONCALVES_DIAS.filter(e => !e.municipioId || e.municipioId === municipioId);
+      }
+      return ESCOLAS_GONCALVES_DIAS;
+    }
     this.init();
     const data = localStorage.getItem(STORAGE_KEYS.ESCOLAS);
     const list: Escola[] = data ? JSON.parse(data) : ESCOLAS_GONCALVES_DIAS;
