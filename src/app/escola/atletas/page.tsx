@@ -48,9 +48,8 @@ export default function EscolaAtletasPage() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
   const [filtroProfessor, setFiltroProfessor] = useState<string>('TODOS');
 
-  // Modal de Cadastro Rápido em 2 Etapas
+  // Modal de Cadastro Rápido e Fluido
   const [modalAberto, setModalAberto] = useState(false);
-  const [etapaAtual, setEtapaAtual] = useState<1 | 2>(1);
   const [atletaEditando, setAtletaEditando] = useState<Atleta | null>(null);
 
   // Form State - Etapa 1 (Dados do Aluno)
@@ -129,7 +128,6 @@ export default function EscolaAtletasPage() {
 
   const handleAbrirModalNovo = () => {
     setAtletaEditando(null);
-    setEtapaAtual(1);
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
@@ -150,7 +148,6 @@ export default function EscolaAtletasPage() {
 
   const handleAbrirModalEditar = (atleta: Atleta) => {
     setAtletaEditando(atleta);
-    setEtapaAtual(1);
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
@@ -223,8 +220,9 @@ export default function EscolaAtletasPage() {
     }
   };
 
-  const handleAvancarParaEtapa2 = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSalvarAtleta = (cadastrarProximo: boolean = false) => {
+    if (!escola) return;
+
     if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
       alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
       return;
@@ -235,59 +233,18 @@ export default function EscolaAtletasPage() {
       return;
     }
 
-    // Se estiver cadastrando novo (não editando), verifica duplicidade
-    if (!atletaEditando && escola) {
-      const diag = JegdStorage.verificarDuplicidadeAtleta({
-        nomeCompleto,
-        dataNascimento,
-        documentoNumero,
-        matricula,
-        escolaIdAtual: escola.id
-      });
-
-      if (diag.duplicado) {
-        if (diag.tipoConflito === 'OUTRA_ESCOLA') {
-          alert(diag.mensagemUsuario || 'Este estudante já se encontra cadastrado por outra escola.');
-          return;
-        } else if (diag.tipoConflito === 'MESMA_ESCOLA' && diag.atletaExistente) {
-          // Carrega os dados existentes e avança direto para a etapa de modalidades
-          const exist = diag.atletaExistente;
-          setAtletaEditando(exist);
-          setNomeCompleto(exist.nomeCompleto);
-          setDataNascimento(exist.dataNascimento);
-          setSexo(exist.sexo);
-          setDocumentoTipo(exist.documentoTipo || 'RG');
-          setDocumentoNumero(exist.documentoNumero || '');
-          setMatricula(exist.matricula);
-          setSerieTurma(exist.serieTurma || '7º Ano (Fundamental)');
-          setNomeMae(exist.nomeMae || '');
-          setTelefoneContato(exist.telefoneContato || '(99) 98888-0000');
-          setTipoSanguineo(exist.tipoSanguineo || 'O+');
-          setConsentimentoResponsavel(exist.consentimentoResponsavel ?? true);
-          setFotoBase64(exist.documentos?.foto3x4 || undefined);
-          setModalidadesEscolhidas(exist.modalidadesInscritas?.map(m => m.modalidadeCodigo as any) || []);
-          const atletismoInsc = exist.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
-          setProvasAtletismo(atletismoInsc?.provas || []);
-          setEtapaAtual(2);
-          return;
-        }
-      }
-    }
-
-    setEtapaAtual(2);
-  };
-
-  const handleSalvarAtleta = (cadastrarProximo: boolean = false) => {
-    if (!escola) return;
-
-    if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
-      alert('Por favor, preencha os dados obrigatórios do aluno.');
-      setEtapaAtual(1);
+    if (modalidadesEscolhidas.length === 0) {
+      alert('Selecione ao menos 1 modalidade para inscrever o estudante.');
       return;
     }
 
     if (modalidadesEscolhidas.includes('atletismo') && provasAtletismo.length === 0) {
       alert('Selecione ao menos 1 prova de Atletismo para este atleta.');
+      return;
+    }
+
+    if (!atletaEditando && diagnosticoDuplicidade.duplicado && diagnosticoDuplicidade.tipoConflito === 'OUTRA_ESCOLA') {
+      alert(diagnosticoDuplicidade.mensagemUsuario || 'Estudante bloqueado por duplicidade em outra escola.');
       return;
     }
 
@@ -575,8 +532,6 @@ export default function EscolaAtletasPage() {
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         atletaEditando={atletaEditando}
-        etapaAtual={etapaAtual}
-        setEtapaAtual={setEtapaAtual}
         nomeCompleto={nomeCompleto}
         setNomeCompleto={setNomeCompleto}
         dataNascimento={dataNascimento}
@@ -601,13 +556,11 @@ export default function EscolaAtletasPage() {
         provasPermitidas={provasPermitidas}
         provasAtletismo={provasAtletismo}
         toggleProva={toggleProva}
-        handleAvancarParaEtapa2={handleAvancarParaEtapa2}
         handleSalvarAtleta={handleSalvarAtleta}
         escolaId={escola?.id || ''}
         diagnosticoDuplicidade={diagnosticoDuplicidade}
         onCarregarAtletaDuplicado={(atl) => {
           handleAbrirModalEditar(atl);
-          setEtapaAtual(2);
         }}
       />
 
