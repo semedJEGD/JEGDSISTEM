@@ -245,7 +245,7 @@ export default function EscolaAtletasPage() {
           setTelefoneContato(exist.telefoneContato || '(99) 98888-0000');
           setTipoSanguineo(exist.tipoSanguineo || 'O+');
           setConsentimentoResponsavel(exist.consentimentoResponsavel ?? true);
-          setFotoBase64(exist.documentos?.foto3x4 || exist.fotoUrl);
+          setFotoBase64(exist.documentos?.foto3x4 || undefined);
           setModalidadesEscolhidas(exist.modalidadesInscritas?.map(m => m.modalidadeCodigo as any) || []);
           const atletismoInsc = exist.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
           setProvasAtletismo(atletismoInsc?.provas || []);
