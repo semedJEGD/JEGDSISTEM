@@ -18,7 +18,7 @@ export const MUNICIPIOS_INICIAIS: Municipio[] = [
     subdominio: 'gd',
     dominio: 'jegds.goncalvesdias.ma.gov.br',
     dominiosAdicionais: ['jegds.com.br', 'jegds-gd.vercel.app', 'jegdsistem.vercel.app'],
-    brasaoUrl: '/icon.png',
+    brasaoUrl: '/logos/prefeitura-goncalves-dias.png',
     contatoSemed: 'semed@goncalvesdias.ma.gov.br',
     ativo: true,
     createdAt: new Date().toISOString()
@@ -34,7 +34,7 @@ export const MUNICIPIOS_INICIAIS: Municipio[] = [
     subdominio: 'sal',
     dominio: 'jesal.santoantoniodoslopes.ma.gov.br',
     dominiosAdicionais: ['jesal.com.br', 'jegds-sal.vercel.app', 'jesal-2026.vercel.app'],
-    brasaoUrl: '/icon.png',
+    brasaoUrl: '/logos/prefeitura-santo-antonio-dos-lopes.png',
     contatoSemed: 'semed@santoantoniodoslopes.ma.gov.br',
     ativo: true,
     createdAt: new Date().toISOString()
@@ -82,7 +82,7 @@ export const MUNICIPIOS_INICIAIS: Municipio[] = [
     subdominio: 'sac',
     dominio: 'jesac.senadoralexandrecosta.ma.gov.br',
     dominiosAdicionais: ['jesac.com.br', 'jegds-sac.vercel.app', 'jesac-2026.vercel.app'],
-    brasaoUrl: '/icon.png',
+    brasaoUrl: '/logos/brasao-senador-alexandre-costa.png',
     contatoSemed: 'semed@senadoralexandrecosta.ma.gov.br',
     ativo: true,
     createdAt: new Date().toISOString()

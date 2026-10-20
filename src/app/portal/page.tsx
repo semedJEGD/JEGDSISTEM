@@ -141,14 +141,15 @@ export default function PortalMunicipiosPage() {
             <div>
               {/* Topo do Card: Logo Prefeitura + Badge Módulo */}
               <div className="flex items-center justify-between gap-3 mb-5">
-                <div className="px-3.5 py-1.5 rounded-xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center">
-                  <span className="text-[11px] font-black tracking-wider text-slate-800 uppercase flex items-center gap-1">
-                    <span className="text-emerald-600">PREFEITURA DE</span>
-                    <span className="text-[#0B4B88]">GONÇALVES DIAS</span>
-                  </span>
+                <div className="h-14 px-3.5 py-1.5 rounded-2xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center shadow-2xs">
+                  <img
+                    src="/logos/prefeitura-goncalves-dias.png"
+                    alt="Prefeitura Municipal de Gonçalves Dias"
+                    className="h-10 sm:h-11 w-auto max-w-[170px] object-contain"
+                  />
                 </div>
 
-                <div className="px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] text-[10px] font-black uppercase tracking-wider">
+                <div className="px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] text-[10px] font-black uppercase tracking-wider shrink-0">
                   MÓDULO JEGDS
                 </div>
               </div>
@@ -221,14 +222,19 @@ export default function PortalMunicipiosPage() {
             <div>
               {/* Topo do Card: Logo Prefeitura + Badge Módulo */}
               <div className="flex items-center justify-between gap-3 mb-5">
-                <div className="px-3.5 py-1.5 rounded-xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center">
-                  <span className="text-[11px] font-black tracking-wider text-slate-800 uppercase flex items-center gap-1">
-                    <span className="text-emerald-600">PREFEITURA DE</span>
-                    <span className="text-[#2563EB]">SEN. ALEXANDRE COSTA</span>
-                  </span>
+                <div className="h-14 px-3.5 py-1.5 rounded-2xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center gap-2.5 shadow-2xs">
+                  <img
+                    src="/logos/brasao-senador-alexandre-costa.png"
+                    alt="Brasão Oficial de Senador Alexandre Costa"
+                    className="h-11 sm:h-12 w-auto object-contain shrink-0"
+                  />
+                  <div className="flex flex-col text-left leading-none pr-1">
+                    <span className="text-[8px] font-black uppercase text-emerald-600 tracking-wider">PREFEITURA DE</span>
+                    <span className="text-[10px] font-black uppercase text-slate-800 tracking-tight mt-0.5">SEN. ALEXANDRE COSTA</span>
+                  </div>
                 </div>
 
-                <div className="px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] text-[10px] font-black uppercase tracking-wider">
+                <div className="px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#2563EB] text-[10px] font-black uppercase tracking-wider shrink-0">
                   MÓDULO JESAC
                 </div>
               </div>
@@ -299,14 +305,15 @@ export default function PortalMunicipiosPage() {
             <div>
               {/* Topo do Card: Logo Prefeitura + Badge Módulo */}
               <div className="flex items-center justify-between gap-3 mb-5">
-                <div className="px-3.5 py-1.5 rounded-xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center">
-                  <span className="text-[11px] font-black tracking-wider text-slate-800 uppercase flex items-center gap-1">
-                    <span className="text-emerald-600">PREFEITURA DE</span>
-                    <span className="text-[#0284C7]">SANTO ANTÔNIO</span>
-                  </span>
+                <div className="h-14 px-3.5 py-1.5 rounded-2xl border border-slate-100 bg-[#F8FAFC] flex items-center justify-center shadow-2xs">
+                  <img
+                    src="/logos/prefeitura-santo-antonio-dos-lopes.png"
+                    alt="Prefeitura Municipal de Santo Antônio dos Lopes"
+                    className="h-10 sm:h-11 w-auto max-w-[180px] object-contain"
+                  />
                 </div>
 
-                <div className="px-3 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[#0284C7] text-[10px] font-black uppercase tracking-wider">
+                <div className="px-3 py-1 rounded-full bg-[#E0F2FE] border border-[#BAE6FD] text-[#0284C7] text-[10px] font-black uppercase tracking-wider shrink-0">
                   MÓDULO JESAL
                 </div>
               </div>
@@ -399,8 +406,12 @@ export default function PortalMunicipiosPage() {
                   className="p-3 rounded-xl hover:bg-blue-50/80 border border-transparent hover:border-blue-200 flex items-center justify-between cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs">
-                      {m.sigla || 'MUN'}
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xs shrink-0 overflow-hidden p-0.5">
+                      {m.brasaoUrl ? (
+                        <img src={m.brasaoUrl} alt={m.nome} className="w-full h-full object-contain" />
+                      ) : (
+                        m.sigla || 'MUN'
+                      )}
                     </div>
                     <div>
                       <div className="font-bold text-sm text-slate-900">{m.nome} - {m.uf}</div>
@@ -451,8 +462,12 @@ export default function PortalMunicipiosPage() {
                   className="w-full p-3.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/60 text-left flex items-center justify-between transition-all group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-700 flex items-center justify-center font-black text-xs transition-colors">
-                      {m.sigla || 'MUN'}
+                    <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 group-hover:border-blue-400 text-slate-700 flex items-center justify-center font-black text-xs transition-colors shrink-0 overflow-hidden p-1">
+                      {m.brasaoUrl ? (
+                        <img src={m.brasaoUrl} alt={m.nome} className="w-full h-full object-contain" />
+                      ) : (
+                        m.sigla || 'MUN'
+                      )}
                     </div>
                     <div>
                       <div className="font-black text-xs sm:text-sm text-slate-900">{m.nome} - {m.uf}</div>
