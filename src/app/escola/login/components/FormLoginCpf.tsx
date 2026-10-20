@@ -12,6 +12,7 @@ interface FormLoginCpfProps {
   setMostrarSenhaLogin: (val: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   onAlternarModoCadastro: () => void;
+  placeholderEmail?: string;
 }
 
 export function FormLoginCpf({
@@ -22,7 +23,8 @@ export function FormLoginCpf({
   mostrarSenhaLogin,
   setMostrarSenhaLogin,
   onSubmit,
-  onAlternarModoCadastro
+  onAlternarModoCadastro,
+  placeholderEmail
 }: FormLoginCpfProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-3 sm:space-y-3.5">
@@ -37,7 +39,7 @@ export function FormLoginCpf({
             maxLength={80}
             value={loginCpf}
             onChange={(e) => setLoginCpf(e.target.value)}
-            placeholder="ex: josecorrea@semed.gd.gov.br"
+            placeholder={placeholderEmail || "ex: escola@semed.gov.br"}
             className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
           />
           <Mail className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3.5" />

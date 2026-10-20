@@ -65,6 +65,20 @@ export function resolveMunicipioFromHost(
     };
   }
 
+  // Domínio raiz multi-tenant ou localhost: permite livre chaveamento de municípios via rota e parâmetros
+  if (
+    hostname === 'jegdsistem.vercel.app' ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  ) {
+    return {
+      municipio: municipios[0] || null,
+      isDomainLocked: false,
+      detectedHostname: hostname,
+      matchedBy: 'none'
+    };
+  }
+
   // 1. Verificação por Domínio Personalizado Exato (ex: "jesal.santoantonio.ma.gov.br")
   const matchCustomDomain = municipios.find(
     m => m.dominio && normalizeHostname(m.dominio) === hostname

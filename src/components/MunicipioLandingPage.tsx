@@ -1,0 +1,426 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  Trophy,
+  School,
+  Users,
+  Calendar,
+  ShieldCheck,
+  ArrowRight,
+  Sparkles,
+  FileCheck,
+  QrCode,
+  Medal,
+  ChevronRight,
+  Flame,
+  CheckCircle2,
+  AlertCircle,
+  FileText
+} from 'lucide-react';
+import { JegdStorage, MUNICIPIOS_INICIAIS } from '@/lib/storage';
+import { Escola, ModalidadeConfig, ComunicadoAviso, Municipio } from '@/types/jegd';
+
+interface MunicipioLandingPageProps {
+  targetSlug: string;
+}
+
+export default function MunicipioLandingPage({ targetSlug }: MunicipioLandingPageProps) {
+  const [municipio, setMunicipio] = useState<Municipio | null>(null);
+  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
+  const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
+  const [totalAtletas, setTotalAtletas] = useState(0);
+  const [totalInscricoes, setTotalInscricoes] = useState(0);
+  const [videoIndexAtual, setVideoIndexAtual] = useState(0);
+
+  const bannerVideos = [
+    '/VIDEOJEGDS.mp4?v=2026',
+    '/segundo-video-banner.mp4?v=2026'
+  ];
+
+  useEffect(() => {
+    JegdStorage.init();
+    const munList = JegdStorage.getMunicipios();
+    const foundMun = munList.find(m => m.slug === targetSlug || m.id === targetSlug) || 
+      MUNICIPIOS_INICIAIS.find(m => m.slug === targetSlug) || 
+      munList[0];
+
+    if (foundMun) {
+      setMunicipio(foundMun);
+      JegdStorage.setCurrentMunicipio(foundMun);
+      carregarDados(foundMun.id);
+    }
+
+    const handleStorageChange = (e?: any) => {
+      const updated = e?.detail || JegdStorage.getCurrentMunicipio();
+      if (updated && (updated.slug === targetSlug || updated.id === targetSlug)) {
+        setMunicipio(updated);
+        carregarDados(updated.id);
+      }
+    };
+
+    window.addEventListener('jegd-municipio-changed', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('jegd-municipio-changed', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [targetSlug]);
+
+  const carregarDados = (targetMunId: string) => {
+    setEscolas(JegdStorage.getEscolas(targetMunId));
+    setModalidades(JegdStorage.getModalidades(targetMunId));
+    setComunicados(JegdStorage.getComunicados(targetMunId));
+    setTotalAtletas(JegdStorage.getAtletas(undefined, targetMunId).length);
+    setTotalInscricoes(JegdStorage.getInscricoes(undefined, targetMunId).length);
+  };
+
+  const munNome = municipio?.nome || 'Município';
+  const munUf = municipio?.uf || 'MA';
+  const munSiglaEvento = municipio?.siglaEvento || 'JOGOS ESCOLARES 2026';
+  const munNomeEvento = municipio?.nomeEvento || `Jogos Escolares de ${munNome}`;
+  const munSlug = municipio?.slug || targetSlug;
+
+  return (
+    <div className="min-h-screen bg-[#F7F9F8] text-[#17221D] flex flex-col font-sans">
+      
+      {/* Banner de Aviso Oficial da Cidade */}
+      {comunicados.length > 0 && comunicados[0].urgente && (
+        <div className="bg-red-600 text-white font-semibold py-2.5 px-4 text-xs sm:text-sm text-center shadow-xs flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5]" />
+          <span>
+            <strong>AVISO OFICIAL ({munSiglaEvento}):</strong> {comunicados[0].titulo} —{' '}
+            <Link href={`/regulamento?m=${munSlug}`} className="underline font-bold hover:text-red-100 transition-colors">
+              Leia o Comunicado
+            </Link>
+          </span>
+        </div>
+      )}
+
+      {/* BANNER OFICIAL HERO */}
+      <section className="relative bg-white border-b border-[#E2EAE5] pt-6 pb-12 overflow-hidden">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Hero Video Institucional Oficial com Playlist Contínua */}
+          <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-[#17221D] relative group">
+            <video
+              key={bannerVideos[videoIndexAtual]}
+              autoPlay
+              muted
+              playsInline
+              onEnded={() => setVideoIndexAtual((prev) => (prev + 1) % bannerVideos.length)}
+              poster="/banner-jegd.png"
+              className="w-full h-auto max-h-[380px] object-cover object-center block"
+            >
+              <source src={bannerVideos[videoIndexAtual]} type="video/mp4" />
+              <img
+                src="/banner-jegd.png"
+                alt={`Banner Oficial ${munSiglaEvento} - Mais que jogos, grandes valores para a vida`}
+                className="w-full h-auto max-h-[380px] object-cover object-center block"
+              />
+            </video>
+
+            {/* Indicadores de Playlist do Banner */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/15 z-10 shadow-sm">
+              {bannerVideos.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setVideoIndexAtual(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    videoIndexAtual === idx ? 'w-5 bg-[#00A878]' : 'w-1.5 bg-white/40 hover:bg-white/80'
+                  }`}
+                  aria-label={`Ir para vídeo ${idx + 1}`}
+                  title={`Vídeo ${idx + 1} de ${bannerVideos.length}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Conteúdo Central Hero Personalizado para o Município */}
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            
+            {/* Tag Institucional da Cidade com Brasão Oficial */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs sm:text-sm font-bold shadow-2xs flex-wrap justify-center">
+              {municipio?.brasaoUrl ? (
+                <img
+                  src={municipio.brasaoUrl}
+                  alt={munNome}
+                  className="w-5 h-5 object-contain shrink-0"
+                />
+              ) : (
+                <Sparkles className="w-4 h-4 text-[#00A878] shrink-0" />
+              )}
+              <span>SEMED • PREFEITURA DE {munNome.toUpperCase()} - {munUf}</span>
+              <span className="px-2 py-0.5 rounded-md bg-[#00A878] text-white text-[10px] font-black uppercase tracking-wider">
+                {munSiglaEvento}
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#17221D] leading-tight">
+              {munNomeEvento}
+            </h1>
+
+            <p className="text-base sm:text-lg text-[#374151] leading-relaxed font-normal max-w-2xl mx-auto">
+              Plataforma oficial para diretores e professores de {munNome} cadastrarem atletas, gerenciarem equipes e emitirem crachás com QR Code para os {munSiglaEvento}.
+            </p>
+
+            {/* Ações Hero com Tenant Travado */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
+              <Link
+                href={`/escola/login?m=${munSlug}`}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-base shadow-sm hover:shadow-md flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-98"
+              >
+                <School className="w-5 h-5 stroke-[2.5]" />
+                <span>Acessar Painel da Escola ({munNome})</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                href={`/modalidades?m=${munSlug}`}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#F7F9F8] hover:bg-white text-[#17221D] font-bold text-base border border-[#E2EAE5] hover:border-[#00A878] flex items-center justify-center gap-2 transition-all duration-200 shadow-2xs"
+              >
+                <span>Ver Modalidades & Regras</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Métricas Rápidas Exclusivas do Município (Sem Cruzamento) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-10 text-left">
+            <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center gap-2 text-[#087A5B] mb-1">
+                <School className="w-4 h-4 text-[#00A878]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[#4B5563]">Escolas</span>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black text-[#17221D]">{escolas.length}</p>
+              <p className="text-xs text-[#68756E] mt-0.5">Cadastradas em {munNome}</p>
+            </div>
+
+            <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center gap-2 text-[#087A5B] mb-1">
+                <Users className="w-4 h-4 text-[#00A878]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[#4B5563]">Atletas</span>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black text-[#17221D]">{totalAtletas}</p>
+              <p className="text-xs text-[#68756E] mt-0.5">Alunos inscritos</p>
+            </div>
+
+            <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center gap-2 text-[#087A5B] mb-1">
+                <Trophy className="w-4 h-4 text-[#00A878]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[#4B5563]">Modalidades</span>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black text-[#17221D]">{modalidades.length}</p>
+              <p className="text-xs text-[#68756E] mt-0.5">Categorias oficiais</p>
+            </div>
+
+            <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 shadow-xs">
+              <div className="flex items-center gap-2 text-[#087A5B] mb-1">
+                <FileCheck className="w-4 h-4 text-[#00A878]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[#4B5563]">Inscrições</span>
+              </div>
+              <p className="text-3xl sm:text-4xl font-black text-[#17221D]">{totalInscricoes}</p>
+              <p className="text-xs text-[#68756E] mt-0.5">Equipes submetidas</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* PASSO A PASSO DA INSCRIÇÃO */}
+      <section className="py-14 bg-[#F7F9F8]">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#087A5B] bg-[#E8F7F1] px-4 py-1.5 rounded-full border border-[#00A878]/25">
+              Passo a Passo
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#17221D]">
+              Como funciona a inscrição no {munSiglaEvento}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 relative shadow-xs hover:shadow-md transition-shadow">
+              <span className="text-3xl font-black text-[#E2EAE5] absolute top-4 right-4 select-none">01</span>
+              <div className="w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#00A878] flex items-center justify-center mb-4">
+                <School className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-[#17221D] mb-1.5">1. Seleção da Escola</h3>
+              <p className="text-sm text-[#4B5563] leading-relaxed">
+                Selecione a sua escola oficial em {munNome} e confirme seus dados de professor responsável.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 relative shadow-xs hover:shadow-md transition-shadow">
+              <span className="text-3xl font-black text-[#E2EAE5] absolute top-4 right-4 select-none">02</span>
+              <div className="w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#00A878] flex items-center justify-center mb-4">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-[#17221D] mb-1.5">2. Cadastro de Alunos</h3>
+              <p className="text-sm text-[#4B5563] leading-relaxed">
+                Cadastre os estudantes com verificação automática de idade e faixa etária para as provas.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 relative shadow-xs hover:shadow-md transition-shadow">
+              <span className="text-3xl font-black text-[#E2EAE5] absolute top-4 right-4 select-none">03</span>
+              <div className="w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#00A878] flex items-center justify-center mb-4">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-[#17221D] mb-1.5">3. Montagem das Equipes</h3>
+              <p className="text-sm text-[#4B5563] leading-relaxed">
+                Inscreva seus atletas nas modalidades coletivas e individuais com formação automática.
+              </p>
+            </div>
+
+            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 relative shadow-xs hover:shadow-md transition-shadow">
+              <span className="text-3xl font-black text-[#E2EAE5] absolute top-4 right-4 select-none">04</span>
+              <div className="w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#00A878] flex items-center justify-center mb-4">
+                <QrCode className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-[#17221D] mb-1.5">4. Fichas e Crachás</h3>
+              <p className="text-sm text-[#4B5563] leading-relaxed">
+                Exporte em PDF as fichas homologadas e os crachás com foto e QR Code para a arbitragem.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MODALIDADES EM DESTAQUE */}
+      <section className="py-14 sm:py-16 bg-white border-t border-[#E2EAE5]">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#087A5B] bg-[#E8F7F1] px-3.5 py-1 rounded-full border border-[#00A878]/20">
+                Esportes {munSiglaEvento}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#17221D] mt-2">
+                Modalidades Coletivas & Individuais
+              </h2>
+            </div>
+            <Link
+              href={`/modalidades?m=${munSlug}`}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#00A878] hover:text-[#087A5B] transition-colors"
+            >
+              <span>Ver todas as modalidades</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {modalidades.slice(0, 6).map((mod) => {
+              const modalidadeImgs: Record<string, string> = {
+                queimada: '/assets/modalidades/queimada.jpg',
+                tenis_mesa: '/assets/modalidades/tenis-mesa.jpg',
+                atletismo: '/assets/modalidades/atletismo.jpg',
+                beach_soccer: '/assets/modalidades/beach-soccer.jpg',
+                futsal: '/assets/modalidades/futsal.jpg',
+                xadrez: '/assets/modalidades/xadrez.jpg',
+                futebol_campo: '/assets/modalidades/futebol-campo.jpg',
+                voleibol: '/assets/modalidades/voleibol.jpg'
+              };
+              const imgSrc = modalidadeImgs[mod.codigo] || '/banner-jegd.png';
+              const isColetiva = mod.tipo === 'COLETIVA';
+              const generoTexto = mod.sexosPermitidos?.join(' / ') || 'MASCULINO / FEMININO';
+
+              return (
+                <div
+                  key={mod.id}
+                  className="group bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[210px] hover:-translate-y-1"
+                >
+                  <div className="absolute top-0 right-0 w-3/5 sm:w-2/3 h-28 sm:h-32 overflow-hidden pointer-events-none rounded-tr-3xl">
+                    <img
+                      src={imgSrc}
+                      alt={mod.nome}
+                      className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+                  </div>
+
+                  <div className="relative z-10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider border ${
+                          isColetiva
+                            ? 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD]'
+                            : 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]'
+                        }`}
+                      >
+                        {mod.tipo}
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline justify-between gap-2 pt-0.5">
+                      <h3 className="text-xl font-black text-[#17221D] group-hover:text-[#087A5B] transition-colors leading-tight">
+                        {mod.nome}
+                      </h3>
+
+                      <span className="text-xs font-black text-[#00A878] shrink-0">
+                        {mod.minAtletas} a {mod.maxAtletas} atletas
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#4B5563] leading-relaxed line-clamp-2 font-medium">
+                      {mod.descricao}
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 pt-3 mt-3 border-t border-[#E2EAE5]/80 flex items-center justify-between text-xs">
+                    <div className="flex flex-wrap gap-1">
+                      {mod.categoriasPermitidas?.slice(0, 2).map((cat) => (
+                        <span
+                          key={cat}
+                          className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]/70 uppercase"
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                    </div>
+
+                    <span className="text-[11px] font-black text-[#00A878] uppercase tracking-wider text-right shrink-0">
+                      {generoTexto}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA PARA AS ESCOLAS DESTE MUNICÍPIO */}
+      <section className="py-14 sm:py-16 bg-[#E8F7F1] border-t border-[#00A878]/20">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#00A878] text-white flex items-center justify-center mx-auto mb-5 shadow-sm">
+            <Medal className="w-7 h-7 stroke-[2.5]" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#17221D] mb-3">
+            Sua escola de {munNome} está pronta para o {munSiglaEvento}?
+          </h2>
+          <p className="text-[#374151] text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed font-medium">
+            Acesse o sistema agora mesmo, registre os seus alunos-atletas e assegure a vaga da sua delegação no maior evento esportivo de {munNome}!
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full">
+            <Link
+              href={`/escola/login?m=${munSlug}`}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-xs hover:shadow-md transition-all active:scale-98 text-center"
+            >
+              Entrar no Painel da Escola ({munNome})
+            </Link>
+            <Link
+              href={`/regulamento?m=${munSlug}`}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white hover:bg-[#F7F9F8] text-[#17221D] font-bold text-sm border border-[#E2EAE5] transition-all text-center"
+            >
+              Consultar Regulamento {munSiglaEvento}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  );
+}

@@ -98,16 +98,20 @@ function LoginContent() {
     const domainRes = JegdStorage.getDomainResolution();
     setIsDominioTravado(domainRes.isDomainLocked);
 
-    let targetMun = domainRes.isDomainLocked && domainRes.municipio ? domainRes.municipio : null;
-
-    if (!targetMun) {
-      const mParam = searchParams.get('m') || searchParams.get('municipio');
-      if (mParam) {
-        const found = munList.find(m => m.slug === mParam || m.id === mParam);
-        if (found) targetMun = found;
-      }
+    // Prioridade 1: Parâmetro explícito na URL (?m=slug ou ?municipio=slug)
+    const mParam = searchParams.get('m') || searchParams.get('municipio');
+    let targetMun: Municipio | null = null;
+    if (mParam) {
+      const found = munList.find(m => m.slug === mParam || m.id === mParam);
+      if (found) targetMun = found;
     }
 
+    // Prioridade 2: Domínio travado específico
+    if (!targetMun && domainRes.isDomainLocked && domainRes.municipio) {
+      targetMun = domainRes.municipio;
+    }
+
+    // Prioridade 3: Município atualmente selecionado no Storage ou primeiro da lista
     if (!targetMun) {
       targetMun = JegdStorage.getCurrentMunicipio() || munList[0];
     }
@@ -503,11 +507,11 @@ function LoginContent() {
 
           {/* Logo & Título Institucional */}
           <div className="text-center mb-4 sm:mb-5">
-            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-2 shadow-xs shrink-0">
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center mx-auto mb-2.5 shadow-sm shrink-0 p-1">
               <img 
-                src="/logo-jegd.png" 
-                alt="Logo dos Jogos" 
-                className="w-full h-full object-contain p-0.5" 
+                src={municipioAtual?.brasaoUrl || municipioAtual?.logoUrl || "/logo-jegd.png"} 
+                alt={`Logo oficial de ${municipioAtual?.nome || 'Jogos Escolares'}`} 
+                className="w-full h-full object-contain" 
               />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">
@@ -600,6 +604,7 @@ function LoginContent() {
                   setMostrarSenhaLogin={setMostrarSenhaLogin}
                   onSubmit={handleLoginCpf}
                   onAlternarModoCadastro={() => { setModoEscola('CADASTRO'); setErro(''); }}
+                  placeholderEmail={escolas.length > 0 && escolas[0].loginEmail ? `ex: ${escolas[0].loginEmail}` : `ex: escola@semed.${municipioAtual?.slug || 'gov'}.br`}
                 />
               )}
 

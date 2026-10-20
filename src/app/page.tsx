@@ -180,7 +180,7 @@ export default function HomePage() {
             {/* Ações Hero */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-3">
               <Link
-                href="/escola/login"
+                href={`/escola/login?m=${municipioAtual?.slug || 'goncalves-dias'}`}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-base shadow-sm hover:shadow-md flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-98"
               >
                 <School className="w-5 h-5 stroke-[2.5]" />
@@ -189,7 +189,7 @@ export default function HomePage() {
               </Link>
 
               <Link
-                href="/modalidades"
+                href={`/modalidades?m=${municipioAtual?.slug || 'goncalves-dias'}`}
                 className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#F7F9F8] hover:bg-white text-[#17221D] font-bold text-base border border-[#E2EAE5] hover:border-[#00A878] flex items-center justify-center gap-2 transition-all duration-200 shadow-2xs"
               >
                 <span>Ver Modalidades & Regras</span>
@@ -205,7 +205,7 @@ export default function HomePage() {
                 <span className="text-xs uppercase font-bold tracking-wider text-[#4B5563]">Escolas</span>
               </div>
               <p className="text-3xl sm:text-4xl font-black text-[#17221D]">{escolas.length}</p>
-              <p className="text-xs text-[#68756E] mt-0.5">Cadastradas no JEGD</p>
+              <p className="text-xs text-[#68756E] mt-0.5">Cadastradas no {municipioAtual?.siglaEvento || 'evento'}</p>
             </div>
 
             <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-5 shadow-xs">
@@ -247,7 +247,7 @@ export default function HomePage() {
               Passo a Passo
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-[#17221D]">
-              Como funciona a inscrição no JEGD 2026
+              Como funciona a inscrição no {municipioAtual?.siglaEvento || 'evento'}
             </h2>
           </div>
 

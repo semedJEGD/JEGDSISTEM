@@ -42,7 +42,15 @@ export default function PortalMunicipiosPage() {
   const handleAcessarMunicipio = (mun: Municipio) => {
     JegdStorage.logoutAll();
     JegdStorage.setCurrentMunicipio(mun);
-    router.push(`/escola/login?m=${mun.slug}`);
+    if (mun.slug === 'goncalves-dias') {
+      router.push('/jegd');
+    } else if (mun.slug === 'senador-alexandre-costa') {
+      router.push('/jesac');
+    } else if (mun.slug === 'santo-antonio-dos-lopes') {
+      router.push('/jesal');
+    } else {
+      router.push(`/cidade/${mun.slug}`);
+    }
   };
 
   // Separa as duas partições prioritárias solicitadas: JEGDS e JESAC

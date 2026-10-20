@@ -84,6 +84,15 @@ export default function Navbar() {
   const siglaTexto = siglaPartes[0] || 'JEGD';
   const anoTexto = siglaPartes[1] || '2026';
   const nomeEvento = municipioAtual?.nomeEvento || `Jogos Escolares de ${municipioAtual?.nome || 'Gonçalves Dias'}`;
+  const munSlug = municipioAtual?.slug || 'goncalves-dias';
+
+  const homeHref = munSlug === 'senador-alexandre-costa'
+    ? '/jesac'
+    : munSlug === 'santo-antonio-dos-lopes'
+    ? '/jesal'
+    : munSlug === 'goncalves-dias'
+    ? '/jegd'
+    : `/?m=${munSlug}`;
 
   return (
     <header className="sticky top-0 z-50 w-full pt-2.5 sm:pt-3 px-3 sm:px-6 lg:px-8 pb-1.5 transition-all">
@@ -92,13 +101,13 @@ export default function Navbar() {
         <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl sm:rounded-full px-3.5 sm:px-6 py-2 sm:py-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
           
           {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + SIGLA | ANO + SUBTÍTULO */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0 select-none">
+          <Link href={homeHref} className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0 select-none">
             {/* Logo Oficial */}
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300">
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300 p-0.5">
               <img 
-                src={municipioAtual?.logoUrl || municipioAtual?.brasaoUrl || "/logo-jegd.png"} 
+                src={municipioAtual?.brasaoUrl || municipioAtual?.logoUrl || "/logo-jegd.png"} 
                 alt={`Logo Oficial ${siglaEvento}`} 
-                className="w-full h-full object-contain p-0.5"
+                className="w-full h-full object-contain"
               />
             </div>
 
@@ -130,19 +139,19 @@ export default function Navbar() {
           {/* NAVEGAÇÃO CENTRAL DESKTOP (CLEAN & OUTLINE) */}
           <nav className="hidden md:flex items-center gap-1.5 lg:gap-2" aria-label="Navegação Principal">
             <Link
-              href="/"
+              href={homeHref}
               className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
-                pathname === '/'
+                pathname === homeHref || pathname === '/'
                   ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
                   : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <Home className={`w-4 h-4 ${pathname === homeHref || pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
               <span>Início</span>
             </Link>
 
             <Link
-              href="/modalidades"
+              href={`/modalidades?m=${munSlug}`}
               className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/modalidades')
                   ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
@@ -154,7 +163,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/regulamento"
+              href={`/regulamento?m=${munSlug}`}
               className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/regulamento')
                   ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
@@ -166,7 +175,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/validar"
+              href={`/validar?m=${munSlug}`}
               className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
                 pathname.startsWith('/validar')
                   ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
@@ -230,7 +239,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link
-                href="/escola/login"
+                href={`/escola/login?m=${munSlug}`}
                 className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-[13px] font-black tracking-wide shadow-[0_2px_12px_rgba(0,168,120,0.25)] hover:shadow-[0_4px_16px_rgba(0,168,120,0.35)] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
               >
                 <LogIn className="w-4 h-4" aria-hidden="true" />
@@ -257,10 +266,10 @@ export default function Navbar() {
           <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl p-4 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col space-y-1.5" aria-label="Navegação Mobile">
               <Link
-                href="/"
+                href={homeHref}
                 onClick={() => setMenuMobileAberto(false)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname === '/'
+                  pathname === homeHref || pathname === '/'
                     ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
                     : 'text-[#4B5563] hover:bg-[#F7F9F8]'
                 }`}
@@ -270,7 +279,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/modalidades"
+                href={`/modalidades?m=${munSlug}`}
                 onClick={() => setMenuMobileAberto(false)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   pathname.startsWith('/modalidades')
@@ -283,7 +292,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/regulamento"
+                href={`/regulamento?m=${munSlug}`}
                 onClick={() => setMenuMobileAberto(false)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   pathname.startsWith('/regulamento')
@@ -296,7 +305,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/validar"
+                href={`/validar?m=${munSlug}`}
                 onClick={() => setMenuMobileAberto(false)}
                 className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   pathname.startsWith('/validar')
@@ -325,7 +334,7 @@ export default function Navbar() {
             <div className="pt-3 border-t border-[#E2EAE5] space-y-2">
               {!escolaAtual && !isAdmin && (
                 <Link
-                  href="/escola/login"
+                  href={`/escola/login?m=${munSlug}`}
                   onClick={() => setMenuMobileAberto(false)}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
                 >

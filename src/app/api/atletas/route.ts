@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const escolaId = searchParams.get('escolaId');
+    const municipioId = searchParams.get('municipioId');
     const token = searchParams.get('token');
     const q = searchParams.get('q');
 
@@ -29,6 +30,9 @@ export async function GET(request: Request) {
     }
 
     const where: any = {};
+    if (municipioId && municipioId !== 'ALL') {
+      where.municipioId = municipioId;
+    }
     if (escolaId) {
       where.escolaId = escolaId;
     }
