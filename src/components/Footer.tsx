@@ -2,14 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Shield } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Municipio } from '@/types/jegd';
 
 export default function Footer() {
+  const pathname = usePathname();
   const [municipioAtual, setMunicipioAtual] = useState<Municipio | null>(null);
 
   useEffect(() => {
+    if (pathname === '/portal' || pathname?.startsWith('/portal')) return;
     JegdStorage.init();
     setMunicipioAtual(JegdStorage.getCurrentMunicipio());
 
@@ -36,6 +39,10 @@ export default function Footer() {
   const nomeCidade = municipioAtual?.nome || 'Gonçalves Dias';
   const ufCidade = municipioAtual?.uf || 'MA';
   const nomeEvento = municipioAtual?.nomeEvento || `Jogos Escolares de ${nomeCidade}`;
+
+  if (pathname === '/portal' || pathname?.startsWith('/portal')) {
+    return null;
+  }
 
   return (
     <footer className="bg-white border-t border-[#E2EAE5] text-[#374151] text-sm w-full max-w-full">

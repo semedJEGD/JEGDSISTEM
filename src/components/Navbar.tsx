@@ -58,6 +58,11 @@ export default function Navbar() {
     setMenuMobileAberto(false);
   }, [pathname]);
 
+  // Se estiver na rota do portal, oculta a barra geral para exibir exclusivamente o layout i6 Systems
+  if (pathname === '/portal' || pathname.startsWith('/portal')) {
+    return null;
+  }
+
   const handleLogoutEscola = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     JegdStorage.logoutEscola();
