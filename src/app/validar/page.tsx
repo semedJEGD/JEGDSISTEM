@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ export default function CrachaGuiaPage() {
   const [ladoCracha, setLadoCracha] = useState<'FRENTE' | 'VERSO' | 'AMBOS'>('AMBOS');
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10 w-full max-w-full">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10 w-full">
       
       {/* Header Principal */}
       <div className="text-center max-w-3xl mx-auto space-y-3.5">

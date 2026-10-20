@@ -79,7 +79,7 @@ export default function ModalidadesPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8 sm:space-y-10">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8 sm:space-y-10">
       
       {/* Cabeçalho da Página */}
       <div className="text-center max-w-3xl mx-auto space-y-3">

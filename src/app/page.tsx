@@ -85,7 +85,7 @@ export default function HomePage() {
 
       {/* BANNER OFICIAL HERO */}
       <section className="relative bg-white border-b border-[#E2EAE5] pt-6 pb-12 overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Hero Video Institucional Oficial JEGD 2026 com Playlist Contínua */}
           <div className="w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#E2EAE5] mb-8 bg-[#17221D] relative group">
@@ -215,7 +215,7 @@ export default function HomePage() {
 
       {/* PASSO A PASSO DA INSCRIÇÃO */}
       <section className="py-14 bg-[#F7F9F8]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-[#087A5B] bg-[#E8F7F1] px-4 py-1.5 rounded-full border border-[#00A878]/25">
               Passo a Passo
@@ -277,7 +277,7 @@ export default function HomePage() {
 
       {/* MODALIDADES EM DESTAQUE */}
       <section className="py-14 sm:py-16 bg-white border-t border-[#E2EAE5]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#087A5B] bg-[#E8F7F1] px-3.5 py-1 rounded-full border border-[#00A878]/20">
@@ -384,7 +384,7 @@ export default function HomePage() {
 
       {/* CTA PARA AS ESCOLAS */}
       <section className="py-14 sm:py-16 bg-[#E8F7F1] border-t border-[#00A878]/20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[#00A878] text-white flex items-center justify-center mx-auto mb-5 shadow-sm">
             <Medal className="w-7 h-7 stroke-[2.5]" />
           </div>

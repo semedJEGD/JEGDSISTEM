@@ -81,7 +81,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full pt-2.5 sm:pt-3 px-3 sm:px-6 lg:px-8 pb-1.5 transition-all">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1500px] mx-auto">
         {/* CONTAINER DO HEADER EM PAINEL FLUTUANTE PREMIUM */}
         <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl sm:rounded-full px-3.5 sm:px-6 py-2 sm:py-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
           
@@ -235,7 +235,7 @@ export default function Navbar() {
 
       {/* MENU MOBILE DROPDOWN DRAWER */}
       {menuMobileAberto && (
-        <div className="md:hidden max-w-7xl mx-auto mt-2">
+        <div className="md:hidden max-w-[1500px] mx-auto mt-2">
           <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl p-4 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col space-y-1.5" aria-label="Navegação Mobile">
               <Link

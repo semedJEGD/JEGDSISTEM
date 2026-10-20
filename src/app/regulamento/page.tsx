@@ -149,7 +149,7 @@ export default function RegulamentoPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 w-full max-w-full">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 w-full">
       
       {/* Header Principal */}
       <div className="text-center max-w-3xl mx-auto space-y-3.5">

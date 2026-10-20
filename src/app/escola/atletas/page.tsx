@@ -404,7 +404,7 @@ export default function EscolaAtletasPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       {/* 1. BARRA DE PERFIL ATIVO (DIRETOR / PROFESSOR) */}
       <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

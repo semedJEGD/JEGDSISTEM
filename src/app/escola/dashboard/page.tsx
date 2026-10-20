@@ -151,7 +151,7 @@ export default function EscolaDashboardPage() {
   const totalPendentes = inscricoes.filter(i => i.status === 'PENDENTE').length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">
       
       {/* 1. BARRA DE PERFIL ATIVO ESTILO NETFLIX (DIREÇÃO OU PROFESSOR) */}
       <div className="bg-[#0F172A] text-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-lg border border-slate-800">
@@ -213,7 +213,7 @@ export default function EscolaDashboardPage() {
                     ? `Delegação aprovada pela Direção em ${new Date(homologacao.dataHomologacao!).toLocaleDateString('pt-BR')}`
                     : 'Aprovação Oficial da Delegação da Escola perante a SEMED'}
                 </h4>
-                <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 max-w-2xl">
+                <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 max-w-4xl">
                   {homologacao.homologado
                     ? 'A Direção atestou formalmente a matrícula ativa e a frequência de todos os alunos. A delegação escolar está autorizada para disputar o JEGDS 2026.'
                     : 'Como Diretor(a), verifique a lista de atletas cadastrados pelos professores e clique no botão para homologar oficialmente a delegação da escola.'}
