@@ -203,3 +203,25 @@ export interface ComunicadoAviso {
   urgente: boolean;
   autor: string;
 }
+
+export interface ProfessorPerfil {
+  id: string;
+  escolaId: string;
+  nome: string;
+  telefone?: string;
+  createdAt: string;
+}
+
+export interface PerfilAtivoEscola {
+  tipo: 'DIRECAO' | 'PROFESSOR';
+  nome: string;
+  id?: string;
+}
+
+export interface HomologacaoDirecao {
+  homologado: boolean;
+  dataHomologacao?: string;
+  responsavelNome?: string;
+  observacoes?: string;
+}
+

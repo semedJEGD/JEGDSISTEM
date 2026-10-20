@@ -30,19 +30,23 @@ import {
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
-import { Escola, Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade } from '@/types/jegd';
+import { Escola, Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade, PerfilAtivoEscola } from '@/types/jegd';
 import { JegdsRulesService, PROVAS_ATLETISMO_POR_CATEGORIA } from '@/services/jegds-rules';
 import { AtletaCard } from './components/AtletaCard';
 import { ModalCadastroAtleta } from './components/ModalCadastroAtleta';
+import { ModalSeletorPerfil } from '../components/ModalSeletorPerfil';
 
 export default function EscolaAtletasPage() {
   const router = useRouter();
   const [escola, setEscola] = useState<Escola | null>(null);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
+  const [perfilAtivo, setPerfilAtivo] = useState<PerfilAtivoEscola | null>(null);
+  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
   const [busca, setBusca] = useState('');
   const [filtroSexo, setFiltroSexo] = useState<string>('TODOS');
   const [filtroCategoria, setFiltroCategoria] = useState<string>('TODOS');
+  const [filtroProfessor, setFiltroProfessor] = useState<string>('TODOS');
 
   // Modal de Cadastro Rápido em 2 Etapas
   const [modalAberto, setModalAberto] = useState(false);
@@ -91,6 +95,13 @@ export default function EscolaAtletasPage() {
     setEscola(atual);
     setAtletas(JegdStorage.getAtletas(atual.id));
     setModalidades(JegdStorage.getModalidades());
+
+    const perfilSalvo = JegdStorage.getCurrentPerfilEscola();
+    if (perfilSalvo) {
+      setPerfilAtivo(perfilSalvo);
+    } else {
+      setModalPerfilAberto(true);
+    }
 
     const handleSync = () => {
       setAtletas(JegdStorage.getAtletas(atual.id));
@@ -288,6 +299,10 @@ export default function EscolaAtletasPage() {
       ? matricula
       : (atletaEditando?.matricula || JegdStorage.gerarProximoCodigoInscricao(escola.municipioId));
 
+    const autorCadastro = perfilAtivo?.tipo === 'PROFESSOR'
+      ? (perfilAtivo.nome.startsWith('Prof') ? perfilAtivo.nome : `Prof. ${perfilAtivo.nome}`)
+      : (perfilAtivo?.nome || currentUser?.nome || escola.responsavelNome || 'Direção');
+
     const atleta: Atleta = {
       id: atletaId,
       escolaId: escola.id,
@@ -304,7 +319,7 @@ export default function EscolaAtletasPage() {
       telefoneContato,
       tipoSanguineo,
       consentimentoResponsavel,
-      cadastradoPor: currentUser?.nome || escola.responsavelNome,
+      cadastradoPor: atletaEditando?.cadastradoPor || autorCadastro,
       categoriaCalculada: (catCalc.categoria as CategoriaIdade) || undefined,
       modalidadesInscritas: modalidadesMapeadas,
       conferidoPeloCoordenador: atletaEditando?.conferidoPeloCoordenador || false,
@@ -346,6 +361,14 @@ export default function EscolaAtletasPage() {
 
   if (!escola) return null;
 
+  const listaProfessoresCadastrantes = React.useMemo(() => {
+    const setProfs = new Set<string>();
+    atletas.forEach(a => {
+      if (a.cadastradoPor) setProfs.add(a.cadastradoPor);
+    });
+    return Array.from(setProfs);
+  }, [atletas]);
+
   // Filtragem
   const atletasFiltrados = atletas.filter(atleta => {
     const bateBusca =
@@ -354,7 +377,8 @@ export default function EscolaAtletasPage() {
       atleta.matricula.toLowerCase().includes(busca.toLowerCase());
     const bateSexo = filtroSexo === 'TODOS' || atleta.sexo === filtroSexo;
     const bateCat = filtroCategoria === 'TODOS' || atleta.categoriaCalculada === filtroCategoria;
-    return bateBusca && bateSexo && bateCat;
+    const bateProfessor = filtroProfessor === 'TODOS' || atleta.cadastradoPor === filtroProfessor;
+    return bateBusca && bateSexo && bateCat && bateProfessor;
   });
 
   // Geração de Crachás
@@ -380,8 +404,42 @@ export default function EscolaAtletasPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
+      {/* 1. BARRA DE PERFIL ATIVO (DIRETOR / PROFESSOR) */}
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-2xs ${
+            perfilAtivo?.tipo === 'DIRECAO' 
+              ? 'bg-[#00A878] text-white shadow-[#00A878]/30' 
+              : 'bg-indigo-600 text-white shadow-indigo-500/30'
+          }`}>
+            {perfilAtivo?.tipo === 'DIRECAO' ? 'DIR' : 'PROF'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-[#64748B] font-bold">Navegando no cadastro de atletas como:</span>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                perfilAtivo?.tipo === 'DIRECAO' ? 'bg-emerald-100 text-[#087A5B]' : 'bg-indigo-100 text-indigo-700'
+              }`}>
+                {perfilAtivo?.tipo === 'DIRECAO' ? 'Direção / Coordenação' : 'Professor de Ed. Física'}
+              </span>
+            </div>
+            <p className="text-sm font-black text-[#17221D]">
+              {perfilAtivo ? perfilAtivo.nome : 'Perfil não selecionado'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setModalPerfilAberto(true)}
+          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#E2EAE5] hover:border-[#00A878]/30 text-xs font-black text-[#087A5B] transition-all flex items-center justify-center gap-2"
+        >
+          <span>Trocar Perfil (Diretor / Professor)</span>
+        </button>
+      </div>
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -421,7 +479,7 @@ export default function EscolaAtletasPage() {
       </div>
 
       {/* Barra de Busca & Filtros */}
-      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-5 grid grid-cols-1 sm:grid-cols-4 gap-4 shadow-xs">
+      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 shadow-xs">
         <div className="sm:col-span-2 relative">
           <input
             type="text"
@@ -439,11 +497,11 @@ export default function EscolaAtletasPage() {
             onChange={(e) => setFiltroCategoria(e.target.value)}
             className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
           >
-            <option value="TODOS">Todas as Categorias</option>
-            <option value="MIRIM">Mirim (9 a 11 anos)</option>
-            <option value="INFANTIL">Infantil (12 a 14 anos)</option>
-            <option value="INFANTO">Infanto (15 a 17 anos)</option>
-            <option value="JUNIOR">Junior (18 a 20 anos)</option>
+            <option value="TODOS">Todas Categorias</option>
+            <option value="MIRIM">Mirim (9 a 11)</option>
+            <option value="INFANTIL">Infantil (12 a 14)</option>
+            <option value="INFANTO">Infanto (15 a 17)</option>
+            <option value="JUNIOR">Junior (18 a 20)</option>
           </select>
         </div>
 
@@ -453,9 +511,22 @@ export default function EscolaAtletasPage() {
             onChange={(e) => setFiltroSexo(e.target.value)}
             className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
           >
-            <option value="TODOS">Todos os Gêneros</option>
+            <option value="TODOS">Todos Gêneros</option>
             <option value="MASCULINO">Masculino</option>
             <option value="FEMININO">Feminino</option>
+          </select>
+        </div>
+
+        <div>
+          <select
+            value={filtroProfessor}
+            onChange={(e) => setFiltroProfessor(e.target.value)}
+            className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
+          >
+            <option value="TODOS">Cadastrado por: Todos</option>
+            {listaProfessoresCadastrantes.map(prof => (
+              <option key={prof} value={prof}>{prof}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -531,6 +602,18 @@ export default function EscolaAtletasPage() {
           handleAbrirModalEditar(atl);
           setEtapaAtual(2);
         }}
+      />
+
+      {/* Modal Seletor de Perfil Escolar estilo Netflix */}
+      <ModalSeletorPerfil
+        isOpen={modalPerfilAberto}
+        escola={escola}
+        onSelecionarPerfil={(p) => {
+          setPerfilAtivo(p);
+          setModalPerfilAberto(false);
+        }}
+        onClose={() => setModalPerfilAberto(false)}
+        permitirFechar={!!perfilAtivo}
       />
 
     </div>

@@ -11,7 +11,10 @@ import {
   Genero,
   Usuario,
   RegistroControle,
-  TipoRegistroControle
+  TipoRegistroControle,
+  ProfessorPerfil,
+  PerfilAtivoEscola,
+  HomologacaoDirecao
 } from '@/types/jegd';
 import { JegdsRulesService } from '@/services/jegds-rules';
 import { LogisticaStorage } from './storage/logistica-storage';
@@ -47,7 +50,10 @@ const STORAGE_KEYS = {
   CURRENT_AUTH_ESCOLA: 'jegds_current_escola_auth',
   CURRENT_AUTH_USER: 'jegds_current_user_auth',
   COMITE_AUTH: 'jegds_comite_auth',
-  SUPERADMIN_AUTH: 'jegds_superadmin_auth'
+  SUPERADMIN_AUTH: 'jegds_superadmin_auth',
+  PROFESSORES_ESCOLA: 'jegds_professores_escola_v6',
+  CURRENT_PERFIL_ESCOLA: 'jegds_current_perfil_escola_v6',
+  HOMOLOGACOES_DIRECAO: 'jegds_homologacoes_direcao_v6'
 };
 
 export class JegdStorage {
@@ -1065,4 +1071,82 @@ export class JegdStorage {
   public static getRelatorioLogistico() {
     return LogisticaStorage.getRelatorioLogistico();
   }
+
+  // ==========================================
+  // PERFIS DA ESCOLA (DIREÇÃO / PROFESSORES - ESTILO NETFLIX)
+  // ==========================================
+
+  public static getProfessoresEscola(escolaId: string): ProfessorPerfil[] {
+    if (!this.isClient()) return [];
+    this.init();
+    const data = localStorage.getItem(STORAGE_KEYS.PROFESSORES_ESCOLA);
+    const list: ProfessorPerfil[] = data ? JSON.parse(data) : [];
+    return list.filter(p => p.escolaId === escolaId);
+  }
+
+  public static saveProfessorEscola(escolaId: string, nome: string, telefone?: string): ProfessorPerfil {
+    if (!this.isClient()) {
+      return { id: `prof-${Date.now()}`, escolaId, nome, telefone, createdAt: new Date().toISOString() };
+    }
+    const data = localStorage.getItem(STORAGE_KEYS.PROFESSORES_ESCOLA);
+    const list: ProfessorPerfil[] = data ? JSON.parse(data) : [];
+    const novo: ProfessorPerfil = {
+      id: `prof-${Date.now()}`,
+      escolaId,
+      nome: nome.trim(),
+      telefone: telefone?.trim(),
+      createdAt: new Date().toISOString()
+    };
+    list.push(novo);
+    localStorage.setItem(STORAGE_KEYS.PROFESSORES_ESCOLA, JSON.stringify(list));
+    return novo;
+  }
+
+  public static deleteProfessorEscola(escolaId: string, profId: string): void {
+    if (!this.isClient()) return;
+    const data = localStorage.getItem(STORAGE_KEYS.PROFESSORES_ESCOLA);
+    const list: ProfessorPerfil[] = data ? JSON.parse(data) : [];
+    const updated = list.filter(p => !(p.escolaId === escolaId && p.id === profId));
+    localStorage.setItem(STORAGE_KEYS.PROFESSORES_ESCOLA, JSON.stringify(updated));
+  }
+
+  public static getCurrentPerfilEscola(): PerfilAtivoEscola | null {
+    if (!this.isClient()) return null;
+    const data = localStorage.getItem(STORAGE_KEYS.CURRENT_PERFIL_ESCOLA);
+    return data ? JSON.parse(data) : null;
+  }
+
+  public static setCurrentPerfilEscola(perfil: PerfilAtivoEscola | null): void {
+    if (!this.isClient()) return;
+    if (perfil) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_PERFIL_ESCOLA, JSON.stringify(perfil));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_PERFIL_ESCOLA);
+    }
+  }
+
+  // ==========================================
+  // HOMOLOGAÇÃO DA DELEGAÇÃO PELA DIREÇÃO
+  // ==========================================
+
+  public static getHomologacaoDirecao(escolaId: string): HomologacaoDirecao {
+    if (!this.isClient()) return { homologado: false };
+    const data = localStorage.getItem(STORAGE_KEYS.HOMOLOGACOES_DIRECAO);
+    const map: Record<string, HomologacaoDirecao> = data ? JSON.parse(data) : {};
+    return map[escolaId] || { homologado: false };
+  }
+
+  public static setHomologacaoDirecao(escolaId: string, homologado: boolean, diretorNome?: string, observacoes?: string): void {
+    if (!this.isClient()) return;
+    const data = localStorage.getItem(STORAGE_KEYS.HOMOLOGACOES_DIRECAO);
+    const map: Record<string, HomologacaoDirecao> = data ? JSON.parse(data) : {};
+    map[escolaId] = {
+      homologado,
+      dataHomologacao: homologado ? new Date().toISOString() : undefined,
+      responsavelNome: diretorNome || 'Direção Escolar',
+      observacoes
+    };
+    localStorage.setItem(STORAGE_KEYS.HOMOLOGACOES_DIRECAO, JSON.stringify(map));
+  }
 }
+

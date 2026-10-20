@@ -18,11 +18,15 @@ import {
   Printer,
   ShieldAlert,
   Download,
-  LogOut
+  LogOut,
+  Sparkles,
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
-import { Escola, Atleta, MembroComissao, InscricaoEquipe } from '@/types/jegd';
+import { Escola, Atleta, MembroComissao, InscricaoEquipe, PerfilAtivoEscola, HomologacaoDirecao } from '@/types/jegd';
+import { ModalSeletorPerfil } from '../components/ModalSeletorPerfil';
 
 export default function EscolaDashboardPage() {
   const router = useRouter();
@@ -31,6 +35,11 @@ export default function EscolaDashboardPage() {
   const [comissao, setComissao] = useState<MembroComissao[]>([]);
   const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
+
+  // Perfil Ativo (Estilo Netflix: Direção ou Professor A/B)
+  const [perfilAtivo, setPerfilAtivo] = useState<PerfilAtivoEscola | null>(null);
+  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
+  const [homologacao, setHomologacao] = useState<HomologacaoDirecao>({ homologado: false });
 
   useEffect(() => {
     JegdStorage.init();
@@ -41,6 +50,14 @@ export default function EscolaDashboardPage() {
     }
     setEscola(atual);
     carregarDados(atual.id);
+
+    const perfilSalvo = JegdStorage.getCurrentPerfilEscola();
+    if (perfilSalvo) {
+      setPerfilAtivo(perfilSalvo);
+    } else {
+      setModalPerfilAberto(true);
+    }
+    setHomologacao(JegdStorage.getHomologacaoDirecao(atual.id));
 
     const handleSync = () => {
       carregarDados(atual.id);
@@ -106,14 +123,147 @@ export default function EscolaDashboardPage() {
     }
   };
 
+  const handleSelecionarPerfil = (perfil: PerfilAtivoEscola) => {
+    setPerfilAtivo(perfil);
+    setModalPerfilAberto(false);
+  };
+
+  const handleHomologarDirecao = () => {
+    if (!escola) return;
+    if (confirm(`Confirmar Homologação Oficial da Escola ${escola.nome}?\n\nA Direção atesta a matrícula e frequência regular de todos os ${atletas.length} atletas inscritos perante a SEMED.`)) {
+      JegdStorage.setHomologacaoDirecao(escola.id, true, perfilAtivo?.nome || escola.responsavelNome);
+      setHomologacao(JegdStorage.getHomologacaoDirecao(escola.id));
+      alert('✅ Delegação Escolar homologada com sucesso! As inscrições foram validadas para a SEMED.');
+    }
+  };
+
+  const handleRevogarHomologacao = () => {
+    if (!escola) return;
+    if (confirm('Deseja reabrir a delegação da escola para edições dos professores?')) {
+      JegdStorage.setHomologacaoDirecao(escola.id, false);
+      setHomologacao(JegdStorage.getHomologacaoDirecao(escola.id));
+    }
+  };
+
   if (!escola) return null;
 
   const totalValidadas = inscricoes.filter(i => i.status === 'VALIDADA').length;
   const totalPendentes = inscricoes.filter(i => i.status === 'PENDENTE').length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">
       
+      {/* 1. BARRA DE PERFIL ATIVO ESTILO NETFLIX (DIREÇÃO OU PROFESSOR) */}
+      <div className="bg-[#0F172A] text-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-lg border border-slate-800">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00A878] to-[#087A5B] flex items-center justify-center text-white text-xl font-black shadow-md shadow-[#00A878]/30 shrink-0">
+            {perfilAtivo?.tipo === 'DIRECAO' ? '🎓' : '🏃'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                {perfilAtivo?.tipo === 'DIRECAO' ? 'Perfil: Direção Escolar' : 'Perfil: Professor de Ed. Física'}
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white mt-0.5 flex items-center gap-2">
+              <span>{perfilAtivo?.nome || 'Selecione seu Perfil'}</span>
+            </h3>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setModalPerfilAberto(true)}
+          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Trocar Perfil (Diretor / Professor)</span>
+        </button>
+      </div>
+
+      {/* 2. CARD EXECUTIVO DE HOMOLOGAÇÃO DA DIREÇÃO / STATUS DE APROVAÇÃO */}
+      {perfilAtivo?.tipo === 'DIRECAO' ? (
+        <div className={`p-5 sm:p-6 rounded-2xl sm:rounded-3xl border transition-all ${
+          homologacao.homologado 
+            ? 'bg-gradient-to-br from-[#E8F7F1] to-white border-[#00A878]/40 shadow-xs' 
+            : 'bg-gradient-to-br from-amber-50/90 to-white border-amber-300 shadow-xs'
+        }`}>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                homologacao.homologado 
+                  ? 'bg-[#00A878] text-white shadow-md shadow-[#00A878]/30' 
+                  : 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-black'
+              }`}>
+                {homologacao.homologado ? <ShieldCheck className="w-6 h-6 stroke-[2.5]" /> : <Clock className="w-6 h-6" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                    homologacao.homologado ? 'bg-emerald-200 text-emerald-950' : 'bg-amber-200 text-amber-950'
+                  }`}>
+                    {homologacao.homologado ? 'Delegação Homologada pela Direção' : 'Aguardando Homologação da Direção'}
+                  </span>
+                  <span className="text-xs text-[#64748B] font-bold">
+                    {atletas.length} alunos inscritos • {inscricoes.length} equipes
+                  </span>
+                </div>
+                <h4 className="text-base sm:text-lg font-black text-[#17221D] mt-1">
+                  {homologacao.homologado
+                    ? `Delegação aprovada pela Direção em ${new Date(homologacao.dataHomologacao!).toLocaleDateString('pt-BR')}`
+                    : 'Aprovação Oficial da Delegação da Escola perante a SEMED'}
+                </h4>
+                <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 max-w-2xl">
+                  {homologacao.homologado
+                    ? 'A Direção atestou formalmente a matrícula ativa e a frequência de todos os alunos. A delegação escolar está autorizada para disputar o JEGDS 2026.'
+                    : 'Como Diretor(a), verifique a lista de atletas cadastrados pelos professores e clique no botão para homologar oficialmente a delegação da escola.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 w-full lg:w-auto shrink-0">
+              {homologacao.homologado ? (
+                <button
+                  type="button"
+                  onClick={handleRevogarHomologacao}
+                  className="w-full lg:w-auto px-4 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors"
+                >
+                  Reabrir Delegação para Ajustes
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleHomologarDirecao}
+                  className="w-full lg:w-auto px-6 py-3 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black shadow-lg shadow-[#00A878]/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Homologar e Aprovar Delegação para a SEMED</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Status para o Professor */
+        <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs ${
+          homologacao.homologado 
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-medium' 
+            : 'bg-amber-50 border-amber-300 text-amber-950 font-medium'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">{homologacao.homologado ? '✅' : '⏳'}</span>
+            <div>
+              <strong className="font-black">Status de Homologação da Escola: </strong>
+              <span>
+                {homologacao.homologado
+                  ? `Delegação aprovada e homologada pela Direção da Escola em ${new Date(homologacao.dataHomologacao!).toLocaleDateString('pt-BR')}. Suas equipes estão aptas perante a SEMED.`
+                  : 'Aguardando Homologação da Direção da Escola. Cadastre seus atletas livremente; quando concluir, avise a Direção para homologar.'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cabeçalho de Boas-Vindas da Escola */}
       <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
@@ -351,7 +501,16 @@ export default function EscolaDashboardPage() {
         )}
       </div>
 
+      {/* Modal Seletor de Perfil Estilo Netflix (Direção / Professores) */}
+      <ModalSeletorPerfil
+        isOpen={modalPerfilAberto}
+        escola={escola}
+        onSelecionarPerfil={handleSelecionarPerfil}
+        permitirFechar={!!perfilAtivo}
+        onClose={() => setModalPerfilAberto(false)}
+      />
     </div>
   );
 }
+
 

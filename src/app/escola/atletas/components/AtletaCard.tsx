@@ -59,6 +59,14 @@ export function AtletaCard({
             <span>Turma / Série:</span>
             <span className="font-semibold text-[#17221D]">{atleta.serieTurma}</span>
           </div>
+          {atleta.cadastradoPor && (
+            <div className="flex items-center justify-between pt-1 border-t border-dashed border-[#E2EAE5] text-xs">
+              <span className="text-gray-500 font-medium">Cadastrado por:</span>
+              <span className="font-bold text-[#087A5B] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 truncate max-w-[170px]" title={atleta.cadastradoPor}>
+                {atleta.cadastradoPor}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Modalidades Inscritas & Equipes Formadas */}
