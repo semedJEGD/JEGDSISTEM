@@ -758,11 +758,22 @@ export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
   },
   // 5. Senador Alexandre Costa - MA (JESAC 2026)
   {
+    id: 'coord-sac-josean-amorim',
+    municipioId: 'senador-alexandre-costa-ma',
+    nome: 'Josean Amorim (Coordenação SEMED)',
+    email: 'josean.amorim@semed.sac.gov.br',
+    telefone: '(99) 98805-1002',
+    senhaHash: 'semed2026',
+    papel: 'COORDENADOR',
+    createdAt: new Date().toISOString()
+  },
+  {
     id: 'coord-sac-semed',
     municipioId: 'senador-alexandre-costa-ma',
     nome: 'Coordenação Geral SEMED / JESAC (Senador Alexandre Costa)',
     email: 'semed@senadoralexandrecosta.ma.gov.br',
     telefone: '(99) 98805-1001',
+    senhaHash: 'semed2026',
     papel: 'COORDENADOR',
     createdAt: new Date().toISOString()
   },
