@@ -366,6 +366,13 @@ export default function EscolaInscricoesPage() {
                           setNumeroEquipeSel(1);
                           setAtletasSelecionadosIds([]);
                           setProvasPorAtleta({});
+
+                          if (mod.categoriasPermitidas && !mod.categoriasPermitidas.includes(categoriaSel)) {
+                            setCategoriaSel(mod.categoriasPermitidas[0] as CategoriaIdade);
+                          }
+                          if (mod.sexosPermitidos && !mod.sexosPermitidos.includes(sexoSel)) {
+                            setSexoSel(mod.sexosPermitidos[0] as Genero);
+                          }
                         }}
                         className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left transition-all ${
                           sel

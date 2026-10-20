@@ -34,10 +34,10 @@ export function FormLoginCpf({
           <input
             type="text"
             required
-            maxLength={14}
+            maxLength={60}
             value={loginCpf}
             onChange={(e) => setLoginCpf(e.target.value)}
-            placeholder="000.000.000-00"
+            placeholder="000.000.000-00 ou email da escola"
             className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors tracking-wider"
           />
           <CreditCard className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />

@@ -11,7 +11,7 @@ export async function GET(request: Request) {
       ? { OR: [{ municipioId }, { escola: { municipioId } }] } 
       : {};
 
-    const [municipios, escolas, atletas, modalidades, registros, comunicados, inscricoes] = await Promise.all([
+    const [municipios, escolas, atletas, modalidades, registros, comunicados, inscricoes, usuarios] = await Promise.all([
       prisma.municipio.findMany({ orderBy: { nome: 'asc' } }),
       prisma.escola.findMany({
         where: whereMunicipio,
@@ -35,6 +35,11 @@ export async function GET(request: Request) {
         where: whereMunicipio,
         include: { atleta: true, modalidade: true, escola: true },
         orderBy: { dataInscricao: 'desc' }
+      }),
+      prisma.usuario.findMany({
+        where: whereMunicipio,
+        include: { escola: true },
+        orderBy: { nome: 'asc' }
       })
     ]);
 
@@ -123,6 +128,24 @@ export async function GET(request: Request) {
     }
     const inscricoesFormatadas = Array.from(inscricoesMap.values());
 
+    const usuariosFormatados = usuarios.map(u => ({
+      id: u.id,
+      municipioId: u.municipioId,
+      nome: u.nome,
+      email: u.email,
+      cpf: u.cpf,
+      senhaHash: u.senhaHash,
+      papel: u.papel === 'COMITE' ? 'COORDENADOR' : (u.papel === 'SUPERADMIN' ? 'SUPERADMIN' : 'PROFESSOR'),
+      escolaId: u.escolaId,
+      escola: u.escola ? {
+        id: u.escola.id,
+        nome: u.escola.nome,
+        sigla: u.escola.sigla,
+        loginEmail: u.escola.loginEmail
+      } : undefined,
+      createdAt: u.createdAt ? u.createdAt.toISOString() : new Date().toISOString()
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -132,7 +155,8 @@ export async function GET(request: Request) {
         modalidades,
         registros,
         comunicados,
-        inscricoes: inscricoesFormatadas
+        inscricoes: inscricoesFormatadas,
+        usuarios: usuariosFormatados
       }
     });
   } catch (error: any) {

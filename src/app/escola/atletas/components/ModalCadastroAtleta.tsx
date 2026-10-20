@@ -364,10 +364,9 @@ export function ModalCadastroAtleta({
               </button>
               <button
                 type="submit"
-                disabled={bloqueadoPorOutraEscola}
                 className={`w-full sm:w-auto px-6 py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black shadow-md flex items-center justify-center gap-2 transition-all ${
                   bloqueadoPorOutraEscola
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
                     : 'bg-[#00A878] hover:bg-[#087A5B] text-white shadow-[#00A878]/20 hover:scale-[1.01]'
                 }`}
               >
@@ -425,13 +424,14 @@ export function ModalCadastroAtleta({
                     const contagemAtual = equipeAtual ? equipeAtual.atletaIds.length : 0;
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={mod.id}
                         onClick={() => toggleModalidade(mod.codigo)}
-                        className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer transition-all ${
+                        className={`w-full p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border text-left transition-all ${
                           sel
-                            ? 'bg-[#E8F7F1] border-[#00A878] shadow-sm'
-                            : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] hover:bg-white hover:border-[#00A878]/40'
+                            ? 'bg-[#E8F7F1] border-[#00A878] shadow-sm ring-2 ring-[#00A878]/30 font-bold'
+                            : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] hover:bg-white hover:border-[#00A878]/60'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -449,7 +449,7 @@ export function ModalCadastroAtleta({
                             Equipe: {contagemAtual}/{mod.maxAtletas}
                           </span>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

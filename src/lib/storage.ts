@@ -179,6 +179,26 @@ export class JegdStorage {
         localStorage.setItem(STORAGE_KEYS.COMUNICADOS, JSON.stringify(data.comunicados));
         changed = true;
       }
+      if (data.usuarios && Array.isArray(data.usuarios) && data.usuarios.length > 0) {
+        const storedUsuarios = this.getAllUsuarios();
+        const mergedUsuarios = [...storedUsuarios];
+        for (const cloudUser of data.usuarios) {
+          const cloudCpf = (cloudUser.cpf || '').replace(/\D/g, '');
+          const idx = mergedUsuarios.findIndex(u => {
+            if (u.id === cloudUser.id) return true;
+            if (cloudCpf && (u.cpf || '').replace(/\D/g, '') === cloudCpf) return true;
+            if (cloudUser.email && u.email?.toLowerCase() === cloudUser.email.toLowerCase()) return true;
+            return false;
+          });
+          if (idx >= 0) {
+            mergedUsuarios[idx] = { ...mergedUsuarios[idx], ...cloudUser };
+          } else {
+            mergedUsuarios.push(cloudUser);
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(mergedUsuarios));
+        changed = true;
+      }
 
       if (changed && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('jegd-data-synced', { detail: data }));
@@ -912,17 +932,18 @@ export class JegdStorage {
       ...user,
       municipioId: user.municipioId !== undefined ? user.municipioId : curMun.id
     };
-    const list = this.getUsuarios();
+    const list = this.getAllUsuarios();
     const userCpfLimpo = (userToSave.cpf || '').replace(/\D/g, '');
     const idx = list.findIndex(u => {
       if (u.id === userToSave.id) return true;
       if (userCpfLimpo && (u.cpf || '').replace(/\D/g, '') === userCpfLimpo) return true;
-      if (userToSave.email && u.email === userToSave.email) return true;
+      if (userToSave.email && u.email?.toLowerCase() === userToSave.email.toLowerCase()) return true;
       return false;
     });
     if (idx >= 0) list[idx] = userToSave;
     else list.push(userToSave);
     localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(list));
+    JegdCloudSync.syncUsuario(userToSave).catch(() => {});
   }
 
   public static setCurrentUser(user: any | null): void {

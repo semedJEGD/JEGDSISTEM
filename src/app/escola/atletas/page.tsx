@@ -171,7 +171,11 @@ export default function EscolaAtletasPage() {
   const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
 
   // Modalidades elegíveis para este aluno
-  const modalidadesDisponiveis = modalidades.filter(mod => {
+  const listaModalidadesBase = modalidades.length > 0 
+    ? modalidades 
+    : (typeof window !== 'undefined' ? JegdStorage.getModalidades() : []);
+
+  const modalidadesDisponiveis = listaModalidadesBase.filter(mod => {
     if (!catCalc.categoria) return false;
     const res = JegdsRulesService.validarMatriz(mod.codigo, catCalc.categoria as CategoriaIdade, sexo);
     return res.valido;
@@ -208,7 +212,7 @@ export default function EscolaAtletasPage() {
     }
 
     if (!catCalc.categoria) {
-      alert('A data de nascimento informada está fora da faixa etária oficial do JEGDS 2026 (9 a 20 anos).');
+      alert('A data de nascimento informada está fora da faixa etária oficial do JEGDS 2026 (9 a 20 anos: nascidos entre 2006 e 2017).');
       return;
     }
 
@@ -227,15 +231,30 @@ export default function EscolaAtletasPage() {
           alert(diag.mensagemUsuario || 'Este estudante já se encontra cadastrado por outra escola.');
           return;
         } else if (diag.tipoConflito === 'MESMA_ESCOLA' && diag.atletaExistente) {
-          // Carrega os dados existentes e avança para a etapa de modalidades
-          handleAbrirModalEditar(diag.atletaExistente);
+          // Carrega os dados existentes e avança direto para a etapa de modalidades
+          const exist = diag.atletaExistente;
+          setAtletaEditando(exist);
+          setNomeCompleto(exist.nomeCompleto);
+          setDataNascimento(exist.dataNascimento);
+          setSexo(exist.sexo);
+          setDocumentoTipo(exist.documentoTipo || 'RG');
+          setDocumentoNumero(exist.documentoNumero || '');
+          setMatricula(exist.matricula);
+          setSerieTurma(exist.serieTurma || '7º Ano (Fundamental)');
+          setNomeMae(exist.nomeMae || '');
+          setTelefoneContato(exist.telefoneContato || '(99) 98888-0000');
+          setTipoSanguineo(exist.tipoSanguineo || 'O+');
+          setConsentimentoResponsavel(exist.consentimentoResponsavel ?? true);
+          setFotoBase64(exist.documentos?.foto3x4 || exist.fotoUrl);
+          setModalidadesEscolhidas(exist.modalidadesInscritas?.map(m => m.modalidadeCodigo as any) || []);
+          const atletismoInsc = exist.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
+          setProvasAtletismo(atletismoInsc?.provas || []);
           setEtapaAtual(2);
           return;
         }
       }
     }
 
-    // Se for primeira vez e só tem uma modalidade, pode auto-selecionar ou avançar
     setEtapaAtual(2);
   };
 

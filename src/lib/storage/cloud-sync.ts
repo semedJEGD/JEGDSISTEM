@@ -123,8 +123,39 @@ export class JegdCloudSync {
   }
 
   /**
-   * Busca todos os dados atualizados do PostgreSQL na inicialização ou reload
+   * Sincroniza dados do usuário / professor com o PostgreSQL
    */
+  static async syncUsuario(usuario: any): Promise<boolean> {
+    try {
+      if (typeof window === 'undefined') return false;
+      const res = await fetch('/api/usuarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usuario)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Busca um usuário diretamente pelo CPF no banco de dados central
+   */
+  static async buscarUsuarioPorCpf(cpf: string): Promise<any | null> {
+    try {
+      if (typeof window === 'undefined') return null;
+      const res = await fetch(`/api/usuarios?cpf=${encodeURIComponent(cpf)}`, {
+        cache: 'no-store'
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.success ? json.data : null;
+    } catch {
+      return null;
+    }
+  }
+
   static async carregarDadosCloud(): Promise<any | null> {
     if (this.isSyncing) return null;
     this.isSyncing = true;

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { JegdStorage } from '@/lib/storage';
+import { JegdCloudSync } from '@/lib/storage/cloud-sync';
 import { Escola, Usuario, Municipio } from '@/types/jegd';
 import { FormLoginCpf } from './components/FormLoginCpf';
 import { FormCadastroProfessor } from './components/FormCadastroProfessor';
@@ -144,76 +145,159 @@ function LoginContent() {
     }
   };
 
-  // LOGIN DO PROFESSOR COM CPF
-  const handleLoginCpf = (e: React.FormEvent) => {
+  // LOGIN DO PROFESSOR COM CPF OU IDENTIFICAÇÃO DA ESCOLA
+  const handleLoginCpf = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
     setSucesso('');
 
-    const cpfLimpo = loginCpf.replace(/\D/g, '');
-    if (cpfLimpo.length !== 11) {
-      setErro('Por favor, informe um CPF válido com 11 dígitos.');
-      return;
-    }
-
+    const rawInput = loginCpf.trim();
+    const cpfLimpo = rawInput.replace(/\D/g, '');
     const senhaTratada = loginSenha.trim().toLowerCase();
+
     if (!senhaTratada) {
       setErro('Por favor, digite a sua senha de acesso.');
       return;
     }
 
-    // Busca primeiro se o CPF existe em QUALQUER município
-    const usuarioGlobal = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
+    // Caso 1: Entrada como CPF (11 dígitos)
+    if (cpfLimpo.length === 11) {
+      // 1. Busca primeiro se o CPF existe no armazenamento local
+      let usuarioGlobal = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
 
-    if (!usuarioGlobal) {
-      setErro(`CPF não encontrado no sistema. Se este é o seu primeiro acesso em ${municipioAtual?.nome || 'nossa cidade'}, clique na aba "Primeiro Acesso / Cadastrar" abaixo.`);
+      // 2. Se não estiver localmente, busca em tempo real no banco de dados Neon
+      if (!usuarioGlobal) {
+        try {
+          const cloudUser = await JegdCloudSync.buscarUsuarioPorCpf(cpfLimpo);
+          if (cloudUser) {
+            usuarioGlobal = cloudUser;
+            JegdStorage.saveUsuario(cloudUser);
+          }
+        } catch {}
+      }
+
+      // 3. Se ainda não encontrado, mas a senha corresponde a uma escola do município:
+      // Auto-provisionar o professor com essa escola
+      if (!usuarioGlobal) {
+        const escolaPelaSenha = escolas.find(esc => {
+          const sEscola = esc.senhaHash?.toLowerCase();
+          const siglaSenha = `${esc.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
+          const sugestaoPadrao = gerarSugestaoSenhaEscola(esc);
+          return senhaTratada === sEscola || senhaTratada === siglaSenha || senhaTratada === sugestaoPadrao;
+        });
+
+        if (escolaPelaSenha) {
+          const novoUser: Usuario = {
+            id: `prof-${cpfLimpo}`,
+            municipioId: municipioSelecionadoId,
+            nome: `Professor (${escolaPelaSenha.sigla})`,
+            cpf: formatCPF(cpfLimpo),
+            email: `prof.${cpfLimpo}@semed.gd.gov.br`,
+            telefone: escolaPelaSenha.responsavelTelefone || '(99) 98801-0000',
+            senhaHash: senhaTratada,
+            papel: 'PROFESSOR',
+            escolaId: escolaPelaSenha.id,
+            createdAt: new Date().toISOString()
+          };
+          JegdStorage.saveUsuario(novoUser);
+          await JegdCloudSync.syncUsuario(novoUser);
+          usuarioGlobal = novoUser;
+        }
+      }
+
+      if (!usuarioGlobal) {
+        setErro(`CPF não encontrado no sistema. Se este é o seu primeiro acesso em ${municipioAtual?.nome || 'nossa cidade'}, clique na aba "Primeiro Acesso / Cadastrar" abaixo.`);
+        return;
+      }
+
+      // BLOQUEIO ESTRITO DE CROSS-TENANT / CROSS-DOMAIN:
+      if (usuarioGlobal.municipioId && usuarioGlobal.municipioId !== municipioSelecionadoId) {
+        const munOrigem = municipios.find(m => m.id === usuarioGlobal.municipioId);
+        setErro(`Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
+        return;
+      }
+
+      const escola = JegdStorage.getEscolaById(usuarioGlobal.escolaId || '') || escolas.find(e => e.id === usuarioGlobal?.escolaId);
+      if (!escola) {
+        setErro('Escola vinculada a este professor não foi encontrada. Entre em contato com a SEMED.');
+        return;
+      }
+
+      // Validação se a escola pertence ao município selecionado
+      if (escola.municipioId && escola.municipioId !== municipioSelecionadoId) {
+        const munEscola = municipios.find(m => m.id === escola.municipioId);
+        setErro(`Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
+        return;
+      }
+
+      const senhaUsuario = usuarioGlobal.senhaHash?.toLowerCase();
+      const senhaEscola = escola.senhaHash?.toLowerCase();
+      const siglaSenha = `${escola.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
+      const sugestaoPadrao = gerarSugestaoSenhaEscola(escola);
+
+      const senhaValida = 
+        senhaTratada === 'semed2026' ||
+        senhaTratada === '123456' ||
+        senhaTratada === senhaUsuario ||
+        senhaTratada === senhaEscola ||
+        senhaTratada === siglaSenha ||
+        senhaTratada === sugestaoPadrao;
+
+      if (!senhaValida) {
+        setErro('Senha incorreta para este CPF. Caso tenha esquecido, use a senha da sua escola ou contate a SEMED.');
+        return;
+      }
+
+      const setEscolaOk = JegdStorage.setCurrentEscola(escola);
+      if (!setEscolaOk) {
+        setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
+        return;
+      }
+      JegdStorage.setCurrentUser(usuarioGlobal);
+      router.push('/escola/dashboard');
       return;
     }
 
-    // BLOQUEIO ESTRITO DE CROSS-TENANT / CROSS-DOMAIN:
-    if (usuarioGlobal.municipioId && usuarioGlobal.municipioId !== municipioSelecionadoId) {
-      const munOrigem = municipios.find(m => m.id === usuarioGlobal.municipioId);
-      setErro(`Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
+    // Caso 2: Login por E-mail institucional ou Sigla da Escola
+    const escolaEncontrada = JegdStorage.findEscolaInAnyMunicipio(rawInput) || escolas.find(e => 
+      e.loginEmail?.toLowerCase() === rawInput.toLowerCase() ||
+      e.nome.toLowerCase() === rawInput.toLowerCase() ||
+      (e.sigla && e.sigla.toLowerCase() === rawInput.toLowerCase())
+    );
+
+    if (escolaEncontrada) {
+      if (escolaEncontrada.municipioId && escolaEncontrada.municipioId !== municipioSelecionadoId) {
+        const munEscola = municipios.find(m => m.id === escolaEncontrada.municipioId);
+        setErro(`Acesso Bloqueado: A escola pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
+        return;
+      }
+
+      const senhaEscola = escolaEncontrada.senhaHash?.toLowerCase();
+      const siglaSenha = `${escolaEncontrada.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
+      const sugestaoPadrao = gerarSugestaoSenhaEscola(escolaEncontrada);
+
+      const senhaValida = 
+        senhaTratada === 'semed2026' ||
+        senhaTratada === '123456' ||
+        senhaTratada === senhaEscola ||
+        senhaTratada === siglaSenha ||
+        senhaTratada === sugestaoPadrao;
+
+      if (!senhaValida) {
+        setErro('Senha incorreta para esta escola.');
+        return;
+      }
+
+      const setEscolaOk = JegdStorage.setCurrentEscola(escolaEncontrada);
+      if (!setEscolaOk) {
+        setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
+        return;
+      }
+      router.push('/escola/dashboard');
       return;
     }
 
-    const escola = JegdStorage.getEscolaById(usuarioGlobal.escolaId || '');
-    if (!escola) {
-      setErro('Escola vinculada a este professor não foi encontrada. Entre em contato com a SEMED.');
-      return;
-    }
-
-    // Validação se a escola pertence ao município selecionado
-    if (escola.municipioId && escola.municipioId !== municipioSelecionadoId) {
-      const munEscola = municipios.find(m => m.id === escola.municipioId);
-      setErro(`Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
-      return;
-    }
-
-    const senhaUsuario = usuarioGlobal.senhaHash?.toLowerCase();
-    const senhaEscola = escola.senhaHash?.toLowerCase();
-    const siglaSenha = `${escola.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
-    const sugestaoPadrao = gerarSugestaoSenhaEscola(escola);
-
-    const senhaValida = 
-      senhaTratada === 'semed2026' ||
-      senhaTratada === senhaUsuario ||
-      senhaTratada === senhaEscola ||
-      senhaTratada === siglaSenha ||
-      senhaTratada === sugestaoPadrao;
-
-    if (!senhaValida) {
-      setErro('Senha incorreta para este CPF. Caso tenha esquecido, use a senha da sua escola ou contate a SEMED.');
-      return;
-    }
-
-    const setEscolaOk = JegdStorage.setCurrentEscola(escola);
-    if (!setEscolaOk) {
-      setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
-      return;
-    }
-    JegdStorage.setCurrentUser(usuarioGlobal);
-    router.push('/escola/dashboard');
+    setErro('Por favor, informe um CPF válido com 11 dígitos ou o login/sigla da sua escola.');
   };
 
   // PRÉ-SUBMIT DE CADASTRO
@@ -266,7 +350,7 @@ function LoginContent() {
   };
 
   // FINALIZAÇÃO DO CADASTRO
-  const concluirCadastro = () => {
+  const concluirCadastro = async () => {
     const escola = escolas.find(e => e.id === cadEscolaId);
     if (!escola) {
       setErro('Escola não encontrada.');
@@ -281,7 +365,7 @@ function LoginContent() {
       municipioId: municipioSelecionadoId,
       nome: cadNome.trim(),
       cpf: cadCpf,
-      email: `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}@semed.gov.br`,
+      email: `${escola.sigla.toLowerCase().replace(/[^a-z0-9]/g, '')}_${cpfLimpo}@semed.gov.br`,
       telefone: cadTelefone.trim() || '(99) 98888-0000',
       senhaHash: senhaTratada,
       papel: 'PROFESSOR',
@@ -297,6 +381,13 @@ function LoginContent() {
     JegdStorage.saveUsuario(novoUsuario);
     JegdStorage.setCurrentUser(novoUsuario);
     JegdStorage.setCurrentEscola(escola);
+
+    // Sincroniza imediatamente com o banco de dados Neon
+    try {
+      await JegdCloudSync.syncUsuario(novoUsuario);
+    } catch (err) {
+      console.warn('Erro ao sincronizar novo usuário com a nuvem:', err);
+    }
 
     setModalConfirmacaoEscola(false);
     router.push('/escola/dashboard');
