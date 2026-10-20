@@ -1086,12 +1086,12 @@ export class JegdStorage {
 
   public static saveProfessorEscola(escolaId: string, nome: string, telefone?: string): ProfessorPerfil {
     if (!this.isClient()) {
-      return { id: `prof-${Date.now()}`, escolaId, nome, telefone, createdAt: new Date().toISOString() };
+      return { id: `prof-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, escolaId, nome, telefone, createdAt: new Date().toISOString() };
     }
     const data = localStorage.getItem(STORAGE_KEYS.PROFESSORES_ESCOLA);
     const list: ProfessorPerfil[] = data ? JSON.parse(data) : [];
     const novo: ProfessorPerfil = {
-      id: `prof-${Date.now()}`,
+      id: `prof-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       escolaId,
       nome: nome.trim(),
       telefone: telefone?.trim(),
