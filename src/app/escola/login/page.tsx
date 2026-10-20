@@ -480,18 +480,8 @@ function LoginContent() {
       <div className="relative z-10 max-w-[500px] w-full mx-auto my-auto">
         <div className="bg-white/98 backdrop-blur-md border border-white/70 sm:border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden transition-all duration-300">
           
-          {/* SELETOR DE MUNICÍPIO NO TOPO (OU DOMÍNIO OFICIAL TRAVADO) */}
-          {isDominioTravado ? (
-            <div className="mb-4 bg-emerald-50/90 border border-emerald-300 rounded-xl p-3 flex items-center justify-between gap-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-emerald-950 font-bold text-xs">
-                <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>Domínio Oficial Travado:</span>
-              </div>
-              <div className="px-3 py-1 rounded-lg bg-emerald-700 text-white text-xs font-black tracking-wide flex items-center gap-1.5 shadow-2xs truncate max-w-[240px]">
-                <span className="truncate">{municipioAtual?.nome} ({municipioAtual?.siglaEvento})</span>
-              </div>
-            </div>
-          ) : (
+          {/* Seletor de Município exibido apenas se o domínio não estiver travado (ambiente local/desenvolvimento) */}
+          {!isDominioTravado && municipios.length > 1 && (
             <div className="mb-4 bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
                 <MapPin className="w-4 h-4 text-emerald-700 shrink-0" />
