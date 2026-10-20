@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreditCard, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 interface FormLoginCpfProps {
   loginCpf: string;
@@ -28,28 +28,28 @@ export function FormLoginCpf({
     <form onSubmit={onSubmit} className="space-y-3 sm:space-y-3.5">
       <div>
         <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-          CPF do Professor
+          E-mail da Escola
         </label>
         <div className="relative">
           <input
             type="text"
             required
-            maxLength={60}
+            maxLength={80}
             value={loginCpf}
             onChange={(e) => setLoginCpf(e.target.value)}
-            placeholder="000.000.000-00 ou email da escola"
-            className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors tracking-wider"
+            placeholder="ex: josecorrea@semed.gd.gov.br"
+            className="w-full px-3.5 py-2.5 pl-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
           />
-          <CreditCard className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />
+          <Mail className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3.5" />
         </div>
         <p className="text-[10px] text-[#4B5563] mt-1 font-medium">
-          O sistema identifica automaticamente sua escola através do CPF.
+          Acesso universal para a Direção e Professores de Ed. Física da escola.
         </p>
       </div>
 
       <div>
         <label className="block text-[11px] sm:text-xs font-bold text-[#17221D] uppercase tracking-wider mb-1">
-          Senha de Acesso
+          Senha da Escola
         </label>
         <div className="relative">
           <input
@@ -58,7 +58,7 @@ export function FormLoginCpf({
             maxLength={30}
             value={loginSenha}
             onChange={(e) => setLoginSenha(e.target.value)}
-            placeholder="Digite sua senha"
+            placeholder="Digite a senha institucional da escola"
             className="w-full px-3.5 py-2.5 pl-9 pr-9 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
           />
           <Lock className="w-3.5 h-3.5 text-[#4B5563] absolute left-3 top-3" />

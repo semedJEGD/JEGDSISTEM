@@ -11,7 +11,8 @@ import {
   UserPlus, 
   MapPin, 
   Settings, 
-  Sparkles 
+  Sparkles,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import { JegdStorage } from '@/lib/storage';
@@ -22,6 +23,19 @@ import { FormCadastroProfessor } from './components/FormCadastroProfessor';
 import { FormLoginAdmin } from './components/FormLoginAdmin';
 import { ModalConfirmacaoEscola } from './components/ModalConfirmacaoEscola';
 import { gerarSugestaoSenhaEscola } from '@/lib/auth-helpers';
+
+function formatIdentificador(val: string): string {
+  // Se contiver letras ou @, permite texto livre de e-mail ou sigla da escola
+  if (/[a-zA-Z@]/.test(val)) {
+    return val.trim();
+  }
+  // Se forem apenas números, formata como CPF para conveniência
+  const digits = val.replace(/\D/g, '');
+  if (digits.length <= 11 && digits.length > 0) {
+    return formatCPF(val);
+  }
+  return val.trim();
+}
 
 function formatCPF(val: string): string {
   const digits = val.replace(/\D/g, '').slice(0, 11);
@@ -297,7 +311,7 @@ function LoginContent() {
       return;
     }
 
-    setErro('Por favor, informe um CPF válido com 11 dígitos ou o login/sigla da sua escola.');
+    setErro('E-mail institucional da escola não encontrado. Verifique se digitou o e-mail ou a sigla correta.');
   };
 
   // PRÉ-SUBMIT DE CADASTRO
@@ -569,8 +583,8 @@ function LoginContent() {
                       : 'border-transparent text-[#68756E] hover:text-[#17221D]'
                   }`}
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Entrar com CPF</span>
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Entrar com E-mail</span>
                 </button>
                 <button
                   type="button"
@@ -589,7 +603,7 @@ function LoginContent() {
               {modoEscola === 'LOGIN' && (
                 <FormLoginCpf
                   loginCpf={loginCpf}
-                  setLoginCpf={(v) => setLoginCpf(formatCPF(v))}
+                  setLoginCpf={(v) => setLoginCpf(formatIdentificador(v))}
                   loginSenha={loginSenha}
                   setLoginSenha={setLoginSenha}
                   mostrarSenhaLogin={mostrarSenhaLogin}
