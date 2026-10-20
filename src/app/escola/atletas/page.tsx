@@ -85,6 +85,14 @@ export default function EscolaAtletasPage() {
     });
   }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula]);
 
+  const listaProfessoresCadastrantes = React.useMemo(() => {
+    const setProfs = new Set<string>();
+    atletas.forEach(a => {
+      if (a.cadastradoPor) setProfs.add(a.cadastradoPor);
+    });
+    return Array.from(setProfs);
+  }, [atletas]);
+
   useEffect(() => {
     JegdStorage.init();
     const atual = JegdStorage.getCurrentEscola();
@@ -359,15 +367,14 @@ export default function EscolaAtletasPage() {
     }
   };
 
-  if (!escola) return null;
-
-  const listaProfessoresCadastrantes = React.useMemo(() => {
-    const setProfs = new Set<string>();
-    atletas.forEach(a => {
-      if (a.cadastradoPor) setProfs.add(a.cadastradoPor);
-    });
-    return Array.from(setProfs);
-  }, [atletas]);
+  if (!escola) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-9 h-9 border-3 border-[#00A878] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-[#64748B]">Carregando delegação da escola...</p>
+      </div>
+    );
+  }
 
   // Filtragem
   const atletasFiltrados = atletas.filter(atleta => {
