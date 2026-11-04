@@ -79,16 +79,25 @@ export async function POST(request: Request) {
 
     // Criar ou atualizar as inscrições dos atletas nesta modalidade
     const criados = [];
+    const equipeChave = id || `insc-${escolaId}-${modalidade.codigo}-${categoria}-${sexo}`;
+
     for (const atletaId of atletaIds) {
+      // Garante que o atleta existe no banco de dados para evitar erro de chave estrangeira
+      const atletaExiste = await prisma.atleta.findUnique({ where: { id: atletaId } });
+      if (!atletaExiste) {
+        console.warn(`Atleta ${atletaId} não encontrado no banco para inscrição na modalidade ${modalidade.codigo}`);
+        continue;
+      }
+
       const provas = provasPorAtleta?.[atletaId];
-      const provaStr = provas && provas.length > 0 ? provas.join(',') : null;
+      const provaStr = provas && provas.length > 0 ? provas.join(',') : '';
 
       const insc = await prisma.inscricao.upsert({
         where: {
           atletaId_modalidadeId_prova: {
             atletaId,
             modalidadeId: modalidade.id,
-            prova: provaStr || ''
+            prova: provaStr
           }
         },
         update: {
@@ -96,19 +105,19 @@ export async function POST(request: Request) {
           motivoRejeicao: motivoRejeicao || null,
           categoria: categoria as any,
           sexo: sexo as any,
-          equipe: id || undefined,
-          municipioId: municipioId || undefined
+          equipe: equipeChave,
+          municipioId: municipioId || atletaExiste.municipioId || undefined
         },
         create: {
-          id: `${id || 'insc'}-${atletaId}`,
+          id: `${equipeChave}-${atletaId}`,
           atletaId,
           modalidadeId: modalidade.id,
           escolaId,
-          municipioId: municipioId || undefined,
+          municipioId: municipioId || atletaExiste.municipioId || undefined,
           categoria: categoria as any,
           sexo: sexo as any,
-          prova: provaStr || '',
-          equipe: id || 'EQUIPE-OFICIAL',
+          prova: provaStr,
+          equipe: equipeChave,
           status: status || 'PENDENTE',
           motivoRejeicao: motivoRejeicao || null
         }

@@ -117,7 +117,87 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, data: atleta });
+    // Sincroniza as modalidades em que o atleta foi inscrito
+    if (Array.isArray(body.modalidadesInscritas)) {
+      const modalidadesDb = await prisma.modalidade.findMany({
+        where: municipioId ? { OR: [{ municipioId }, { municipioId: null }] } : {}
+      });
+
+      const modalidadeIdsMantidas: string[] = [];
+
+      for (const modInsc of body.modalidadesInscritas) {
+        if (!modInsc || !modInsc.modalidadeCodigo) continue;
+
+        let modDb = modalidadesDb.find(m => m.codigo === modInsc.modalidadeCodigo && m.municipioId === municipioId);
+        if (!modDb) {
+          modDb = modalidadesDb.find(m => m.codigo === modInsc.modalidadeCodigo);
+        }
+        if (!modDb) {
+          modDb = await prisma.modalidade.create({
+            data: {
+              codigo: modInsc.modalidadeCodigo,
+              nome: modInsc.modalidadeNome || modInsc.modalidadeCodigo,
+              tipo: 'COLETIVA',
+              dataEvento: new Date('2026-12-12T00:00:00Z'),
+              prazoInscricao: new Date('2026-12-05T23:59:59Z'),
+              municipioId: municipioId || undefined
+            }
+          });
+        }
+
+        modalidadeIdsMantidas.push(modDb.id);
+
+        const provasArr = Array.isArray(modInsc.provas) ? modInsc.provas : [];
+        const provaStr = provasArr.length > 0 ? provasArr.join(',') : '';
+        const equipeId = `insc-${atleta.escolaId}-${modDb.codigo}-eq1`;
+
+        await prisma.inscricao.upsert({
+          where: {
+            atletaId_modalidadeId_prova: {
+              atletaId: atleta.id,
+              modalidadeId: modDb.id,
+              prova: provaStr
+            }
+          },
+          update: {
+            escolaId: atleta.escolaId,
+            municipioId: atleta.municipioId,
+            categoria: atleta.categoria,
+            sexo: atleta.sexo,
+            equipe: equipeId,
+            status: 'PENDENTE'
+          },
+          create: {
+            id: `insc-${Date.now()}-${atleta.id}-${modDb.codigo}`,
+            atletaId: atleta.id,
+            modalidadeId: modDb.id,
+            escolaId: atleta.escolaId,
+            municipioId: atleta.municipioId,
+            categoria: atleta.categoria,
+            sexo: atleta.sexo,
+            prova: provaStr,
+            equipe: equipeId,
+            status: 'PENDENTE'
+          }
+        });
+      }
+
+      // Remove inscrições em modalidades que foram desmarcadas
+      await prisma.inscricao.deleteMany({
+        where: {
+          atletaId: atleta.id,
+          modalidadeId: { notIn: modalidadeIdsMantidas }
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...atleta,
+        modalidadesInscritas: body.modalidadesInscritas || []
+      }
+    });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao salvar atleta' },

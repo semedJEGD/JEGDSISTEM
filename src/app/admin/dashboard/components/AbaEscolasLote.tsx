@@ -12,7 +12,10 @@ import {
   Square,
   MessageSquare,
   LayoutGrid,
-  List
+  List,
+  UserPlus,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { Escola, Atleta, ModalidadeConfig } from '@/types/jegd';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -44,6 +47,10 @@ interface AbaEscolasLoteProps {
   handleGerarCrachaIndividual: (atleta: Atleta, esc?: Escola) => void;
   toggleConferenciaAtleta: (atleta: Atleta) => void;
   abrirModalObsAtleta: (atleta: Atleta) => void;
+  onNovoAtleta?: (esc: Escola) => void;
+  onEditarAtleta?: (atleta: Atleta, esc: Escola) => void;
+  onExcluirAtleta?: (atleta: Atleta, esc: Escola) => void;
+  onAcessarInscricoesEscola?: (esc: Escola) => void;
 }
 
 export function AbaEscolasLote({
@@ -66,7 +73,11 @@ export function AbaEscolasLote({
   handleImprimirLoteEscola,
   handleGerarCrachaIndividual,
   toggleConferenciaAtleta,
-  abrirModalObsAtleta
+  abrirModalObsAtleta,
+  onNovoAtleta,
+  onEditarAtleta,
+  onExcluirAtleta,
+  onAcessarInscricoesEscola
 }: AbaEscolasLoteProps) {
   return (
     <div className="space-y-6">
@@ -126,6 +137,30 @@ export function AbaEscolasLote({
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
+              {onNovoAtleta && (
+                <button
+                  type="button"
+                  onClick={() => onNovoAtleta(escolaSelecionada)}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all shrink-0 hover:scale-[1.02] active:scale-95"
+                  title="Inscrever e cadastrar novo aluno nesta escola pela Coordenação SEMED"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>+ Inscrever Aluno</span>
+                </button>
+              )}
+
+              {onAcessarInscricoesEscola && (
+                <button
+                  type="button"
+                  onClick={() => onAcessarInscricoesEscola(escolaSelecionada)}
+                  className="px-4 py-2.5 rounded-xl bg-[#1E293B] hover:bg-[#0F172A] text-white font-bold text-xs sm:text-sm shadow-sm flex items-center gap-2 transition-all shrink-0 hover:scale-[1.01]"
+                  title="Montar inscrições de equipes por modalidade e emitir fichas desta escola"
+                >
+                  <Users className="w-4 h-4 text-emerald-400" />
+                  <span>Montar Equipes</span>
+                </button>
+              )}
+
               <button
                 onClick={() => handleGerarCrachasEscola(escolaSelecionada)}
                 disabled={gerandoPdf || atletasDaEscolaSelecionada.length === 0}
@@ -394,6 +429,28 @@ export function AbaEscolasLote({
                                   </div>
 
                                   <div className="flex items-center gap-1 shrink-0">
+                                    {onEditarAtleta && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
+                                        className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-amber-50 text-amber-700 border border-amber-300 transition-all"
+                                        title="Editar dados e modalidades do atleta"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+
+                                    {onExcluirAtleta && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
+                                        className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-rose-50 text-rose-600 border border-rose-200 transition-all"
+                                        title="Remover atleta da escola"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+
                                     <button
                                       onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
                                       className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 transition-all"
@@ -509,6 +566,26 @@ export function AbaEscolasLote({
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
+                                  {onEditarAtleta && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
+                                      className="p-2 rounded-xl bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs transition-all"
+                                      title="Editar dados e modalidades do atleta"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {onExcluirAtleta && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
+                                      className="p-2 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs transition-all"
+                                      title="Remover atleta da escola"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
                                     title="Gerar crachá individual em PDF"
@@ -623,7 +700,27 @@ export function AbaEscolasLote({
                           {atleta.cadastradoPor || escolaSelecionada.responsavelNome}
                         </td>
 
-                        <td className="p-3.5 text-right">
+                        <td className="p-3.5 text-right flex items-center justify-end gap-1.5">
+                          {onEditarAtleta && (
+                            <button
+                              type="button"
+                              onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
+                              className="p-2 rounded-xl bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 transition-all"
+                              title="Editar dados e modalidades do atleta"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {onExcluirAtleta && (
+                            <button
+                              type="button"
+                              onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
+                              className="p-2 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 transition-all"
+                              title="Remover atleta da escola"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => abrirModalObsAtleta(atleta)}
                             className={`p-2 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition-all ${

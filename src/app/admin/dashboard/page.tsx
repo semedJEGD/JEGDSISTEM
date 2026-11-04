@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import confetti from 'canvas-confetti';
 import {
   Shield,
   ShieldCheck,
@@ -33,7 +34,8 @@ import {
   Eye,
   MessageSquare,
   QrCode,
-  LogOut
+  LogOut,
+  UserPlus
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -44,9 +46,13 @@ import {
   InscricaoEquipe,
   ComunicadoAviso,
   StatusInscricao,
-  ModalidadeConfig
+  ModalidadeConfig,
+  Genero,
+  TipoDocumento,
+  ModalidadeCodigo,
+  CategoriaIdade
 } from '@/types/jegd';
-import { JegdsRulesService } from '@/services/jegds-rules';
+import { JegdsRulesService, PROVAS_ATLETISMO_POR_CATEGORIA } from '@/services/jegds-rules';
 import { ModalAnaliseInscricao } from './components/ModalAnaliseInscricao';
 import { ModalNovoAviso } from './components/ModalNovoAviso';
 import { ModalObsAtleta } from './components/ModalObsAtleta';
@@ -56,6 +62,7 @@ import { AbaAlertas } from './components/AbaAlertas';
 import { AbaSumulas } from './components/AbaSumulas';
 import { AbaComunicados } from './components/AbaComunicados';
 import { AbaCrachaLogistica } from './components/AbaCrachaLogistica';
+import { ModalCadastroAtleta } from '@/app/escola/atletas/components/ModalCadastroAtleta';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -108,6 +115,21 @@ export default function AdminDashboardPage() {
 
   const [sincronizandoOnline, setSincronizandoOnline] = useState(false);
   const [ultimaSincronizacao, setUltimaSincronizacao] = useState<string>('Agora');
+
+  // Modal de Inscrição / Cadastro de Aluno pela Coordenação
+  const [modalCadastroAtletaAberto, setModalCadastroAtletaAberto] = useState(false);
+  const [atletaEditando, setAtletaEditando] = useState<Atleta | null>(null);
+  const [nomeCompleto, setNomeCompleto] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('2013-05-10');
+  const [sexo, setSexo] = useState<Genero>('MASCULINO');
+  const [documentoTipo, setDocumentoTipo] = useState<TipoDocumento>('RG');
+  const [documentoNumero, setDocumentoNumero] = useState('');
+  const [matricula, setMatricula] = useState('');
+  const [serieTurma, setSerieTurma] = useState('7º Ano (Fundamental)');
+  const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
+  const [modalidadesEscolhidas, setModalidadesEscolhidas] = useState<ModalidadeCodigo[]>([]);
+  const [provasAtletismo, setProvasAtletismo] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     JegdStorage.init();
@@ -496,6 +518,208 @@ export default function AdminDashboardPage() {
   const atletasDaEscolaSelecionada = atletas.filter(a => a.escolaId === escolaSelecionadaId);
   const inscricoesDaEscolaSelecionada = inscricoes.filter(i => i.escolaId === escolaSelecionadaId);
 
+  const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
+
+  const modalidadesDisponiveis = modalidades.filter(mod => {
+    if (!catCalc.categoria) return false;
+    const res = JegdsRulesService.validarMatriz(mod.codigo, catCalc.categoria as CategoriaIdade, sexo);
+    return res.valido;
+  });
+
+  const provasPermitidas = catCalc.categoria ? (PROVAS_ATLETISMO_POR_CATEGORIA[catCalc.categoria] || []) : [];
+
+  const toggleModalidade = (modCodigo: ModalidadeCodigo) => {
+    if (modalidadesEscolhidas.includes(modCodigo)) {
+      setModalidadesEscolhidas(modalidadesEscolhidas.filter(c => c !== modCodigo));
+      if (modCodigo === 'atletismo') setProvasAtletismo([]);
+    } else {
+      setModalidadesEscolhidas([...modalidadesEscolhidas, modCodigo]);
+    }
+  };
+
+  const toggleProva = (prova: string) => {
+    if (provasAtletismo.includes(prova)) {
+      setProvasAtletismo(provasAtletismo.filter(p => p !== prova));
+    } else {
+      if (provasAtletismo.length >= 2) {
+        alert('No Atletismo, cada atleta pode disputar no máximo 2 provas.');
+        return;
+      }
+      setProvasAtletismo([...provasAtletismo, prova]);
+    }
+  };
+
+  const handleFotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('A foto deve ter no máximo 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFotoBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFotoBase64(undefined);
+    }
+  };
+
+  const diagnosticoDuplicidade = React.useMemo(() => {
+    if (atletaEditando || !escolaSelecionada) return { duplicado: false };
+    if (!nomeCompleto.trim() && !documentoNumero.trim()) return { duplicado: false };
+    return JegdStorage.verificarDuplicidadeAtleta({
+      nomeCompleto,
+      dataNascimento,
+      documentoNumero,
+      matricula,
+      escolaIdAtual: escolaSelecionada.id
+    });
+  }, [atletaEditando, escolaSelecionada, nomeCompleto, dataNascimento, documentoNumero, matricula]);
+
+  const handleAbrirModalNovoAtleta = (esc?: Escola) => {
+    const targetEsc = esc || escolaSelecionada;
+    if (targetEsc) setEscolaSelecionadaId(targetEsc.id);
+    setAtletaEditando(null);
+    setNomeCompleto('');
+    setDataNascimento('2013-05-10');
+    setSexo('MASCULINO');
+    setDocumentoTipo('RG');
+    setDocumentoNumero('');
+    const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(targetEsc?.municipioId || municipioAtual?.id);
+    setMatricula(proximoCodigo);
+    setSerieTurma('7º Ano (Fundamental)');
+    setFotoBase64(undefined);
+    setModalidadesEscolhidas([]);
+    setProvasAtletismo([]);
+    setModalCadastroAtletaAberto(true);
+  };
+
+  const handleAbrirModalEditarAtleta = (atleta: Atleta, esc?: Escola) => {
+    const targetEsc = esc || escolaSelecionada;
+    if (targetEsc) setEscolaSelecionadaId(targetEsc.id);
+    setAtletaEditando(atleta);
+    setNomeCompleto(atleta.nomeCompleto);
+    setDataNascimento(atleta.dataNascimento);
+    setSexo(atleta.sexo);
+    setDocumentoTipo(atleta.documentoTipo || 'RG');
+    setDocumentoNumero(atleta.documentoNumero || '');
+    setMatricula(atleta.matricula);
+    setSerieTurma(atleta.serieTurma);
+    setFotoBase64(atleta.documentos?.foto3x4);
+    const modsInsc = atleta.modalidadesInscritas?.map(m => m.modalidadeCodigo) || [];
+    setModalidadesEscolhidas(modsInsc);
+    const atletismoInsc = atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
+    setProvasAtletismo(atletismoInsc?.provas || []);
+    setModalCadastroAtletaAberto(true);
+  };
+
+  const handleSalvarAtletaCoord = (continuar: boolean = false) => {
+    const targetEsc = escolaSelecionada;
+    if (!targetEsc) {
+      alert('Selecione uma escola para vincular o estudante.');
+      return;
+    }
+
+    if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
+      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+      return;
+    }
+
+    if (!catCalc.categoria) {
+      alert('A data de nascimento informada está fora da faixa etária oficial do JEGDS 2026 (9 a 20 anos).');
+      return;
+    }
+
+    if (modalidadesEscolhidas.length === 0) {
+      alert('Selecione ao menos 1 modalidade para inscrever o estudante.');
+      return;
+    }
+
+    if (modalidadesEscolhidas.includes('atletismo') && provasAtletismo.length === 0) {
+      alert('Selecione ao menos 1 prova de Atletismo para este atleta.');
+      return;
+    }
+
+    const currentUser = JegdStorage.getCurrentUser();
+    const atletaId = atletaEditando ? atletaEditando.id : `atl-${Date.now()}`;
+    const codigoFinal = matricula && matricula.trim() !== '' && !matricula.startsWith('MAT-')
+      ? matricula
+      : (atletaEditando?.matricula || JegdStorage.gerarProximoCodigoInscricao(targetEsc.municipioId));
+
+    const modalidadesMapeadas = modalidadesEscolhidas.map(mCod => {
+      const modObj = modalidades.find(m => m.codigo === mCod);
+      return {
+        modalidadeCodigo: mCod,
+        modalidadeNome: modObj?.nome || mCod,
+        provas: mCod === 'atletismo' ? provasAtletismo : undefined
+      };
+    });
+
+    const autorCoord = currentUser?.nome
+      ? (currentUser.nome.includes('SEMED') ? currentUser.nome : `${currentUser.nome} (SEMED)`)
+      : 'Coordenação SEMED';
+
+    const atleta: Atleta = {
+      id: atletaId,
+      escolaId: targetEsc.id,
+      municipioId: targetEsc.municipioId || municipioAtual?.id,
+      nomeCompleto: nomeCompleto.toUpperCase(),
+      dataNascimento,
+      sexo,
+      documentoTipo,
+      documentoNumero,
+      matricula: codigoFinal,
+      crachaToken: atletaEditando?.crachaToken || codigoFinal,
+      serieTurma: serieTurma || '7º Ano (Fundamental)',
+      telefoneContato: targetEsc.responsavelTelefone || '(99) 98801-0000',
+      tipoSanguineo: 'O+',
+      consentimentoResponsavel: true,
+      cadastradoPor: atletaEditando?.cadastradoPor || autorCoord,
+      categoriaCalculada: catCalc.categoria as CategoriaIdade,
+      modalidadesInscritas: modalidadesMapeadas,
+      conferidoPeloCoordenador: true,
+      documentos: {
+        ...(atletaEditando?.documentos || {}),
+        foto3x4: fotoBase64
+      },
+      ativo: true,
+      createdAt: atletaEditando ? atletaEditando.createdAt : new Date().toISOString()
+    };
+
+    // 1. Salva o Atleta
+    JegdStorage.saveAtleta(atleta);
+
+    // 2. Sincroniza e monta automaticamente as equipes correspondentes da escola
+    JegdStorage.syncAtletaComEquipes(targetEsc.id, atleta);
+
+    // 3. Atualiza dados na tela
+    carregarTodosDados(municipioAtual?.id);
+
+    try {
+      confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+    } catch {}
+
+    if (continuar) {
+      handleAbrirModalNovoAtleta(targetEsc);
+    } else {
+      setModalCadastroAtletaAberto(false);
+    }
+  };
+
+  const handleExcluirAtletaCoord = (atleta: Atleta) => {
+    if (confirm(`Deseja realmente remover o aluno "${atleta.nomeCompleto}"? Ele também será removido das equipes desta escola.`)) {
+      JegdStorage.deleteAtleta(atleta.id);
+      carregarTodosDados(municipioAtual?.id);
+    }
+  };
+
+  const handleAcessarInscricoesEscola = (esc: Escola) => {
+    JegdStorage.setCurrentEscola(esc);
+    router.push('/escola/inscricoes');
+  };
+
   // Alertas de inconsistência
   const alertasInconsistencia: { tipo: string; mensagem: string; escolaNome: string; atletaNome?: string }[] = [];
   atletas.forEach(a => {
@@ -763,6 +987,10 @@ export default function AdminDashboardPage() {
           handleGerarCrachaIndividual={handleGerarCrachaIndividual}
           toggleConferenciaAtleta={toggleConferenciaAtleta}
           abrirModalObsAtleta={abrirModalObsAtleta}
+          onNovoAtleta={handleAbrirModalNovoAtleta}
+          onEditarAtleta={handleAbrirModalEditarAtleta}
+          onExcluirAtleta={handleExcluirAtletaCoord}
+          onAcessarInscricoesEscola={handleAcessarInscricoesEscola}
         />
       )}
 
@@ -953,6 +1181,43 @@ export default function AdminDashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Inscrição / Cadastro de Aluno pela Coordenação SEMED */}
+      {escolaSelecionada && (
+        <ModalCadastroAtleta
+          isOpen={modalCadastroAtletaAberto}
+          onClose={() => setModalCadastroAtletaAberto(false)}
+          atletaEditando={atletaEditando}
+          nomeCompleto={nomeCompleto}
+          setNomeCompleto={setNomeCompleto}
+          dataNascimento={dataNascimento}
+          setDataNascimento={setDataNascimento}
+          sexo={sexo}
+          setSexo={setSexo}
+          documentoTipo={documentoTipo}
+          setDocumentoTipo={setDocumentoTipo}
+          documentoNumero={documentoNumero}
+          setDocumentoNumero={setDocumentoNumero}
+          matricula={matricula}
+          setMatricula={setMatricula}
+          serieTurma={serieTurma}
+          setSerieTurma={setSerieTurma}
+          fotoBase64={fotoBase64}
+          handleFotoUpload={handleFotoUpload}
+          fileInputRef={fileInputRef}
+          catCalc={catCalc}
+          modalidadesDisponiveis={modalidadesDisponiveis}
+          modalidadesEscolhidas={modalidadesEscolhidas}
+          toggleModalidade={toggleModalidade}
+          provasPermitidas={provasPermitidas}
+          provasAtletismo={provasAtletismo}
+          toggleProva={toggleProva}
+          handleSalvarAtleta={handleSalvarAtletaCoord}
+          escolaId={escolaSelecionada.id}
+          diagnosticoDuplicidade={diagnosticoDuplicidade}
+          onCarregarAtletaDuplicado={(atl) => handleAbrirModalEditarAtleta(atl, escolaSelecionada)}
+        />
       )}
 
     </div>

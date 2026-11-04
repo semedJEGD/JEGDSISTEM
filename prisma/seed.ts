@@ -206,6 +206,43 @@ async function main() {
     }
   });
 
+  // Coordenadores Oficiais de Gonçalves Dias - MA
+  await prisma.usuario.upsert({
+    where: { email: 'elias.veloso@semed.gd.gov.br' },
+    update: {
+      nome: 'Elias Veloso',
+      papel: 'COMITE',
+      municipioId: 'goncalves-dias-ma',
+      senhaHash: senhaHashComite
+    },
+    create: {
+      id: 'coord-elias-veloso',
+      nome: 'Elias Veloso',
+      email: 'elias.veloso@semed.gd.gov.br',
+      papel: 'COMITE',
+      municipioId: 'goncalves-dias-ma',
+      senhaHash: senhaHashComite
+    }
+  });
+
+  await prisma.usuario.upsert({
+    where: { email: 'herbert.sa@semed.gd.gov.br' },
+    update: {
+      nome: 'Herbert de Sá',
+      papel: 'COMITE',
+      municipioId: 'goncalves-dias-ma',
+      senhaHash: senhaHashComite
+    },
+    create: {
+      id: 'coord-herbert-sa',
+      nome: 'Herbert de Sá',
+      email: 'herbert.sa@semed.gd.gov.br',
+      papel: 'COMITE',
+      municipioId: 'goncalves-dias-ma',
+      senhaHash: senhaHashComite
+    }
+  });
+
   // 4. ESCOLAS DE GONÇALVES DIAS - MA
   const senhaHashEscola = await bcrypt.hash('123456', 10);
   const escolasListaGD = [

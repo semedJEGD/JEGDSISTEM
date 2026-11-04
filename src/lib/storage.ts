@@ -212,11 +212,47 @@ export class JegdStorage {
         changed = true;
       }
       if (data.atletas && Array.isArray(data.atletas)) {
-        localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(data.atletas));
+        const storedData = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+        const storedAtletas: Atleta[] = storedData ? JSON.parse(storedData) : [];
+        const mergedAtletas: Atleta[] = [...data.atletas];
+
+        for (const localAtl of storedAtletas) {
+          const idx = mergedAtletas.findIndex(a => a.id === localAtl.id);
+          if (idx >= 0) {
+            // Se o local tiver modalidades e o cloud vier vazio por delay, preserva o local
+            const cloudMods = mergedAtletas[idx].modalidadesInscritas || [];
+            const localMods = localAtl.modalidadesInscritas || [];
+            if (localMods.length > 0 && cloudMods.length === 0) {
+              mergedAtletas[idx].modalidadesInscritas = localMods;
+            }
+          } else {
+            // Atleta salvo localmente que ainda está sincronizando com a nuvem
+            mergedAtletas.push(localAtl);
+            JegdCloudSync.syncAtleta(localAtl).catch(() => {});
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(mergedAtletas));
         changed = true;
       }
       if (data.inscricoes && Array.isArray(data.inscricoes)) {
-        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(data.inscricoes));
+        const storedInscData = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
+        const storedInscricoes: InscricaoEquipe[] = storedInscData ? JSON.parse(storedInscData) : [];
+        const mergedInscricoes: InscricaoEquipe[] = [...data.inscricoes];
+
+        for (const localInsc of storedInscricoes) {
+          const idx = mergedInscricoes.findIndex(i => i.id === localInsc.id);
+          if (idx >= 0) {
+            const cloudIds = mergedInscricoes[idx].atletaIds || [];
+            const localIds = localInsc.atletaIds || [];
+            if (localIds.length > cloudIds.length) {
+              mergedInscricoes[idx].atletaIds = Array.from(new Set([...cloudIds, ...localIds]));
+            }
+          } else {
+            mergedInscricoes.push(localInsc);
+            JegdCloudSync.syncInscricao(localInsc).catch(() => {});
+          }
+        }
+        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(mergedInscricoes));
         changed = true;
       }
       if (data.registros && Array.isArray(data.registros)) {
@@ -478,6 +514,10 @@ export class JegdStorage {
   public static isComiteAuth(): boolean {
     if (!this.isClient()) return false;
     return localStorage.getItem(STORAGE_KEYS.COMITE_AUTH) === 'true';
+  }
+
+  public static isComite(): boolean {
+    return this.isAdminAuth();
   }
 
   public static setSuperAdminAuth(isAuth: boolean): void {
@@ -799,6 +839,34 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = { ...inscToSave, updatedAt: new Date().toISOString() };
     else list.unshift({ ...inscToSave, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(list));
+
+    // Atualiza imediatamente os atletas locais para refletirem esta modalidade
+    try {
+      const dataAtl = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+      const listAtl: Atleta[] = dataAtl ? JSON.parse(dataAtl) : [];
+      let atlChanged = false;
+      for (const atlId of insc.atletaIds) {
+        const atl = listAtl.find(a => a.id === atlId);
+        if (atl) {
+          const mods = atl.modalidadesInscritas || [];
+          if (!mods.some(m => m.modalidadeCodigo === insc.modalidadeCodigo)) {
+            atl.modalidadesInscritas = [
+              ...mods,
+              {
+                modalidadeCodigo: insc.modalidadeCodigo,
+                modalidadeNome: insc.modalidadeNome,
+                provas: insc.provasPorAtleta?.[atlId]
+              }
+            ];
+            atlChanged = true;
+          }
+        }
+      }
+      if (atlChanged) {
+        localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(listAtl));
+      }
+    } catch {}
+
     JegdCloudSync.syncInscricao(inscToSave).catch(() => {});
   }
 
@@ -883,6 +951,12 @@ export class JegdStorage {
 
     todasInscricoes = todasInscricoes.filter(i => i.atletaIds.length > 0);
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
+
+    // Sincroniza em tempo real as equipes da escola atualizadas com o banco de dados
+    const equipesParaSincronizar = todasInscricoes.filter(i => i.escolaId === escolaId);
+    for (const eq of equipesParaSincronizar) {
+      JegdCloudSync.syncInscricao(eq).catch(() => {});
+    }
   }
 
   public static deleteInscricao(id: string): void {

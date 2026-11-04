@@ -714,6 +714,7 @@ export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
     nome: 'Elias Veloso (SEMED)',
     email: 'elias.veloso@semed.gd.gov.br',
     telefone: '(99) 98801-1001',
+    senhaHash: 'semed2026',
     papel: 'COORDENADOR',
     createdAt: new Date().toISOString()
   },
@@ -723,6 +724,7 @@ export const COORDENADORES_OFICIAIS_SEMED: Usuario[] = [
     nome: 'Herbert de Sá (SEMED)',
     email: 'herbert.sa@semed.gd.gov.br',
     telefone: '(99) 98801-1002',
+    senhaHash: 'semed2026',
     papel: 'COORDENADOR',
     createdAt: new Date().toISOString()
   },

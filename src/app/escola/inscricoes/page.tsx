@@ -83,6 +83,9 @@ function renderEmblemaEquipe(logo?: string) {
 export default function EscolaInscricoesPage() {
   const router = useRouter();
   const [escola, setEscola] = useState<Escola | null>(null);
+  const [todasEscolas, setTodasEscolas] = useState<Escola[]>([]);
+  const [isCoordenador, setIsCoordenador] = useState(false);
+  const [nomeOperador, setNomeOperador] = useState('');
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [todosAtletas, setTodosAtletas] = useState<Atleta[]>([]);
   const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
@@ -100,10 +103,27 @@ export default function EscolaInscricoesPage() {
 
   useEffect(() => {
     JegdStorage.init();
-    const atual = JegdStorage.getCurrentEscola();
+    let atual = JegdStorage.getCurrentEscola();
+    const coordLogado = JegdStorage.isAdminAuth();
+    setIsCoordenador(coordLogado);
+
+    const curMun = JegdStorage.getCurrentMunicipio();
+    const escList = JegdStorage.getEscolas(curMun.id);
+    setTodasEscolas(escList);
+
+    const currentUser = JegdStorage.getCurrentUser();
+    if (currentUser) {
+      setNomeOperador(currentUser.nome);
+    }
+
     if (!atual) {
-      router.push('/escola/login');
-      return;
+      if (coordLogado && escList.length > 0) {
+        atual = escList[0];
+        JegdStorage.setCurrentEscola(atual);
+      } else {
+        router.push('/escola/login');
+        return;
+      }
     }
     setEscola(atual);
     setTodosAtletas(JegdStorage.getAtletas(atual.id));
@@ -115,8 +135,11 @@ export default function EscolaInscricoesPage() {
     }
 
     const handleSync = () => {
-      setTodosAtletas(JegdStorage.getAtletas(atual.id));
-      setInscricoes(JegdStorage.getInscricoes(atual.id));
+      const targetEsc = JegdStorage.getCurrentEscola();
+      if (targetEsc) {
+        setTodosAtletas(JegdStorage.getAtletas(targetEsc.id));
+        setInscricoes(JegdStorage.getInscricoes(targetEsc.id));
+      }
       setModalidades(JegdStorage.getModalidades());
     };
     window.addEventListener('jegd-data-synced', handleSync);
@@ -319,7 +342,7 @@ export default function EscolaInscricoesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
-            href="/escola/dashboard"
+            href={isCoordenador ? "/admin/dashboard" : "/escola/dashboard"}
             className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -332,6 +355,60 @@ export default function EscolaInscricoesPage() {
           </div>
         </div>
       </div>
+
+      {/* Banner de Operação Especial para a Coordenação SEMED */}
+      {isCoordenador && (
+        <div className="bg-[#0b291e] border-2 border-emerald-500/40 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center font-bold text-lg shrink-0">
+              👑
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-0.5">
+                <span>Modo Coordenação SEMED Ativo</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-white">
+                Operador: {nomeOperador || 'Elias Veloso / Herbert (SEMED)'}
+              </h3>
+              <p className="text-xs text-emerald-100/80">
+                Você tem permissão para inscrever atletas e homologar equipes para qualquer escola do município.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto">
+            <span className="text-xs font-bold text-emerald-200 shrink-0">Alternar Escola:</span>
+            <select
+              value={escola.id}
+              onChange={(e) => {
+                const esc = todasEscolas.find(x => x.id === e.target.value);
+                if (esc) {
+                  JegdStorage.setCurrentEscola(esc);
+                  setEscola(esc);
+                  setTodosAtletas(JegdStorage.getAtletas(esc.id));
+                  setInscricoes(JegdStorage.getInscricoes(esc.id));
+                  setAtletasSelecionadosIds([]);
+                  setProvasPorAtleta({});
+                }
+              }}
+              className="px-3.5 py-2 rounded-xl bg-emerald-950 border border-emerald-500/60 text-white text-xs font-bold focus:outline-none focus:border-emerald-300 cursor-pointer w-full md:w-auto"
+            >
+              {todasEscolas.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.nome} ({e.sigla})
+                </option>
+              ))}
+            </select>
+
+            <Link
+              href="/admin/dashboard"
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 whitespace-nowrap text-center"
+            >
+              Painel SEMED
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         
