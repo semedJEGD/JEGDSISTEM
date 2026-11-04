@@ -346,9 +346,9 @@ export default function EscolaAtletasPage() {
     }
   };
 
-  const handleExcluirAtleta = (id: string, nome: string) => {
+  const handleExcluirAtleta = async (id: string, nome: string) => {
     if (confirm(`Deseja realmente remover o aluno "${nome}"? Ele também será removido das equipes vinculadas.`)) {
-      JegdStorage.deleteAtleta(id);
+      await JegdStorage.deleteAtleta(id);
       if (escola) setAtletas(JegdStorage.getAtletas(escola.id));
     }
   };

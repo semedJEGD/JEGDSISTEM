@@ -18,7 +18,13 @@ export async function GET(request: Request) {
         orderBy: { nome: 'asc' }
       }),
       prisma.atleta.findMany({
-        where: whereAtleta,
+        where: {
+          AND: [
+            whereAtleta,
+            { NOT: { nomeCompleto: { contains: 'TESTE', mode: 'insensitive' } } },
+            { NOT: { id: { contains: 'teste' } } }
+          ]
+        },
         include: { escola: true },
         orderBy: { nomeCompleto: 'asc' }
       }),

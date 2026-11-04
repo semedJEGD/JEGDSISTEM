@@ -339,10 +339,10 @@ export default function EscolaDashboardPage() {
     }
   };
 
-  const handleExcluirAtleta = (atleta: Atleta) => {
+  const handleExcluirAtleta = async (atleta: Atleta) => {
     if (!escola) return;
     if (confirm(`Deseja realmente remover o aluno "${atleta.nomeCompleto}"? Ele também sairá das equipes desta escola.`)) {
-      JegdStorage.deleteAtleta(atleta.id);
+      await JegdStorage.deleteAtleta(atleta.id);
       carregarDados(escola.id);
     }
   };

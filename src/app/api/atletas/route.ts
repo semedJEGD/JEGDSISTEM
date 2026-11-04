@@ -215,7 +215,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'ID do atleta não informado' }, { status: 400 });
     }
 
-    await prisma.atleta.delete({
+    // Remove dependências primeiro para evitar violações de integridade referencial
+    await prisma.registroControle.deleteMany({
+      where: { atletaId: id }
+    });
+
+    await prisma.inscricao.deleteMany({
+      where: { atletaId: id }
+    });
+
+    await prisma.atleta.deleteMany({
       where: { id }
     });
 

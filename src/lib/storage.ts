@@ -53,7 +53,8 @@ const STORAGE_KEYS = {
   SUPERADMIN_AUTH: 'jegds_superadmin_auth',
   PROFESSORES_ESCOLA: 'jegds_professores_escola_v6',
   CURRENT_PERFIL_ESCOLA: 'jegds_current_perfil_escola_v6',
-  HOMOLOGACOES_DIRECAO: 'jegds_homologacoes_direcao_v6'
+  HOMOLOGACOES_DIRECAO: 'jegds_homologacoes_direcao_v6',
+  DELETED_ATLETAS_IDS: 'jegds_deleted_atletas_ids_v6'
 };
 
 export class JegdStorage {
@@ -214,12 +215,37 @@ export class JegdStorage {
       if (data.atletas && Array.isArray(data.atletas)) {
         const storedData = localStorage.getItem(STORAGE_KEYS.ATLETAS);
         const storedAtletas: Atleta[] = storedData ? JSON.parse(storedData) : [];
-        const mergedAtletas: Atleta[] = [...data.atletas];
+        const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
+        const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
+
+        // Filtra da nuvem qualquer atleta que foi excluído ou que seja de teste
+        const cloudValidos = data.atletas.filter((a: Atleta) => {
+          if (deletedIds.includes(a.id)) {
+            JegdCloudSync.deleteAtleta(a.id).catch(() => {});
+            return false;
+          }
+          if (a.nomeCompleto?.toUpperCase().includes('TESTE') || a.id?.includes('teste') || a.documentoNumero?.includes('TESTE')) {
+            JegdCloudSync.deleteAtleta(a.id).catch(() => {});
+            return false;
+          }
+          return true;
+        });
+
+        const mergedAtletas: Atleta[] = [...cloudValidos];
 
         for (const localAtl of storedAtletas) {
+          // Ignora excluídos ou testes locais
+          if (
+            deletedIds.includes(localAtl.id) ||
+            localAtl.nomeCompleto?.toUpperCase().includes('TESTE') ||
+            localAtl.id?.includes('teste') ||
+            localAtl.documentoNumero?.includes('TESTE')
+          ) {
+            continue;
+          }
+
           const idx = mergedAtletas.findIndex(a => a.id === localAtl.id);
           if (idx >= 0) {
-            // Se o local tiver modalidades e o cloud vier vazio por delay, preserva o local
             const cloudMods = mergedAtletas[idx].modalidadesInscritas || [];
             const localMods = localAtl.modalidadesInscritas || [];
             if (localMods.length > 0 && cloudMods.length === 0) {
@@ -740,14 +766,26 @@ export class JegdStorage {
     return { duplicado: false };
   }
 
-  public static deleteAtleta(id: string): void {
+  public static async deleteAtleta(id: string): Promise<void> {
     if (!this.isClient()) return;
+
+    // 1. Registra no tombstone para o polling nunca re-inserir
+    try {
+      const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
+      const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
+      if (!deletedIds.includes(id)) {
+        deletedIds.push(id);
+        localStorage.setItem(STORAGE_KEYS.DELETED_ATLETAS_IDS, JSON.stringify(deletedIds));
+      }
+    } catch {}
+
+    // 2. Remove do localStorage de atletas
     const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
     const list: Atleta[] = data ? JSON.parse(data) : [];
     const updated = list.filter(a => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(updated));
-    JegdCloudSync.deleteAtleta(id).catch(() => {});
 
+    // 3. Remove das equipes vinculadas
     let inscricoes = this.getInscricoes();
     inscricoes = inscricoes.map(insc => {
       if (insc.atletaIds.includes(id)) {
@@ -765,6 +803,16 @@ export class JegdStorage {
     }).filter(insc => insc.atletaIds.length > 0);
 
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoes));
+
+    // 4. Remove do banco de dados na nuvem (Neon PostgreSQL)
+    try {
+      await JegdCloudSync.deleteAtleta(id);
+    } catch {}
+
+    // 5. Dispara evento para atualizar a interface imediatamente
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('jegd-data-synced'));
+    }
   }
 
   // ==========================================
