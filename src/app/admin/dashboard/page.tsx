@@ -73,6 +73,7 @@ export default function AdminDashboardPage() {
   const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState<string>('');
@@ -140,12 +141,13 @@ export default function AdminDashboardPage() {
     const munList = JegdStorage.getMunicipios();
     setMunicipios(munList);
 
-    const currentUser = JegdStorage.getCurrentUser();
+    const user = JegdStorage.getCurrentUser();
+    setCurrentUser(user);
     let curMun = JegdStorage.getCurrentMunicipio();
 
     // Se for coordenador local, força o município atribuído ao seu usuário
-    if (currentUser && currentUser.papel === 'COORDENADOR' && currentUser.municipioId) {
-      const userMun = munList.find(m => m.id === currentUser.municipioId);
+    if (user && user.papel === 'COORDENADOR' && user.municipioId) {
+      const userMun = munList.find(m => m.id === user.municipioId);
       if (userMun) {
         curMun = userMun;
         JegdStorage.setCurrentMunicipio(userMun);
@@ -745,226 +747,232 @@ export default function AdminDashboardPage() {
   return (
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 w-full">
       
-      {/* Header Coordenadores SEMED com Contexto Municipal */}
-      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#00A878]/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-
-        {/* Seletor Rápido de Município no Painel */}
-        <div className="mb-4 bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-black text-emerald-950 flex-wrap">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-            <span>MUNICÍPIO ATIVO:</span>
-            <span className="bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-emerald-900 font-black">
-              {municipioAtual ? `${municipioAtual.nome} - ${municipioAtual.uf} (${municipioAtual.siglaEvento})` : 'Carregando...'}
-            </span>
-            <button
-              type="button"
-              onClick={handleForcarSincronizacao}
-              disabled={sincronizandoOnline}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-2xs transition-all disabled:opacity-60"
-              title="Sincronizar instantaneamente com o banco central"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${sincronizandoOnline ? 'animate-spin' : ''}`} aria-hidden="true" />
-              <span>{sincronizandoOnline ? 'Sincronizando...' : `Online • Sinc: ${ultimaSincronizacao}`}</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {JegdStorage.isSuperAdminAuth() && !JegdStorage.isDomainLocked() && (
-              <select
-                value={municipioAtual?.id || ''}
-                onChange={(e) => handleMudarMunicipio(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 text-ellipsis"
-              >
-                {municipios.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    Alternar p/ {m.nome} ({m.siglaEvento})
-                  </option>
-                ))}
-              </select>
-            )}
-            {JegdStorage.isSuperAdminAuth() && (
-              <Link
-                href="/admin/super"
-                className="px-3 py-1.5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white text-xs font-black shrink-0 transition-colors shadow-xs"
-              >
-                Central SuperAdmin
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6 relative z-10">
-          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/30 flex items-center justify-center text-[#087A5B] shadow-2xs shrink-0">
-              <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2]" aria-hidden="true" />
+      {/* ================= TOP BAR COMPACTO E MODERNO ================= */}
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          
+          {/* Identificação do Coordenador e Município */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-800 shadow-2xs shrink-0">
+              <ShieldCheck className="w-6 h-6 stroke-[2]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">
-                  Painel da Coordenação SEMED
+                <h1 className="text-base sm:text-lg font-black text-[#17221D] truncate">
+                  Coordenação SEMED
                 </h1>
-                <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] border border-[#00A878]/30 font-black shrink-0">
-                  {municipioAtual ? municipioAtual.nomeEvento : 'Jogos Escolares'}
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                  {municipioAtual ? municipioAtual.siglaEvento : 'JEGDS 2026'}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200 shrink-0">
+                  {municipioAtual?.nome || 'Gonçalves Dias'} - {municipioAtual?.uf || 'MA'}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-[#4B5563] mt-1 font-medium break-words">
-                Conferência de lotes de {municipioAtual?.nome || 'Gonçalves Dias'}, emissão de crachás, súmulas e controle de vagas.
+              <p className="text-xs text-[#64748B] mt-0.5 truncate">
+                Operador: <strong className="text-[#17221D]">{currentUser?.nome || 'Elias Veloso / Herbert de Sá'}</strong> (Comitê Oficial)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap sm:flex-nowrap">
+          {/* Status Online e Ações Rápidas do Topo */}
+          <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto justify-end">
+            
+            {/* Alternar Município (SuperAdmin) */}
+            {JegdStorage.isSuperAdminAuth() && !JegdStorage.isDomainLocked() && (
+              <select
+                value={municipioAtual?.id || ''}
+                onChange={(e) => handleMudarMunicipio(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl bg-[#F7F9F8] border border-emerald-300 text-emerald-900 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                {municipios.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome} ({m.siglaEvento})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Sincronização Online */}
             <button
+              type="button"
+              onClick={handleForcarSincronizacao}
+              disabled={sincronizandoOnline}
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-60"
+              title="Sincronizar instantaneamente com o banco central Neon"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${sincronizandoOnline ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{sincronizandoOnline ? 'Sincronizando...' : `Online • ${ultimaSincronizacao}`}</span>
+              <span className="sm:hidden">{sincronizandoOnline ? '...' : ultimaSincronizacao}</span>
+            </button>
+
+            {/* Todos os Crachás Oficiais */}
+            <button
+              type="button"
               onClick={handleGerarTodosCrachas}
               disabled={gerandoPdf || atletas.length === 0}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs sm:text-sm font-black shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-50"
-              title="Gerar e baixar todos os crachás oficiais de todos os alunos do município em PDF"
+              className="px-3 py-1.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+              title="Baixar todos os crachás de todos os atletas do município em PDF"
             >
-              <QrCode className="w-4 h-4" aria-hidden="true" />
+              <QrCode className="w-3.5 h-3.5" />
               <span>Todos os Crachás ({atletas.length})</span>
             </button>
+
+            {/* Cadastrar Nova Escola */}
             <button
+              type="button"
               onClick={() => setModalNovaEscolaAberto(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-white text-xs sm:text-sm font-bold shadow-2xs flex items-center justify-center gap-2 transition-all shrink-0"
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-[#E2EAE5] text-[#17221D] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
             >
-              <PlusCircle className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-              <span>Cadastrar Escola</span>
+              <PlusCircle className="w-3.5 h-3.5 text-[#00A878]" />
+              <span className="hidden sm:inline">Nova Escola</span>
             </button>
+
+            {/* Publicar Comunicado */}
             <button
+              type="button"
               onClick={() => setModalAvisoAberto(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all shrink-0"
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
             >
-              <Bell className="w-4 h-4" aria-hidden="true" />
-              <span>Publicar Aviso</span>
+              <Bell className="w-3.5 h-3.5" />
+              <span>Avisos ({comunicados.length})</span>
             </button>
+
+            {/* Sair */}
             <button
+              type="button"
               onClick={() => {
                 JegdStorage.logoutAdmin();
                 window.location.href = '/admin/login';
               }}
-              title="Desconectar do painel administrativo"
-              aria-label="Desconectar do painel administrativo"
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-bold border border-rose-200 flex items-center justify-center gap-2 transition-all shrink-0"
+              className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all"
+              title="Desconectar do painel"
             >
-              <LogOut className="w-4 h-4" aria-hidden="true" />
-              <span>Sair do Painel</span>
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Estatísticas Gerais do Município Ativo */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Escolas</span>
-          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{escolas.length}</p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">{municipioAtual?.nome || 'Município'}</p>
+      {/* ================= FAIXA COMPACTA DE MÉTRICAS (1 LINHA) ================= */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-[#64748B]">Escolas</span>
+            <p className="text-xl font-black text-[#17221D] mt-0.5">{escolas.length}</p>
+          </div>
+          <School className="w-6 h-6 text-[#94A3B8] opacity-50" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Alunos</span>
-          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{atletas.length}</p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Cadastrados</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-[#64748B]">Alunos</span>
+            <p className="text-xl font-black text-[#17221D] mt-0.5">{atletas.length}</p>
+          </div>
+          <Users className="w-6 h-6 text-[#94A3B8] opacity-50" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#4B5563]">Inscrições</span>
-          <p className="text-2xl sm:text-4xl font-black text-[#17221D] mt-1">{inscricoes.length}</p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Equipes enviadas</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-[#64748B]">Inscrições</span>
+            <p className="text-xl font-black text-[#17221D] mt-0.5">{inscricoes.length}</p>
+          </div>
+          <Trophy className="w-6 h-6 text-[#94A3B8] opacity-50" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#087A5B]">Conferidos</span>
-          <p className="text-2xl sm:text-4xl font-black text-[#00A878] mt-1">
-            {atletas.filter(a => a.conferidoPeloCoordenador).length}
-          </p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Homologados</p>
+        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase text-emerald-700">Homologados</span>
+            <p className="text-xl font-black text-emerald-700 mt-0.5">
+              {atletas.filter(a => a.conferidoPeloCoordenador).length}
+            </p>
+          </div>
+          <CheckCheck className="w-6 h-6 text-emerald-500 opacity-60" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 col-span-2 lg:col-span-1 shadow-xs">
-          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-red-600">Alertas</span>
-          <p className="text-2xl sm:text-4xl font-black text-red-600 mt-1">{alertasInconsistencia.length}</p>
-          <p className="text-[11px] sm:text-xs text-[#4B5563] mt-0.5 font-medium truncate">Inconsistências</p>
+        <div
+          onClick={() => setAbaAtiva('HOMOLOGACAO')}
+          className="bg-white border border-[#E2EAE5] hover:border-rose-300 cursor-pointer rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 transition-all"
+          title="Ver alertas e documentos pendentes na aba de homologação"
+        >
+          <div>
+            <span className="text-[10px] font-black uppercase text-rose-600">Pendências</span>
+            <p className="text-xl font-black text-rose-600 mt-0.5">{alertasInconsistencia.length}</p>
+          </div>
+          <AlertTriangle className="w-6 h-6 text-rose-500 opacity-60" />
         </div>
       </div>
 
-      {/* Navegação por Abas */}
-      <div className="flex items-center gap-2 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
+      {/* ================= NAVEGAÇÃO REORGANIZADA POR 4 ABAS FOCADAS ================= */}
+      <div className="flex items-center gap-1.5 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'ESCOLAS_LOTE'
-              ? 'bg-[#00A878] text-white shadow-xs'
+              ? 'bg-[#00A878] text-white shadow-2xs font-black'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <Building2 className="w-4 h-4" aria-hidden="true" />
-          <span>Lotes por Escola & Conferência</span>
+          <Building2 className="w-4 h-4" />
+          <span>Escolas & Alunos ({escolas.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'HOMOLOGACAO'
-              ? 'bg-[#00A878] text-white shadow-xs'
+              ? 'bg-[#00A878] text-white shadow-2xs font-black'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <CheckCheck className="w-4 h-4" aria-hidden="true" />
-          <span>Homologação ({inscricoes.length})</span>
-        </button>
-
-        <button
-          onClick={() => setAbaAtiva('ALERTAS')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            abaAtiva === 'ALERTAS'
-              ? 'bg-[#00A878] text-white shadow-xs'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4" aria-hidden="true" />
-          <span>Alertas ({alertasInconsistencia.length})</span>
+          <CheckCheck className="w-4 h-4" />
+          <span>Homologação & Pendências</span>
+          {alertasInconsistencia.length > 0 && (
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+              abaAtiva === 'HOMOLOGACAO' ? 'bg-white text-rose-700' : 'bg-rose-500 text-white'
+            }`}>
+              {alertasInconsistencia.length}
+            </span>
+          )}
         </button>
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'LISTAS_CHAMADA'
-              ? 'bg-[#00A878] text-white shadow-xs'
+              ? 'bg-[#00A878] text-white shadow-2xs font-black'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <ClipboardList className="w-4 h-4" aria-hidden="true" />
-          <span>Súmulas & Listas</span>
+          <ClipboardList className="w-4 h-4" />
+          <span>Súmulas & Competição</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'CRACHA_LOGISTICA'
-              ? 'bg-[#00A878] text-white shadow-xs'
+              ? 'bg-[#00A878] text-white shadow-2xs font-black'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <IdCard className="w-4 h-4" aria-hidden="true" />
-          <span>Crachá & Validação</span>
+          <IdCard className="w-4 h-4" />
+          <span>Logística & Crachás QR</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'AVISOS'
-              ? 'bg-[#00A878] text-white shadow-xs'
+              ? 'bg-[#00A878] text-white shadow-2xs font-black'
               : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
           }`}
         >
-          <Megaphone className="w-4 h-4" aria-hidden="true" />
+          <Megaphone className="w-4 h-4" />
           <span>Comunicados ({comunicados.length})</span>
         </button>
       </div>
 
-      {/* ABA: LOTES POR ESCOLA & CONFERÊNCIA */}
+      {/* ABA 1: HUB ESCOLAS & ALUNOS */}
       {abaAtiva === 'ESCOLAS_LOTE' && (
         <AbaEscolasLote
           progressoEscolas={progressoEscolas}
@@ -994,7 +1002,7 @@ export default function AdminDashboardPage() {
         />
       )}
 
-      {/* ABA: HOMOLOGAÇÃO DE INSCRIÇÕES */}
+      {/* ABA 2: HOMOLOGAÇÃO DE INSCRIÇÕES & PENDÊNCIAS */}
       {abaAtiva === 'HOMOLOGACAO' && (
         <AbaHomologacao
           busca={busca}
@@ -1004,16 +1012,12 @@ export default function AdminDashboardPage() {
           inscricoes={inscricoes}
           escolas={escolas}
           atletas={atletas}
+          alertas={alertasInconsistencia}
           abrirModalAnalise={abrirModalAnalise}
         />
       )}
 
-      {/* ABA: ALERTAS DE INCONSISTÊNCIA */}
-      {abaAtiva === 'ALERTAS' && (
-        <AbaAlertas alertas={alertasInconsistencia} />
-      )}
-
-      {/* ABA: LISTAS DE CHAMADA & SÚMULAS */}
+      {/* ABA 3: SÚMULAS & LISTAS OFICIAIS */}
       {abaAtiva === 'LISTAS_CHAMADA' && (
         <AbaSumulas
           modalidades={modalidades}
@@ -1023,12 +1027,12 @@ export default function AdminDashboardPage() {
         />
       )}
 
-      {/* ABA: VALIDAÇÃO DE CRACHÁS & LOGÍSTICA */}
+      {/* ABA 4: LOGÍSTICA & VALIDAÇÃO DE CRACHÁS */}
       {abaAtiva === 'CRACHA_LOGISTICA' && (
         <AbaCrachaLogistica />
       )}
 
-      {/* ABA: AVISOS */}
+      {/* ABA 5: COMUNICADOS E AVISOS */}
       {abaAtiva === 'AVISOS' && (
         <AbaComunicados comunicados={comunicados} />
       )}

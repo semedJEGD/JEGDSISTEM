@@ -104,3 +104,4 @@ if (aposExclusao) throw new Error('Atleta deveria ter sido removido');
 console.log('✅ SUCESSO: Exclusão e limpeza pós-teste confirmadas.');
 
 console.log('\n🎉 TODOS OS TESTES DE COORDENAÇÃO & INSCRIÇÃO PASSARAM COM 100% DE SUCESSO!\n');
+
