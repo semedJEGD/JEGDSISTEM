@@ -22,7 +22,8 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { Escola, Atleta, ModalidadeConfig } from '@/types/jegd';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -52,6 +53,7 @@ interface AbaEscolasLoteProps {
   handleGerarCrachasEscola: (esc: Escola) => void;
   handleImprimirLoteEscola: (esc: Escola, filtroMod?: string, filtroCat?: string, filtroSex?: string) => void;
   handleGerarCrachaIndividual: (atleta: Atleta, esc?: Escola) => void;
+  handleGerarCadernoEscola?: (esc: Escola) => void;
   toggleConferenciaAtleta: (atleta: Atleta) => void;
   abrirModalObsAtleta: (atleta: Atleta) => void;
   onNovoAtleta?: (esc: Escola) => void;
@@ -79,6 +81,7 @@ export function AbaEscolasLote({
   handleGerarCrachasEscola,
   handleImprimirLoteEscola,
   handleGerarCrachaIndividual,
+  handleGerarCadernoEscola,
   toggleConferenciaAtleta,
   abrirModalObsAtleta,
   onNovoAtleta,
@@ -356,6 +359,19 @@ export function AbaEscolasLote({
                           <QrCode className="w-3.5 h-3.5 text-[#00A878]" />
                           <span>Todos os Crachás da Escola (PDF)</span>
                         </button>
+                        {handleGerarCadernoEscola && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuImprimirAberto(false);
+                              handleGerarCadernoEscola(escolaSelecionada);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-[#17221D] hover:bg-[#E8F7F1] hover:text-[#087A5B] flex items-center gap-2 transition-colors"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-[#00A878]" />
+                            <span>Caderno de Súmulas da Escola (PDF)</span>
+                          </button>
+                        )}
                         {(filtroModalidadeLote !== 'TODAS' || filtroCategoriaLote !== 'TODAS' || filtroSexoLote !== 'TODOS') && (
                           <button
                             type="button"

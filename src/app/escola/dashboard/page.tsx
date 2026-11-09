@@ -33,7 +33,9 @@ import {
   Phone,
   Mail,
   PlusCircle,
-  X
+  X,
+  BookOpen,
+  ClipboardList
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -63,6 +65,7 @@ export default function EscolaDashboardPage() {
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
   const [gerandoCrachasLote, setGerandoCrachasLote] = useState(false);
+  const [gerandoPdfLote, setGerandoPdfLote] = useState(false);
 
   // Navegação por Abas Unificadas
   const [abaAtiva, setAbaAtiva] = useState<'ALUNOS' | 'EQUIPES' | 'HOMOLOGACAO' | 'COMISSAO'>('ALUNOS');
@@ -412,6 +415,80 @@ export default function EscolaDashboardPage() {
       alert('Erro ao gerar crachás em PDF.');
     } finally {
       setGerandoPdfId(null);
+    }
+  };
+
+  const handleGerarSumulaEquipePdf = async (inscricao: InscricaoEquipe) => {
+    if (!escola) return;
+    setGerandoPdfId(inscricao.id);
+    try {
+      const atletasEquipe = inscricao.atletaIds
+        .map(id => JegdStorage.getAtletaById(id))
+        .filter((a): a is Atleta => a !== undefined);
+
+      const atletasComEscola = atletasEquipe.map(atl => ({
+        atleta: atl,
+        escola: escola,
+        provas: inscricao.provasPorAtleta?.[atl.id]
+      }));
+
+      await JegdPdfGenerator.gerarSumulaEscolaIndividual(
+        inscricao.modalidadeNome,
+        inscricao.categoria,
+        inscricao.sexo,
+        '2026',
+        atletasComEscola,
+        escola
+      );
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao gerar súmula da equipe em PDF.');
+    } finally {
+      setGerandoPdfId(null);
+    }
+  };
+
+  const handleGerarCadernoSumulasMinhaEscola = async () => {
+    if (!escola) return;
+    setGerandoPdfLote(true);
+    try {
+      const modalidades = JegdStorage.getModalidades();
+      const inscricoesEscola = inscricoes.filter(i => i.escolaId === escola.id);
+
+      const modalidadesCompletas = modalidades.map(mod => {
+        const inscsMod = inscricoesEscola.filter(
+          i => i.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() ||
+               i.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
+        );
+
+        const categoriasData = inscsMod.map(insc => {
+          const atletasEquipe = insc.atletaIds
+            .map(id => JegdStorage.getAtletaById(id))
+            .filter((a): a is Atleta => a !== undefined);
+
+          return {
+            categoria: insc.categoria,
+            sexo: insc.sexo,
+            atletasComEscola: atletasEquipe.map(atl => ({
+              atleta: atl,
+              escola: escola,
+              provas: insc.provasPorAtleta?.[atl.id]
+            }))
+          };
+        });
+
+        return {
+          modalidade: mod,
+          categoriasData
+        };
+      }).filter(item => item.categoriasData.some(c => c.atletasComEscola.length > 0));
+
+      await JegdPdfGenerator.gerarCadernoSumulasEscola(escola, modalidadesCompletas);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao gerar caderno de súmulas da escola.');
+    } finally {
+      setGerandoPdfLote(false);
     }
   };
 
@@ -804,6 +881,18 @@ export default function EscolaDashboardPage() {
                 <span>Crachás (PDF)</span>
               </button>
 
+              {/* Botão Súmulas da Escola */}
+              <button
+                type="button"
+                onClick={handleGerarCadernoSumulasMinhaEscola}
+                disabled={gerandoPdfLote || atletas.length === 0}
+                className="px-3 py-2 rounded-xl bg-white hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                title="Baixar caderno de súmulas da minha escola em PDF"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Súmulas (PDF)</span>
+              </button>
+
               {/* Alternador de Modo de Visualização */}
               <div className="flex items-center gap-0.5 bg-white p-0.5 rounded-xl border border-[#E2EAE5]">
                 <button
@@ -1081,6 +1170,16 @@ export default function EscolaDashboardPage() {
                       >
                         <QrCode className="w-3.5 h-3.5 text-[#00A878]" />
                         <span>Crachás QR</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleGerarSumulaEquipePdf(insc)}
+                        disabled={gerandoPdfId === insc.id}
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                        title="Baixar súmula oficial desta equipe em PDF"
+                      >
+                        <FileCheck2 className="w-3.5 h-3.5 text-[#00A878]" />
+                        <span>Súmula PDF</span>
                       </button>
 
                       <Link

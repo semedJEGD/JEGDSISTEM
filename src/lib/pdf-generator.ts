@@ -52,9 +52,10 @@ export class JegdPdfGenerator {
    */
   public static async gerarCadernoModalidadeCompleto(
     modalidade: any,
-    categoriasData: any[]
+    categoriasData: any[],
+    options?: any
   ): Promise<void> {
-    return SumulaChamadaService.gerarCadernoModalidadeCompleto(modalidade, categoriasData);
+    return SumulaChamadaService.gerarCadernoModalidadeCompleto(modalidade, categoriasData, options);
   }
 
   /**
@@ -64,6 +65,56 @@ export class JegdPdfGenerator {
     modalidadesCompletas: any[]
   ): Promise<void> {
     return SumulaChamadaService.gerarCadernoGeralArbitragem(modalidadesCompletas);
+  }
+
+  /**
+   * Gera Súmula Individual Oficial filtrada para uma única Escola
+   */
+  public static async gerarSumulaEscolaIndividual(
+    modalidadeNome: string,
+    categoria: string,
+    sexo: string,
+    dataJogo: string,
+    atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[],
+    escola: Escola
+  ): Promise<void> {
+    return SumulaChamadaService.gerarSumulaEscolaIndividual(
+      modalidadeNome,
+      categoria,
+      sexo,
+      dataJogo,
+      atletasComEscola,
+      escola
+    );
+  }
+
+  /**
+   * Gera o Caderno Completo de Súmulas da Escola (todas as categorias em que a escola participa em 1 PDF)
+   */
+  public static async gerarCadernoSumulasEscola(
+    escola: Escola,
+    modalidadesCompletas: any[]
+  ): Promise<void> {
+    return SumulaChamadaService.gerarCadernoSumulasEscola(escola, modalidadesCompletas);
+  }
+
+  /**
+   * Gera o Modelo Oficial Universal em Branco para preenchimento manual em campo/quadra
+   */
+  public static async gerarModeloManualUniversal(): Promise<void> {
+    return SumulaChamadaService.gerarModeloManualUniversal();
+  }
+
+  /**
+   * Gera o Modelo Oficial em Branco pré-formatado para uma Modalidade específica
+   */
+  public static async gerarModeloManualModalidade(
+    modalidadeNome: string,
+    categoria?: string,
+    sexo?: string,
+    dataJogo?: string
+  ): Promise<void> {
+    return SumulaChamadaService.gerarModeloManualModalidade(modalidadeNome, categoria, sexo, dataJogo);
   }
 
   /**

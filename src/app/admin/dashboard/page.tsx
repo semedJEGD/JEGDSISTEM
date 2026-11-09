@@ -406,17 +406,22 @@ export default function AdminDashboardPage() {
     setNovoAvisoConteudo('');
   };
 
-  const extrairCategoriasData = (mod: ModalidadeConfig) => {
+  const extrairCategoriasData = (mod: ModalidadeConfig, escolaIdFiltro?: string) => {
     const sexos = ['MASCULINO', 'FEMININO'];
     const categoriasData: { categoria: string; sexo: string; atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] }[] = [];
 
     mod.categoriasPermitidas.forEach(cat => {
       sexos.forEach(sexo => {
+        // Validação da matriz da modalidade
+        const validacao = JegdsRulesService.validarMatriz(mod.codigo, cat as any, sexo as any);
+        if (!validacao.valido) return;
+
         const inscricoesCat = inscricoes.filter(
           i => (i.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() || 
                 i.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())) && 
                i.categoria === cat && 
-               i.sexo === sexo
+               i.sexo === sexo &&
+               (!escolaIdFiltro || i.escolaId === escolaIdFiltro)
         );
         const atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[] = [];
         
@@ -425,7 +430,7 @@ export default function AdminDashboardPage() {
           if (escolaObj) {
             insc.atletaIds.forEach(atlId => {
               const atlObj = atletas.find(a => a.id === atlId);
-              if (atlObj && !atletasComEscola.some(x => x.atleta.id === atlObj.id)) {
+              if (atlObj && (!escolaIdFiltro || atlObj.escolaId === escolaIdFiltro) && !atletasComEscola.some(x => x.atleta.id === atlObj.id)) {
                 atletasComEscola.push({
                   atleta: atlObj,
                   escola: escolaObj,
@@ -438,6 +443,7 @@ export default function AdminDashboardPage() {
 
         // Também inclui atletas que possuem esta modalidade inscrita diretamente no cadastro
         atletas.forEach(atl => {
+          if (escolaIdFiltro && atl.escolaId !== escolaIdFiltro) return;
           const catAtl = atl.categoriaCalculada;
           if (catAtl === cat && atl.sexo === sexo) {
             const temMod = atl.modalidadesInscritas?.some(m => 
@@ -456,22 +462,6 @@ export default function AdminDashboardPage() {
           }
         });
 
-        // Caso a categoria ainda esteja vazia mas existam atletas da faixa etária e sexo registrados na escola
-        if (atletasComEscola.length === 0 && (mod.codigo === 'futsal' || mod.codigo === 'queimada')) {
-          atletas.forEach(atl => {
-            const catAtl = atl.categoriaCalculada;
-            if (catAtl === cat && atl.sexo === sexo) {
-              const escolaObj = escolas.find(e => e.id === atl.escolaId);
-              if (escolaObj && !atletasComEscola.some(x => x.atleta.id === atl.id)) {
-                atletasComEscola.push({
-                  atleta: atl,
-                  escola: escolaObj
-                });
-              }
-            }
-          });
-        }
-
         categoriasData.push({
           categoria: cat,
           sexo,
@@ -483,28 +473,45 @@ export default function AdminDashboardPage() {
     return categoriasData;
   };
 
-  const handleGerarListaChamada = async (mod: ModalidadeConfig, categoria: string, sexo: string) => {
-    const categoriasData = extrairCategoriasData(mod);
+  const handleGerarListaChamada = async (mod: ModalidadeConfig, categoria: string, sexo: string, escolaId?: string) => {
+    const categoriasData = extrairCategoriasData(mod, escolaId);
     const catEncontrada = categoriasData.find(c => c.categoria === categoria && c.sexo === sexo);
     const atletasComEscola = catEncontrada?.atletasComEscola || [];
+    const escolaObj = escolaId ? escolas.find(e => e.id === escolaId) : undefined;
 
-    if (atletasComEscola.length === 0) {
+    if (atletasComEscola.length === 0 && !escolaObj) {
       alert(`Nenhum atleta inscrito ou cadastrado nesta categoria (${categoria} - ${sexo}) para gerar a súmula.`);
       return;
     }
 
-    await JegdPdfGenerator.gerarListaChamadaOficial(
-      mod.nome,
-      categoria,
-      sexo,
-      new Date(mod.dataEvento).toLocaleDateString('pt-BR'),
-      atletasComEscola
-    );
+    if (escolaObj) {
+      await JegdPdfGenerator.gerarSumulaEscolaIndividual(
+        mod.nome,
+        categoria,
+        sexo,
+        new Date(mod.dataEvento).toLocaleDateString('pt-BR'),
+        atletasComEscola,
+        escolaObj
+      );
+    } else {
+      await JegdPdfGenerator.gerarListaChamadaOficial(
+        mod.nome,
+        categoria,
+        sexo,
+        new Date(mod.dataEvento).toLocaleDateString('pt-BR'),
+        atletasComEscola
+      );
+    }
   };
 
-  const handleGerarCadernoModalidade = async (mod: ModalidadeConfig) => {
-    const categoriasData = extrairCategoriasData(mod);
-    await JegdPdfGenerator.gerarCadernoModalidadeCompleto(mod, categoriasData);
+  const handleGerarCadernoModalidade = async (mod: ModalidadeConfig, escolaId?: string) => {
+    const categoriasData = extrairCategoriasData(mod, escolaId);
+    const escolaObj = escolaId ? escolas.find(e => e.id === escolaId) : undefined;
+    if (escolaObj) {
+      await JegdPdfGenerator.gerarCadernoModalidadeCompleto(mod, categoriasData, { escolaFiltro: escolaObj });
+    } else {
+      await JegdPdfGenerator.gerarCadernoModalidadeCompleto(mod, categoriasData);
+    }
   };
 
   const handleGerarCadernoGeralArbitragem = async () => {
@@ -513,6 +520,33 @@ export default function AdminDashboardPage() {
       categoriasData: extrairCategoriasData(mod)
     }));
     await JegdPdfGenerator.gerarCadernoGeralArbitragem(modalidadesCompletas);
+  };
+
+  const handleGerarCadernoEscola = async (escola: Escola) => {
+    const modalidadesCompletas = modalidades.map(mod => ({
+      modalidade: mod,
+      categoriasData: extrairCategoriasData(mod, escola.id)
+    })).filter(item => item.categoriasData.some(c => c.atletasComEscola.length > 0));
+
+    if (modalidadesCompletas.length === 0) {
+      alert(`A escola ${escola.sigla || escola.nome} não possui atletas inscritos em modalidades no momento.`);
+      return;
+    }
+
+    await JegdPdfGenerator.gerarCadernoSumulasEscola(escola, modalidadesCompletas);
+  };
+
+  const handleGerarModeloManual = async (mod?: ModalidadeConfig, categoria?: string, sexo?: string) => {
+    if (mod) {
+      await JegdPdfGenerator.gerarModeloManualModalidade(
+        mod.nome,
+        categoria || 'LIVRE',
+        sexo || 'MASC / FEM',
+        new Date(mod.dataEvento).toLocaleDateString('pt-BR')
+      );
+    } else {
+      await JegdPdfGenerator.gerarModeloManualUniversal();
+    }
   };
 
   const progressoEscolas = JegdStorage.getProgressoEscolas();
@@ -993,6 +1027,7 @@ export default function AdminDashboardPage() {
           handleGerarCrachasEscola={handleGerarCrachasEscola}
           handleImprimirLoteEscola={handleImprimirLoteEscola}
           handleGerarCrachaIndividual={handleGerarCrachaIndividual}
+          handleGerarCadernoEscola={handleGerarCadernoEscola}
           toggleConferenciaAtleta={toggleConferenciaAtleta}
           abrirModalObsAtleta={abrirModalObsAtleta}
           onNovoAtleta={handleAbrirModalNovoAtleta}
@@ -1021,9 +1056,14 @@ export default function AdminDashboardPage() {
       {abaAtiva === 'LISTAS_CHAMADA' && (
         <AbaSumulas
           modalidades={modalidades}
+          escolas={escolas}
+          atletas={atletas}
+          inscricoes={inscricoes}
           handleGerarListaChamada={handleGerarListaChamada}
           handleGerarCadernoModalidade={handleGerarCadernoModalidade}
           handleGerarCadernoGeralArbitragem={handleGerarCadernoGeralArbitragem}
+          handleGerarCadernoEscola={handleGerarCadernoEscola}
+          handleGerarModeloManual={handleGerarModeloManual}
         />
       )}
 
