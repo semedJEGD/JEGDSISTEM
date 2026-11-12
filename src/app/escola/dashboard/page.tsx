@@ -137,7 +137,7 @@ export default function EscolaDashboardPage() {
 
     const interval = setInterval(() => {
       JegdStorage.sincronizarComNuvem().catch(() => {});
-    }, 4000);
+    }, 60000);
 
     return () => {
       window.removeEventListener('jegd-data-synced', handleSync);
