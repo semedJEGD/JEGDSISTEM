@@ -376,6 +376,10 @@ export function ModalCadastroAtleta({
                   )}
                 </div>
 
+                <p className="text-[11px] font-medium text-[#4B5563] bg-[#F7F9F8] px-2.5 py-1.5 rounded-lg border border-[#E2EAE5] mb-2.5">
+                  <strong>Regra do Edital (Art. 13):</strong> máx. <strong>1 coletiva</strong> e até <strong>2 individuais</strong> (3 no total).
+                </p>
+
                 {modalidadesDisponiveis.length === 0 ? (
                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center space-y-1">
                     <AlertCircle className="w-6 h-6 text-amber-600 mx-auto" />

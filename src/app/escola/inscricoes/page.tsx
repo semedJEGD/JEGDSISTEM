@@ -185,6 +185,15 @@ export default function EscolaInscricoesPage() {
         alert(`Limite máximo de ${modalidadeAtual.maxAtletas} atletas para ${modalidadeAtual.nome} atingido.`);
         return;
       }
+      const atletaObj = todosAtletas.find(a => a.id === id);
+      if (atletaObj) {
+        const modsAtuais = (atletaObj.modalidadesInscritas || []).map(m => m.modalidadeCodigo);
+        const validacaoArt13 = JegdsRulesService.validarLimiteModalidadesAtleta([...modsAtuais, modalidadeAtual.codigo] as any);
+        if (!validacaoArt13.valido) {
+          alert(`${atletaObj.nomeCompleto}: ${validacaoArt13.erro}`);
+          return;
+        }
+      }
       setAtletasSelecionadosIds([...atletasSelecionadosIds, id]);
     }
   };

@@ -194,4 +194,19 @@ assert(
   'Voleibol deve permitir 1 equipe por escola'
 );
 
+// 5. Testes do Art. 13 (Máx 1 coletiva + até 2 individuais = 3 no total)
+console.log('\n5. Testes do Art. 13 (Limite de Modalidades por Atleta):');
+assert(
+  JegdsRulesService.validarLimiteModalidadesAtleta(['futsal', 'atletismo', 'xadrez']).valido,
+  '1 coletiva (futsal) + 2 individuais (atletismo, xadrez) deve ser VÁLIDO'
+);
+assert(
+  !JegdsRulesService.validarLimiteModalidadesAtleta(['futsal', 'futebol_campo']).valido,
+  '2 coletivas (futsal + futebol_campo) deve ser BLOQUEADO pelo Art. 13'
+);
+assert(
+  !JegdsRulesService.validarLimiteModalidadesAtleta(['atletismo', 'xadrez', 'tenis_mesa']).valido,
+  '3 individuais (atletismo + xadrez + tenis_mesa) deve ser BLOQUEADO pelo Art. 13'
+);
+
 console.log('\n🎉 TODOS OS TESTES DE REGRAS DE NEGÓCIO PASSARAM COM 100% DE SUCESSO!');

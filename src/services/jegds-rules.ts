@@ -247,6 +247,49 @@ export class JegdsRulesService {
   }
 
   /**
+   * Validação do Art. 13 do Regulamento:
+   * Cada estudante-atleta pode participar de no máximo 03 modalidades,
+   * sendo até 02 modalidades individuais e 01 coletiva.
+   */
+  public static validarLimiteModalidadesAtleta(
+    modalidadesCodigos: ModalidadeCodigoJEGDS[]
+  ): { valido: boolean; erro?: string } {
+    const unicas = Array.from(new Set(modalidadesCodigos));
+    let coletivas = 0;
+    let individuais = 0;
+
+    for (const codigo of unicas) {
+      const info = MODALIDADES_JEGDS[codigo];
+      if (!info) continue;
+      if (info.tipo === 'COLETIVA') coletivas++;
+      else if (info.tipo === 'INDIVIDUAL') individuais++;
+    }
+
+    if (coletivas > 1) {
+      return {
+        valido: false,
+        erro: 'Regra do Edital (Art. 13): cada estudante-atleta pode participar de no máximo 01 (uma) modalidade coletiva.'
+      };
+    }
+
+    if (individuais > 2) {
+      return {
+        valido: false,
+        erro: 'Regra do Edital (Art. 13): cada estudante-atleta pode participar de no máximo 02 (duas) modalidades individuais.'
+      };
+    }
+
+    if (unicas.length > 3) {
+      return {
+        valido: false,
+        erro: 'Regra do Edital (Art. 13): cada estudante-atleta pode participar de no máximo 03 (três) modalidades no total.'
+      };
+    }
+
+    return { valido: true };
+  }
+
+  /**
    * Validação de Documento Obrigatório (RG ou Certidão)
    */
   public static validarDocumento(

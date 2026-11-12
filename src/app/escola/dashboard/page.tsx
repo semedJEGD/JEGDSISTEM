@@ -179,7 +179,13 @@ export default function EscolaDashboardPage() {
       setModalidadesEscolhidas(modalidadesEscolhidas.filter(c => c !== modCodigo));
       if (modCodigo === 'atletismo') setProvasAtletismo([]);
     } else {
-      setModalidadesEscolhidas([...modalidadesEscolhidas, modCodigo]);
+      const proximas = [...modalidadesEscolhidas, modCodigo];
+      const validacaoArt13 = JegdsRulesService.validarLimiteModalidadesAtleta(proximas as any);
+      if (!validacaoArt13.valido) {
+        alert(validacaoArt13.erro);
+        return;
+      }
+      setModalidadesEscolhidas(proximas);
     }
   };
 
