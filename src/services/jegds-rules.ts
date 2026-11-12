@@ -27,7 +27,8 @@ export const MODALIDADES_JEGDS: Record<ModalidadeCodigoJEGDS, ModalidadeInfo> = 
     tipo: 'COLETIVA',
     dataEvento: '2026-11-28',
     prazoInscricaoPadrao: '2026-11-21',
-    limiteMinElenco: 8
+    limiteMinElenco: 8,
+    limiteMaxElenco: 8
   },
   tenis_mesa: {
     codigo: 'tenis_mesa',

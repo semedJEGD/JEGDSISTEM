@@ -262,6 +262,43 @@ export default function AdminDashboardPage() {
     carregarTodosDados();
   };
 
+  const aprovarInscricoesEAtletas = (inscricoesAlvo: InscricaoEquipe[], atletaIds: string[]) => {
+    atletaIds.forEach((atletaId) => {
+      JegdStorage.updateAtletaConferencia(atletaId, true);
+    });
+
+    const dataHomologacao = new Date().toLocaleString('pt-BR');
+    inscricoesAlvo.forEach((insc) => {
+      JegdStorage.saveInscricao({
+        ...insc,
+        status: 'VALIDADA',
+        motivoRejeicao: undefined,
+        parecerComite: insc.parecerComite || 'Equipe aprovada e homologada pelo Comitê Organizador do JEGDS 2026.',
+        dataHomologacao
+      });
+    });
+
+    carregarTodosDados();
+  };
+
+  const handleAprovarEquipeModalidade = (escola: Escola, modalidade: ModalidadeConfig, atletasDaEquipe: Atleta[]) => {
+    const atletaIds = atletasDaEquipe.map((a) => a.id);
+    const atletaIdSet = new Set(atletaIds);
+    const inscricoesRelacionadas = inscricoes.filter(
+      (i) =>
+        i.escolaId === escola.id &&
+        (i.modalidadeCodigo?.toLowerCase() === modalidade.codigo.toLowerCase() ||
+          i.modalidadeNome?.toLowerCase().includes(modalidade.nome.toLowerCase())) &&
+        i.atletaIds.some((id) => atletaIdSet.has(id))
+    );
+
+    aprovarInscricoesEAtletas(inscricoesRelacionadas, atletaIds);
+  };
+
+  const handleAprovarEquipeDireto = (insc: InscricaoEquipe) => {
+    aprovarInscricoesEAtletas([insc], insc.atletaIds);
+  };
+
   const abrirModalObsAtleta = (atleta: Atleta) => {
     setAtletaObs(atleta);
     setObsTexto(atleta.observacaoCoordenador || '');
@@ -1034,6 +1071,7 @@ export default function AdminDashboardPage() {
           onEditarAtleta={handleAbrirModalEditarAtleta}
           onExcluirAtleta={handleExcluirAtletaCoord}
           onAcessarInscricoesEscola={handleAcessarInscricoesEscola}
+          onAprovarEquipeModalidade={handleAprovarEquipeModalidade}
         />
       )}
 
@@ -1049,6 +1087,7 @@ export default function AdminDashboardPage() {
           atletas={atletas}
           alertas={alertasInconsistencia}
           abrirModalAnalise={abrirModalAnalise}
+          onAprovarEquipeDireto={handleAprovarEquipeDireto}
         />
       )}
 

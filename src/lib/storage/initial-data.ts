@@ -101,7 +101,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
     sexosPermitidos: ['FEMININO', 'MASCULINO'],
     minAtletas: 8,
-    maxAtletas: 12,
+    maxAtletas: 8,
     maxProvasPorAtleta: 1,
     descricao: 'Dinâmica de 8 atletas em quadra. Masculino e Feminino em todas as 4 categorias.',
     localPadrao: 'Quadra Poliesportiva Municipal'

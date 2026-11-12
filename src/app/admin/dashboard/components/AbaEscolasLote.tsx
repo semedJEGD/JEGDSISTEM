@@ -60,6 +60,7 @@ interface AbaEscolasLoteProps {
   onEditarAtleta?: (atleta: Atleta, esc: Escola) => void;
   onExcluirAtleta?: (atleta: Atleta, esc: Escola) => void;
   onAcessarInscricoesEscola?: (esc: Escola) => void;
+  onAprovarEquipeModalidade?: (escola: Escola, modalidade: ModalidadeConfig, atletasDaEquipe: Atleta[]) => void;
 }
 
 export function AbaEscolasLote({
@@ -87,7 +88,8 @@ export function AbaEscolasLote({
   onNovoAtleta,
   onEditarAtleta,
   onExcluirAtleta,
-  onAcessarInscricoesEscola
+  onAcessarInscricoesEscola,
+  onAprovarEquipeModalidade
 }: AbaEscolasLoteProps) {
   const [buscaEscola, setBuscaEscola] = useState('');
   const [buscaAluno, setBuscaAluno] = useState('');
@@ -501,6 +503,9 @@ export function AbaEscolasLote({
 
                         if (atletasNestaMod.length === 0) return null;
 
+                        const todosAprovados = atletasNestaMod.every(a => a.conferidoPeloCoordenador);
+                        const totalAprovados = atletasNestaMod.filter(a => a.conferidoPeloCoordenador).length;
+
                         return (
                           <div
                             key={modalidade.id}
@@ -516,10 +521,33 @@ export function AbaEscolasLote({
                                   <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                                     {atletasNestaMod.length} {atletasNestaMod.length === 1 ? 'atleta' : 'atletas'}
                                   </span>
+                                  <span className={`ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    todosAprovados
+                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                                  }`}>
+                                    {totalAprovados}/{atletasNestaMod.length} aprovados
+                                  </span>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {onAprovarEquipeModalidade && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onAprovarEquipeModalidade(escolaSelecionada, modalidade, atletasNestaMod)}
+                                    disabled={todosAprovados}
+                                    className={`text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all ${
+                                      todosAprovados
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                                        : 'bg-[#00A878] hover:bg-[#087A5B] text-white shadow-2xs cursor-pointer'
+                                    }`}
+                                    title={todosAprovados ? 'Todos os alunos desta modalidade já estão aprovados' : 'Aprovar todos os alunos e homologar equipe nesta modalidade'}
+                                  >
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    <span>{todosAprovados ? 'Equipe Aprovada' : 'Aprovar Equipe'}</span>
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => JegdPdfGenerator.gerarCrachasEmLote(escolaSelecionada, atletasNestaMod, modalidade.nome)}

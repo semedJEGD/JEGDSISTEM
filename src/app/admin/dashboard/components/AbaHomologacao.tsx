@@ -22,6 +22,7 @@ interface AbaHomologacaoProps {
   atletas: Atleta[];
   alertas?: AlertaInconsistencia[];
   abrirModalAnalise: (insc: InscricaoEquipe) => void;
+  onAprovarEquipeDireto?: (insc: InscricaoEquipe) => void;
 }
 
 export function AbaHomologacao({
@@ -33,7 +34,8 @@ export function AbaHomologacao({
   escolas,
   atletas,
   alertas = [],
-  abrirModalAnalise
+  abrirModalAnalise,
+  onAprovarEquipeDireto
 }: AbaHomologacaoProps) {
   const [subAba, setSubAba] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
 
@@ -173,6 +175,18 @@ export function AbaHomologacao({
 
                     {/* Ações */}
                     <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+                      {onAprovarEquipeDireto && insc.status !== 'VALIDADA' && (
+                        <button
+                          type="button"
+                          onClick={() => onAprovarEquipeDireto(insc)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors"
+                          title="Aprovar todos os alunos e homologar esta equipe imediatamente"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Aprovar Equipe</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => abrirModalAnalise(insc)}
                         className="px-3.5 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors"

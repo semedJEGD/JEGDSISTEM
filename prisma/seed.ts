@@ -83,7 +83,7 @@ async function main() {
       dataEvento: new Date('2026-11-28T08:00:00Z'),
       prazoInscricao: new Date('2026-11-21T23:59:59Z'),
       minAtletas: 8,
-      maxAtletas: 12,
+      maxAtletas: 8,
       maxProvasPorAtleta: 1,
       descricao: 'Dinâmica de 8 atletas em quadra. Todas as 4 categorias (Fem e Masc).'
     },
