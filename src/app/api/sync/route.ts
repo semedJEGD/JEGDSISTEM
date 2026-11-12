@@ -56,15 +56,15 @@ export async function GET(request: Request) {
         : String(a.dataNascimento).split('T')[0];
 
       // Vincular modalidades em que o atleta está inscrito
-      const modalidadesDoAtleta = inscricoes
-        .filter(i => i.atletaId === a.id)
-        .map(i => ({
-          modalidadeCodigo: i.modalidade?.codigo || i.modalidadeId,
-          modalidadeNome: i.modalidade?.nome || i.modalidadeId,
-          categoria: i.categoria,
-          sexo: i.sexo,
-          provas: i.prova ? i.prova.split(',') : []
-        }));
+      const inscricoesDoAtleta = inscricoes.filter(i => i.atletaId === a.id);
+      const modalidadesDoAtleta = inscricoesDoAtleta.map(i => ({
+        modalidadeCodigo: i.modalidade?.codigo || i.modalidadeId,
+        modalidadeNome: i.modalidade?.nome || i.modalidadeId,
+        categoria: i.categoria,
+        sexo: i.sexo,
+        provas: i.prova ? i.prova.split(',') : []
+      }));
+      const todosValidados = inscricoesDoAtleta.length > 0 && inscricoesDoAtleta.every(i => i.status === 'VALIDADA');
         
       return {
         id: a.id,
@@ -85,6 +85,7 @@ export async function GET(request: Request) {
         categoriaCalculada: a.categoria,
         categoria: a.categoria,
         crachaToken: a.crachaToken || a.matricula || a.id,
+        conferidoPeloCoordenador: todosValidados ? true : undefined,
         modalidadesInscritas: modalidadesDoAtleta,
         documentos: {
           foto3x4: a.fotoUrl || undefined,

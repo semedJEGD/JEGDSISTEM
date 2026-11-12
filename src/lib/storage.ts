@@ -251,6 +251,12 @@ export class JegdStorage {
             if (localMods.length > 0 && cloudMods.length === 0) {
               mergedAtletas[idx].modalidadesInscritas = localMods;
             }
+            if (mergedAtletas[idx].conferidoPeloCoordenador === undefined && localAtl.conferidoPeloCoordenador !== undefined) {
+              mergedAtletas[idx].conferidoPeloCoordenador = localAtl.conferidoPeloCoordenador;
+            }
+            if (!mergedAtletas[idx].observacaoCoordenador && localAtl.observacaoCoordenador) {
+              mergedAtletas[idx].observacaoCoordenador = localAtl.observacaoCoordenador;
+            }
           } else {
             // Atleta salvo localmente que ainda está sincronizando com a nuvem
             mergedAtletas.push(localAtl);
@@ -272,6 +278,15 @@ export class JegdStorage {
             const localIds = localInsc.atletaIds || [];
             if (localIds.length > cloudIds.length) {
               mergedInscricoes[idx].atletaIds = Array.from(new Set([...cloudIds, ...localIds]));
+            }
+            const localTime = localInsc.updatedAt ? new Date(localInsc.updatedAt).getTime() : 0;
+            const cloudTime = mergedInscricoes[idx].updatedAt ? new Date(mergedInscricoes[idx].updatedAt).getTime() : 0;
+            if (localTime > cloudTime) {
+              mergedInscricoes[idx].status = localInsc.status;
+              mergedInscricoes[idx].motivoRejeicao = localInsc.motivoRejeicao;
+              mergedInscricoes[idx].parecerComite = localInsc.parecerComite;
+              mergedInscricoes[idx].dataHomologacao = localInsc.dataHomologacao;
+              mergedInscricoes[idx].updatedAt = localInsc.updatedAt;
             }
           } else {
             mergedInscricoes.push(localInsc);
