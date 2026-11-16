@@ -505,10 +505,11 @@ export default function EscolaDashboardPage() {
 
   const handleHomologarDirecao = () => {
     if (!escola) return;
-    if (confirm(`Confirmar Homologação Oficial da Escola ${escola.nome}?\n\nA Direção atesta a matrícula e frequência regular de todos os ${atletas.length} atletas inscritos perante a SEMED.`)) {
-      JegdStorage.setHomologacaoDirecao(escola.id, true, perfilAtivo?.nome || escola.responsavelNome);
+    const autor = perfilAtivo?.nome || escola.responsavelNome || 'Professor / Direção da Escola';
+    if (confirm(`Confirmar Homologação Oficial da Escola ${escola.nome}?\n\nO responsável atesta a matrícula e frequência regular de todos os ${atletas.length} atletas inscritos perante a SEMED.`)) {
+      JegdStorage.setHomologacaoDirecao(escola.id, true, autor);
       setHomologacao(JegdStorage.getHomologacaoDirecao(escola.id));
-      alert('✅ Delegação Escolar homologada com sucesso! As inscrições foram validadas para a SEMED.');
+      alert(`✅ Delegação Escolar homologada com sucesso por ${autor}! As inscrições foram validadas para a SEMED.`);
     }
   };
 
@@ -517,6 +518,30 @@ export default function EscolaDashboardPage() {
     if (confirm('Deseja reabrir a delegação da escola para edições dos professores?')) {
       JegdStorage.setHomologacaoDirecao(escola.id, false);
       setHomologacao(JegdStorage.getHomologacaoDirecao(escola.id));
+    }
+  };
+
+  const handleToggleValidarEquipe = (insc: InscricaoEquipe) => {
+    if (!escola) return;
+    const novoStatus = insc.status === 'VALIDADA' ? 'PENDENTE' : 'VALIDADA';
+    const autor = perfilAtivo?.nome || escola.responsavelNome || 'Professor / Diretor da Escola';
+
+    const atualizada: InscricaoEquipe = {
+      ...insc,
+      status: novoStatus,
+      updatedAt: new Date().toISOString()
+    };
+
+    JegdStorage.saveInscricao(atualizada);
+    carregarDados(escola.id);
+
+    if (novoStatus === 'VALIDADA') {
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      } catch {}
+      alert(`✅ Equipe "${insc.nomeEquipe || insc.modalidadeNome}" validada com sucesso por ${autor}!`);
+    } else {
+      alert(`Equipe "${insc.nomeEquipe || insc.modalidadeNome}" reaberta para edições.`);
     }
   };
 
@@ -1159,6 +1184,20 @@ export default function EscolaDashboardPage() {
 
                     <div className="flex items-center gap-2 w-full lg:w-auto justify-end flex-wrap shrink-0">
                       <button
+                        type="button"
+                        onClick={() => handleToggleValidarEquipe(insc)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs transition-all ${
+                          insc.status === 'VALIDADA'
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        }`}
+                        title={insc.status === 'VALIDADA' ? 'Equipe validada pela escola. Clique para reabrir.' : 'Validar e homologar esta equipe'}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{insc.status === 'VALIDADA' ? 'Validada' : 'Validar Equipe'}</span>
+                      </button>
+
+                      <button
                         onClick={() => handleGerarFichaPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
                         className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
@@ -1236,39 +1275,33 @@ export default function EscolaDashboardPage() {
             <div>
               <p className="text-xs font-bold text-[#17221D]">
                 {homologacao.homologado
-                  ? `Delegação homologada por ${homologacao.responsavelNome || 'Direção'} em ${new Date(homologacao.dataHomologacao!).toLocaleString('pt-BR')}`
-                  : 'A Direção Escolar deve validar os atletas cadastrados para liberar a emissão final das súmulas.'}
+                  ? `Delegação homologada por ${homologacao.responsavelNome || 'Professor/Direção'} em ${new Date(homologacao.dataHomologacao!).toLocaleString('pt-BR')}`
+                  : 'O Professor ou a Direção Escolar deve validar os atletas cadastrados para atestar a delegação perante a SEMED.'}
               </p>
               <p className="text-[11px] text-[#64748B] mt-0.5">
-                {perfilAtivo?.tipo === 'DIRECAO'
-                  ? 'Você está conectado como Direção Escolar e possui autorização legal para assinar.'
-                  : 'Você está navegando como Professor. Apenas a Direção Escolar pode clicar em Homologar.'}
+                {perfilAtivo?.nome
+                  ? `Conectado como ${perfilAtivo.nome} (${perfilAtivo.tipo === 'DIRECAO' ? 'Direção Escolar' : 'Professor/Responsável'}). Autorização concedida para validar.`
+                  : 'Responsável autorizado pela Escola para validar a delegação oficial.'}
               </p>
             </div>
 
-            {perfilAtivo?.tipo === 'DIRECAO' ? (
-              homologacao.homologado ? (
-                <button
-                  type="button"
-                  onClick={handleRevogarHomologacao}
-                  className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-all shadow-2xs shrink-0"
-                >
-                  Reabrir Delegação para Ajustes
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleHomologarDirecao}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all shrink-0 hover:scale-[1.01]"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Homologar e Assinar Delegação</span>
-                </button>
-              )
+            {homologacao.homologado ? (
+              <button
+                type="button"
+                onClick={handleRevogarHomologacao}
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-all shadow-2xs shrink-0"
+              >
+                Reabrir Delegação para Ajustes
+              </button>
             ) : (
-              <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 shrink-0">
-                Aguardando assinatura da Direção
-              </span>
+              <button
+                type="button"
+                onClick={handleHomologarDirecao}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all shrink-0 hover:scale-[1.01]"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Homologar e Validar Delegação Escolar</span>
+              </button>
             )}
           </div>
         </div>

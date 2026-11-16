@@ -150,7 +150,7 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     categoriasPermitidas: ['INFANTIL', 'INFANTO', 'JUNIOR'],
     sexosPermitidos: ['MASCULINO'],
     minAtletas: 5,
-    maxAtletas: 12,
+    maxAtletas: 10,
     maxProvasPorAtleta: 1,
     descricao: 'Exclusivamente Masculino na areia a partir do Infantil (12 anos). Não existe Mirim.',
     localPadrao: 'Arena de Areia Municipal'

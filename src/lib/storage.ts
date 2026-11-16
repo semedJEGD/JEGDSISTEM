@@ -964,42 +964,78 @@ export class JegdStorage {
       return insc;
     });
 
-    // 2. Adiciona/atualiza nas equipes vinculadas
+    // 2. Adiciona/atualiza nas equipes vinculadas respeitando o número da equipe e limites de elenco
     atleta.modalidadesInscritas?.forEach(modInsc => {
       const modObj = modalidadesConfig.find(m => m.codigo === modInsc.modalidadeCodigo);
       if (!modObj) return;
 
-      const idx = todasInscricoes.findIndex(
-        i => i.escolaId === escolaId && i.modalidadeCodigo === modInsc.modalidadeCodigo && i.categoria === cat && i.sexo === atleta.sexo
+      const maxAtletasModalidade = modObj.maxAtletas || 99;
+
+      // 2.1 Verifica se o atleta já está em alguma equipe desta modalidade/categoria/sexo
+      let idx = todasInscricoes.findIndex(
+        i => i.escolaId === escolaId &&
+             i.modalidadeCodigo === modInsc.modalidadeCodigo &&
+             i.categoria === cat &&
+             i.sexo === atleta.sexo &&
+             i.atletaIds.includes(atleta.id)
       );
+
+      // 2.2 Se não está em nenhuma, procura uma equipe aberta que ainda não atingiu o limite de atletas
+      if (idx === -1) {
+        idx = todasInscricoes.findIndex(
+          i => i.escolaId === escolaId &&
+               i.modalidadeCodigo === modInsc.modalidadeCodigo &&
+               i.categoria === cat &&
+               i.sexo === atleta.sexo &&
+               i.atletaIds.length < maxAtletasModalidade
+        );
+      }
 
       if (idx >= 0) {
         const equipeExistente = todasInscricoes[idx];
-        const atletaIds = equipeExistente.atletaIds.includes(atleta.id)
-          ? equipeExistente.atletaIds
-          : [...equipeExistente.atletaIds, atleta.id];
+        const atletaJaPresente = equipeExistente.atletaIds.includes(atleta.id);
+        
+        // Só adiciona se o atleta já estiver lá ou se a equipe ainda tiver vaga
+        const podeAdicionar = atletaJaPresente || equipeExistente.atletaIds.length < maxAtletasModalidade;
 
-        const provasPorAtleta = {
-          ...(equipeExistente.provasPorAtleta || {}),
-          ...(modInsc.provas ? { [atleta.id]: modInsc.provas } : {})
-        };
+        if (podeAdicionar) {
+          const atletaIds = atletaJaPresente
+            ? equipeExistente.atletaIds
+            : [...equipeExistente.atletaIds, atleta.id];
 
-        todasInscricoes[idx] = {
-          ...equipeExistente,
-          municipioId: equipeExistente.municipioId || curMun.id,
-          atletaIds,
-          provasPorAtleta: modInsc.modalidadeCodigo === 'atletismo' ? provasPorAtleta : equipeExistente.provasPorAtleta,
-          updatedAt: new Date().toISOString()
-        };
+          const provasPorAtleta = {
+            ...(equipeExistente.provasPorAtleta || {}),
+            ...(modInsc.provas ? { [atleta.id]: modInsc.provas } : {})
+          };
+
+          todasInscricoes[idx] = {
+            ...equipeExistente,
+            municipioId: equipeExistente.municipioId || curMun.id,
+            atletaIds,
+            provasPorAtleta: modInsc.modalidadeCodigo === 'atletismo' ? provasPorAtleta : equipeExistente.provasPorAtleta,
+            updatedAt: new Date().toISOString()
+          };
+        }
       } else {
+        // Conta quantas equipes dessa modalidade/categoria/sexo a escola já possui para numerar certo (Equipe 1, Equipe 2...)
+        const totalEquipesDestaMod = todasInscricoes.filter(
+          i => i.escolaId === escolaId &&
+               i.modalidadeCodigo === modInsc.modalidadeCodigo &&
+               i.categoria === cat &&
+               i.sexo === atleta.sexo
+        ).length;
+        const proxNumero = totalEquipesDestaMod + 1;
+
         const novaInsc: InscricaoEquipe = {
-          id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}`,
+          id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}-eq${proxNumero}`,
           municipioId: curMun.id,
           escolaId,
           modalidadeCodigo: modInsc.modalidadeCodigo,
           modalidadeNome: modObj.nome,
           categoria: cat,
           sexo: atleta.sexo,
+          numeroEquipe: proxNumero,
+          nomeEquipe: proxNumero > 1 ? `${modObj.nome} - Equipe ${proxNumero}` : modObj.nome,
           atletaIds: [atleta.id],
           provasPorAtleta: modInsc.provas ? { [atleta.id]: modInsc.provas } : undefined,
           comissaoIds: [],

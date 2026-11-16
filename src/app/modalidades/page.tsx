@@ -64,6 +64,7 @@ const MODALIDADES_ASSETS: Record<string, { img: string; alt: string }> = {
 export default function ModalidadesPage() {
   const [modalidades, setModalidades] = useState<ModalidadeConfig[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<'TODOS' | 'COLETIVA' | 'INDIVIDUAL'>('TODOS');
+  const [filtroEtapa, setFiltroEtapa] = useState<number | 'TODAS'>('TODAS');
   const [siglaEvento, setSiglaEvento] = useState('JEGD 2026');
 
   useEffect(() => {
@@ -73,9 +74,44 @@ export default function ModalidadesPage() {
     if (curMun) setSiglaEvento(curMun.siglaEvento);
   }, []);
 
+  // Helper oficial das Etapas
+  const getEtapaInfo = (modCodigo: string) => {
+    switch (modCodigo) {
+      case 'queimada':
+      case 'tenis_mesa':
+        return {
+          etapa: 1,
+          rotulo: '1ª ETAPA',
+          data: '28/11/2026',
+          badge: 'bg-emerald-50 text-emerald-800 border-emerald-300'
+        };
+      case 'atletismo':
+      case 'beach_soccer':
+        return {
+          etapa: 2,
+          rotulo: '2ª ETAPA',
+          data: '05/12/2026',
+          badge: 'bg-cyan-50 text-cyan-800 border-cyan-300'
+        };
+      case 'futsal':
+      case 'xadrez':
+      case 'futebol_campo':
+      case 'voleibol':
+      default:
+        return {
+          etapa: 3,
+          rotulo: '3ª ETAPA',
+          data: '12/12/2026',
+          badge: 'bg-amber-50 text-amber-800 border-amber-300'
+        };
+    }
+  };
+
   const modalidadesFiltradas = modalidades.filter(m => {
-    if (filtroTipo === 'TODOS') return true;
-    return m.tipo === filtroTipo;
+    const atendeTipo = filtroTipo === 'TODOS' || m.tipo === filtroTipo;
+    const etapaInfo = getEtapaInfo(m.codigo);
+    const atendeEtapa = filtroEtapa === 'TODAS' || etapaInfo.etapa === filtroEtapa;
+    return atendeTipo && atendeEtapa;
   });
 
   return (
@@ -95,41 +131,92 @@ export default function ModalidadesPage() {
         </p>
       </div>
 
-      {/* Filtros por Tipo de Modalidade */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full max-w-md mx-auto">
-        <button
-          type="button"
-          onClick={() => setFiltroTipo('TODOS')}
-          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
-            filtroTipo === 'TODOS'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
-              : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
-          }`}
-        >
-          Todas ({modalidades.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFiltroTipo('COLETIVA')}
-          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
-            filtroTipo === 'COLETIVA'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
-              : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
-          }`}
-        >
-          Coletivas
-        </button>
-        <button
-          type="button"
-          onClick={() => setFiltroTipo('INDIVIDUAL')}
-          className={`flex-1 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all border text-center cursor-pointer ${
-            filtroTipo === 'INDIVIDUAL'
-              ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
-              : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
-          }`}
-        >
-          Individuais
-        </button>
+      {/* Filtros por Etapa do Calendário & Tipo */}
+      <div className="space-y-3 max-w-2xl mx-auto">
+        {/* Seletor de Etapas */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setFiltroEtapa('TODAS')}
+            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black transition-all border cursor-pointer ${
+              filtroEtapa === 'TODAS'
+                ? 'bg-[#17221D] text-white border-[#17221D] shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:bg-[#F7F9F8]'
+            }`}
+          >
+            Todas as Etapas
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroEtapa(1)}
+            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black transition-all border cursor-pointer flex items-center gap-1.5 ${
+              filtroEtapa === 1
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-emerald-800 hover:bg-emerald-50'
+            }`}
+          >
+            <span>1ª Etapa (28/11)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroEtapa(2)}
+            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black transition-all border cursor-pointer flex items-center gap-1.5 ${
+              filtroEtapa === 2
+                ? 'bg-cyan-600 text-white border-cyan-600 shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-cyan-800 hover:bg-cyan-50'
+            }`}
+          >
+            <span>2ª Etapa (05/12)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroEtapa(3)}
+            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black transition-all border cursor-pointer flex items-center gap-1.5 ${
+              filtroEtapa === 3
+                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-amber-800 hover:bg-amber-50'
+            }`}
+          >
+            <span>3ª Etapa (12/12)</span>
+          </button>
+        </div>
+
+        {/* Filtros por Tipo de Modalidade */}
+        <div className="flex flex-wrap items-center justify-center gap-2 w-full max-w-sm mx-auto">
+          <button
+            type="button"
+            onClick={() => setFiltroTipo('TODOS')}
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+              filtroTipo === 'TODOS'
+                ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:bg-[#F7F9F8]'
+            }`}
+          >
+            Todas ({modalidades.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroTipo('COLETIVA')}
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+              filtroTipo === 'COLETIVA'
+                ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:bg-[#F7F9F8]'
+            }`}
+          >
+            Coletivas
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroTipo('INDIVIDUAL')}
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border text-center cursor-pointer ${
+              filtroTipo === 'INDIVIDUAL'
+                ? 'bg-[#00A878] text-white border-[#00A878] shadow-xs'
+                : 'bg-white border-[#E2EAE5] text-[#4B5563] hover:bg-[#F7F9F8]'
+            }`}
+          >
+            Individuais
+          </button>
+        </div>
       </div>
 
       {/* Grid de Cards das Modalidades (3 cols desktop, 2 cols tablet, 1 col mobile) */}
@@ -142,6 +229,7 @@ export default function ModalidadesPage() {
 
           const isColetiva = mod.tipo === 'COLETIVA';
           const generoTexto = mod.sexosPermitidos?.join(' / ') || 'MASCULINO / FEMININO';
+          const etapaInfo = getEtapaInfo(mod.codigo);
 
           return (
             <div
@@ -165,12 +253,17 @@ export default function ModalidadesPage() {
               {/* CONTEÚDO PRINCIPAL FLUTUANTE */}
               <div className="relative z-10 space-y-3.5">
                 
-                {/* 1. Badge Tipo de Modalidade (Top-Left) */}
-                <div className="flex items-center justify-between">
+                {/* 1. Badge Tipo de Modalidade & Etapa do Calendário (Top-Left) */}
+                <div className="flex items-center gap-2">
                   <span
-                    className="text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider border border-[#E5E7EB] shadow-2xs bg-[#F3F4F6] text-[#6B7280]"
+                    className="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-[#E5E7EB] shadow-2xs bg-[#F3F4F6] text-[#6B7280]"
                   >
                     {mod.tipo}
+                  </span>
+                  <span
+                    className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${etapaInfo.badge}`}
+                  >
+                    {etapaInfo.rotulo} • {etapaInfo.data}
                   </span>
                 </div>
 
@@ -198,7 +291,7 @@ export default function ModalidadesPage() {
                 </p>
               </div>
 
-              {/* 4. RODAPÉ INFERIOR: CATEGORIAS + GÊNERO + BOTÃO INSCREVER */}
+              {/* 4. RODAPÉ INFERIOR: CATEGORIAS + GÊNERO + BOTÃO INSCREVER COM QUERY PARAM */}
               <div className="relative z-10 pt-4 mt-3 border-t border-[#E2EAE5]/80 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   {/* Categorias Permitidas (Pills Claras) */}
@@ -219,12 +312,12 @@ export default function ModalidadesPage() {
                   </span>
                 </div>
 
-                {/* Botão Oficial: Inscrever Equipe */}
+                {/* Botão Oficial: Inscrever Equipe com Modalidade e Etapa Pré-selecionadas */}
                 <Link
-                  href="/escola/inscricoes"
+                  href={`/escola/inscricoes?modalidade=${mod.codigo}&etapa=${etapaInfo.etapa}`}
                   className="w-full py-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs sm:text-sm font-black border border-[#00A878]/25 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn mt-1"
                 >
-                  <span>Inscrever equipe</span>
+                  <span>Inscrever equipe na {etapaInfo.rotulo}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
                 </Link>
               </div>

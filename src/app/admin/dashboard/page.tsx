@@ -478,26 +478,28 @@ export default function AdminDashboardPage() {
           }
         });
 
-        // Também inclui atletas que possuem esta modalidade inscrita diretamente no cadastro
-        atletas.forEach(atl => {
-          if (escolaIdFiltro && atl.escolaId !== escolaIdFiltro) return;
-          const catAtl = atl.categoriaCalculada;
-          if (catAtl === cat && atl.sexo === sexo) {
-            const temMod = atl.modalidadesInscritas?.some(m => 
-              m.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() || 
-              m.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
-            );
-            if (temMod && !atletasComEscola.some(x => x.atleta.id === atl.id)) {
-              const escolaObj = escolas.find(e => e.id === atl.escolaId);
-              if (escolaObj) {
-                atletasComEscola.push({
-                  atleta: atl,
-                  escola: escolaObj
-                });
+        // Caso a escola ainda não tenha formalizado inscrição de equipe, inclui atletas aptos cadastrados como prévia
+        if (atletasComEscola.length === 0) {
+          atletas.forEach(atl => {
+            if (escolaIdFiltro && atl.escolaId !== escolaIdFiltro) return;
+            const catAtl = atl.categoriaCalculada;
+            if (catAtl === cat && atl.sexo === sexo) {
+              const temMod = atl.modalidadesInscritas?.some(m => 
+                m.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() || 
+                m.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
+              );
+              if (temMod && !atletasComEscola.some(x => x.atleta.id === atl.id)) {
+                const escolaObj = escolas.find(e => e.id === atl.escolaId);
+                if (escolaObj) {
+                  atletasComEscola.push({
+                    atleta: atl,
+                    escola: escolaObj
+                  });
+                }
               }
             }
-          }
-        });
+          });
+        }
 
         categoriasData.push({
           categoria: cat,

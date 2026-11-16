@@ -52,7 +52,8 @@ export const MODALIDADES_JEGDS: Record<ModalidadeCodigoJEGDS, ModalidadeInfo> = 
     tipo: 'COLETIVA',
     dataEvento: '2026-12-05',
     prazoInscricaoPadrao: '2026-11-28',
-    limiteMaxElenco: 12
+    limiteMinElenco: 5,
+    limiteMaxElenco: 10
   },
   futsal: {
     codigo: 'futsal',

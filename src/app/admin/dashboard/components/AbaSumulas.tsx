@@ -88,7 +88,7 @@ export function AbaSumulas({
     return (modCodigo: string, categoria?: string, sexo?: string, escolaId?: string) => {
       const idsSet = new Set<string>();
 
-      // 1. Busca por Inscrições homologadas / cadastradas
+      // 1. Busca prioritária por Inscrições homologadas / cadastradas oficialmente
       inscricoes.forEach(insc => {
         const modMatch = 
           insc.modalidadeCodigo?.toLowerCase() === modCodigo.toLowerCase() ||
@@ -102,21 +102,23 @@ export function AbaSumulas({
         insc.atletaIds?.forEach(id => idsSet.add(id));
       });
 
-      // 2. Busca direta no cadastro de Atletas
-      atletas.forEach(atl => {
-        if (escolaId && atl.escolaId !== escolaId) return;
-        if (categoria && atl.categoriaCalculada !== categoria) return;
-        if (sexo && atl.sexo !== sexo) return;
+      // 2. Apenas se não houver nenhuma inscrição de equipe formalizada, busca do cadastro de atletas como prévia
+      if (idsSet.size === 0) {
+        atletas.forEach(atl => {
+          if (escolaId && atl.escolaId !== escolaId) return;
+          if (categoria && atl.categoriaCalculada !== categoria) return;
+          if (sexo && atl.sexo !== sexo) return;
 
-        const temMod = atl.modalidadesInscritas?.some(m => 
-          m.modalidadeCodigo?.toLowerCase() === modCodigo.toLowerCase() || 
-          m.modalidadeNome?.toLowerCase().includes(modCodigo.toLowerCase())
-        );
+          const temMod = atl.modalidadesInscritas?.some(m => 
+            m.modalidadeCodigo?.toLowerCase() === modCodigo.toLowerCase() || 
+            m.modalidadeNome?.toLowerCase().includes(modCodigo.toLowerCase())
+          );
 
-        if (temMod) {
-          idsSet.add(atl.id);
-        }
-      });
+          if (temMod) {
+            idsSet.add(atl.id);
+          }
+        });
+      }
 
       return idsSet;
     };

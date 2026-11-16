@@ -23,7 +23,11 @@ import {
   Crown,
   Medal,
   Award,
-  Star
+  Star,
+  ShieldCheck,
+  UserPlus,
+  X,
+  Sparkles
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { JegdPdfGenerator } from '@/lib/pdf-generator';
@@ -101,6 +105,53 @@ export default function EscolaInscricoesPage() {
   const [provasPorAtleta, setProvasPorAtleta] = useState<Record<string, string[]>>({});
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
 
+  // Estado do Cadastro Rápido de Aluno direto no Painel da Modalidade
+  const [modalRapidoAberto, setModalRapidoAberto] = useState(false);
+  const [rapidoNome, setRapidoNome] = useState('');
+  const [rapidoDataNasc, setRapidoDataNasc] = useState('2013-05-10');
+  const [rapidoDocTipo, setRapidoDocTipo] = useState<'RG' | 'CERTIDAO'>('RG');
+  const [rapidoDocNum, setRapidoDocNum] = useState('');
+  const [rapidoSerie, setRapidoSerie] = useState('7º Ano A');
+
+  // Helper oficial das Etapas
+  const getEtapaInfo = (modCodigo: string) => {
+    switch (modCodigo) {
+      case 'queimada':
+      case 'tenis_mesa':
+        return {
+          etapa: 1,
+          etapaNome: '1ª ETAPA OFICIAL',
+          data: '28/11/2026',
+          prazo: '21/11/2026',
+          corFundo: 'bg-emerald-50 border-emerald-300 text-emerald-900',
+          badge: 'bg-emerald-600 text-white'
+        };
+      case 'atletismo':
+      case 'beach_soccer':
+        return {
+          etapa: 2,
+          etapaNome: '2ª ETAPA OFICIAL',
+          data: '05/12/2026',
+          prazo: '28/11/2026',
+          corFundo: 'bg-cyan-50 border-cyan-300 text-cyan-900',
+          badge: 'bg-cyan-600 text-white'
+        };
+      case 'futsal':
+      case 'xadrez':
+      case 'futebol_campo':
+      case 'voleibol':
+      default:
+        return {
+          etapa: 3,
+          etapaNome: '3ª ETAPA OFICIAL',
+          data: '12/12/2026',
+          prazo: '05/12/2026',
+          corFundo: 'bg-amber-50 border-amber-300 text-amber-900',
+          badge: 'bg-amber-600 text-white'
+        };
+    }
+  };
+
   useEffect(() => {
     JegdStorage.init();
     let atual = JegdStorage.getCurrentEscola();
@@ -130,7 +181,24 @@ export default function EscolaInscricoesPage() {
     setInscricoes(JegdStorage.getInscricoes(atual.id));
     const mods = JegdStorage.getModalidades();
     setModalidades(mods);
-    if (mods.length > 0) {
+
+    // Leitura inteligente de parâmetros da URL (quando acessado via menu Modalidades)
+    const urlParams = new URLSearchParams(window.location.search);
+    const modParam = urlParams.get('modalidade') as ModalidadeCodigo | null;
+    const etapaParam = urlParams.get('etapa');
+
+    if (modParam && mods.some(m => m.codigo === modParam)) {
+      setModalidadeSelCodigo(modParam);
+      const modObj = mods.find(m => m.codigo === modParam);
+      if (modObj) {
+        if (modObj.categoriasPermitidas && !modObj.categoriasPermitidas.includes(categoriaSel)) {
+          setCategoriaSel(modObj.categoriasPermitidas[0] as CategoriaIdade);
+        }
+        if (modObj.sexosPermitidos && !modObj.sexosPermitidos.includes(sexoSel)) {
+          setSexoSel(modObj.sexosPermitidos[0] as Genero);
+        }
+      }
+    } else if (mods.length > 0) {
       setModalidadeSelCodigo(mods[0].codigo);
     }
 
@@ -340,6 +408,124 @@ export default function EscolaInscricoesPage() {
     }
   };
 
+  const handleToggleValidarEquipe = (insc: InscricaoEquipe) => {
+    if (!escola) return;
+    const novoStatus = insc.status === 'VALIDADA' ? 'PENDENTE' : 'VALIDADA';
+    const autor = nomeOperador || escola.responsavelNome || 'Professor / Diretor da Escola';
+
+    const atualizada: InscricaoEquipe = {
+      ...insc,
+      status: novoStatus,
+      updatedAt: new Date().toISOString()
+    };
+
+    JegdStorage.saveInscricao(atualizada);
+    setInscricoes(JegdStorage.getInscricoes(escola.id));
+
+    if (novoStatus === 'VALIDADA') {
+      try {
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      } catch {}
+      alert(`✅ Equipe "${insc.nomeEquipe || insc.modalidadeNome}" validada com sucesso por ${autor}!`);
+    } else {
+      alert(`Equipe "${insc.nomeEquipe || insc.modalidadeNome}" reaberta para edições.`);
+    }
+  };
+
+  const handleAbrirModalRapido = () => {
+    setRapidoNome('');
+    if (categoriaSel === 'MIRIM') setRapidoDataNasc('2015-05-10');
+    else if (categoriaSel === 'INFANTIL') setRapidoDataNasc('2013-05-10');
+    else if (categoriaSel === 'INFANTO') setRapidoDataNasc('2010-05-10');
+    else setRapidoDataNasc('2007-05-10');
+
+    setRapidoDocTipo('RG');
+    setRapidoDocNum('');
+    setRapidoSerie('7º Ano A');
+    setModalRapidoAberto(true);
+  };
+
+  const handleSalvarAlunoRapido = (adicionarMais: boolean = false) => {
+    if (!escola || !modalidadeAtual) return;
+    if (!rapidoNome.trim() || !rapidoDataNasc || !rapidoDocNum.trim()) {
+      alert('Preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+      return;
+    }
+
+    const infoCat = JegdsRulesService.calcularCategoria(rapidoDataNasc);
+    if (!infoCat.categoria) {
+      alert('Data de nascimento fora da faixa etária oficial do JEGDS 2026.');
+      return;
+    }
+
+    // Valida matriz da modalidade
+    const valMatriz = JegdsRulesService.validarMatriz(modalidadeAtual.codigo, infoCat.categoria, sexoSel);
+    if (!valMatriz.valido) {
+      alert(`Não é possível cadastrar: ${valMatriz.erro}`);
+      return;
+    }
+
+    // Verifica limite de elenco da equipe
+    if (atletasSelecionadosIds.length >= modalidadeAtual.maxAtletas) {
+      alert(`Limite máximo de ${modalidadeAtual.maxAtletas} atletas para ${modalidadeAtual.nome} atingido.`);
+      return;
+    }
+
+    const atletaId = `atl-${Date.now()}`;
+    const codigoFinal = JegdStorage.gerarProximoCodigoInscricao(escola.municipioId);
+
+    const novoAtleta: Atleta = {
+      id: atletaId,
+      escolaId: escola.id,
+      municipioId: escola.municipioId,
+      nomeCompleto: rapidoNome.trim().toUpperCase(),
+      dataNascimento: rapidoDataNasc,
+      sexo: sexoSel,
+      documentoTipo: rapidoDocTipo,
+      documentoNumero: rapidoDocNum.trim(),
+      matricula: codigoFinal,
+      crachaToken: codigoFinal,
+      serieTurma: rapidoSerie,
+      telefoneContato: escola.responsavelTelefone || '(99) 98801-0000',
+      tipoSanguineo: 'O+',
+      consentimentoResponsavel: true,
+      cadastradoPor: nomeOperador || escola.responsavelNome || 'Professor da Escola',
+      categoriaCalculada: infoCat.categoria,
+      modalidadesInscritas: [
+        {
+          modalidadeCodigo: modalidadeAtual.codigo,
+          modalidadeNome: modalidadeAtual.nome,
+          provas: modalidadeSelCodigo === 'atletismo' ? ['75m'] : undefined
+        }
+      ],
+      conferidoPeloCoordenador: false,
+      documentos: {},
+      ativo: true,
+      createdAt: new Date().toISOString()
+    };
+
+    JegdStorage.saveAtleta(novoAtleta);
+
+    // Atualiza a lista geral e já seleciona o novo atleta para a equipe!
+    const listaAtualizada = JegdStorage.getAtletas(escola.id);
+    setTodosAtletas(listaAtualizada);
+    setAtletasSelecionadosIds(prev => [...prev, atletaId]);
+    if (modalidadeSelCodigo === 'atletismo') {
+      setProvasPorAtleta(prev => ({ ...prev, [atletaId]: ['75m'] }));
+    }
+
+    try {
+      confetti({ particleCount: 40, spread: 50, origin: { y: 0.6 } });
+    } catch {}
+
+    if (adicionarMais) {
+      setRapidoNome('');
+      setRapidoDocNum('');
+    } else {
+      setModalRapidoAberto(false);
+    }
+  };
+
   if (!escola) return null;
 
   const provasPermitidasAtletismo = PROVAS_ATLETISMO_POR_CATEGORIA[categoriaSel] || [];
@@ -428,9 +614,34 @@ export default function EscolaInscricoesPage() {
               <Trophy className="w-5 h-5 text-[#00A878]" />
               <span>Montar Inscrição de Equipe</span>
             </h2>
-            <p className="text-xs sm:text-sm text-[#4B5563] mb-5 sm:mb-6 font-medium">
+            <p className="text-xs sm:text-sm text-[#4B5563] mb-4 font-medium">
               Selecione a modalidade, categoria, nomeie a equipe e convoque os atletas conforme as regras do JEGDS 2026.
             </p>
+
+            {/* Banner Oficial da Etapa do Calendário */}
+            {modalidadeAtual && (() => {
+              const etapaInfo = getEtapaInfo(modalidadeAtual.codigo);
+              return (
+                <div className={`p-4 rounded-2xl border mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs ${etapaInfo.corFundo}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shrink-0 ${etapaInfo.badge}`}>
+                      {etapaInfo.etapaNome}
+                    </span>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-black">
+                        Data dos Jogos: {etapaInfo.data}
+                      </h3>
+                      <p className="text-xs opacity-90 font-medium">
+                        Modalidade: <strong>{modalidadeAtual.nome}</strong> • Limite oficial: <strong>{modalidadeAtual.maxAtletas} atletas</strong>
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/80 border border-current/20 shrink-0">
+                    Prazo final: {etapaInfo.prazo}
+                  </span>
+                </div>
+              );
+            })()}
 
             <form onSubmit={handleSubmeterInscricao} className="space-y-5 sm:space-y-6">
               
@@ -631,35 +842,52 @@ export default function EscolaInscricoesPage() {
               {/* Lista de Atletas Elegíveis */}
               {validacaoMatriz.valido && (
                 <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
-                      4. Seleção de Alunos-Atletas
-                    </label>
-                    {modalidadeAtual && (
-                      <span className={`text-xs font-black px-3 py-1 rounded-full border ${
-                        atletasSelecionadosIds.length >= modalidadeAtual.minAtletas &&
-                        atletasSelecionadosIds.length <= modalidadeAtual.maxAtletas
-                          ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} convocados (Mín: {modalidadeAtual.minAtletas})
-                      </span>
-                    )}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
+                        4. Seleção de Alunos-Atletas
+                      </label>
+                      {modalidadeAtual && (
+                        <span className={`text-xs font-black px-3 py-0.5 rounded-full border ${
+                          atletasSelecionadosIds.length >= modalidadeAtual.minAtletas &&
+                          atletasSelecionadosIds.length <= modalidadeAtual.maxAtletas
+                            ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} (Mín: {modalidadeAtual.minAtletas})
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAbrirModalRapido}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>+ Cadastrar Aluno Rápido</span>
+                    </button>
                   </div>
 
                   {atletasElegiveis.length === 0 ? (
-                    <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-3xl p-6 text-center">
-                      <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                      <p className="text-sm font-bold text-[#17221D]">
-                        Nenhum atleta cadastrado na escola para a categoria {categoriaSel} ({sexoSel}).
-                      </p>
-                      <Link
-                        href="/escola/atletas"
-                        className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-1.5 mt-3 shadow-xs transition-all"
+                    <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-3xl p-6 text-center space-y-3">
+                      <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                      <div>
+                        <p className="text-sm font-bold text-[#17221D]">
+                          Nenhum aluno cadastrado na escola para a categoria {categoriaSel} ({sexoSel}).
+                        </p>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          Cadastre os alunos agora mesmo sem burocracia para convocar para a equipe!
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAbrirModalRapido}
+                        className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
                       >
-                        <Plus className="w-4 h-4" />
-                        <span>Cadastrar Novo Atleta</span>
-                      </Link>
+                        <UserPlus className="w-4 h-4" />
+                        <span>Cadastrar Aluno Rápido Agora</span>
+                      </button>
                     </div>
                   ) : (
                     <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
@@ -812,25 +1040,39 @@ export default function EscolaInscricoesPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 pt-2 border-t border-[#E2EAE5]">
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-[#E2EAE5] flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleValidarEquipe(insc)}
+                        className={`py-2 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
+                          insc.status === 'VALIDADA'
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                        }`}
+                        title={insc.status === 'VALIDADA' ? 'Equipe já validada pela escola. Clique para reabrir.' : 'Validar e homologar esta equipe'}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{insc.status === 'VALIDADA' ? 'Validada' : 'Validar Equipe'}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleGerarPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                       >
                         <Printer className="w-3.5 h-3.5 text-[#00A878]" />
-                        <span>Ficha PDF</span>
+                        <span>Ficha</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleGerarCrachasPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                       >
                         <Download className="w-3.5 h-3.5 text-[#00A878]" />
-                        <span>Crachás QR</span>
+                        <span>Crachás</span>
                       </button>
 
                       <button
@@ -850,6 +1092,128 @@ export default function EscolaInscricoesPage() {
         </div>
 
       </div>
+
+      {/* Modal de Cadastro Rápido de Aluno */}
+      {modalRapidoAberto && modalidadeAtual && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl relative my-auto">
+            <div className="flex items-center justify-between pb-3.5 border-b border-[#E2EAE5] mb-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-black mb-1">
+                  <Sparkles className="w-3 h-3" />
+                  <span>Cadastro Ágil & Direto</span>
+                </div>
+                <h3 className="text-lg font-black text-[#17221D]">
+                  Novo Aluno na Equipe
+                </h3>
+                <p className="text-xs text-[#64748B]">
+                  {modalidadeAtual.nome} • {categoriaSel} ({sexoSel})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalRapidoAberto(false)}
+                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                  Nome Completo do Aluno *
+                </label>
+                <input
+                  type="text"
+                  value={rapidoNome}
+                  onChange={(e) => setRapidoNome(e.target.value)}
+                  placeholder="Ex: LUCAS HENRIQUE SILVA"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#CBD5E1] text-sm font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none uppercase"
+                  autoFocus
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                    Data de Nascimento *
+                  </label>
+                  <input
+                    type="date"
+                    value={rapidoDataNasc}
+                    onChange={(e) => setRapidoDataNasc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-emerald-700 font-bold mt-0.5 block">
+                    {JegdsRulesService.calcularCategoria(rapidoDataNasc).mensagem}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                    Série / Turma
+                  </label>
+                  <input
+                    type="text"
+                    value={rapidoSerie}
+                    onChange={(e) => setRapidoSerie(e.target.value)}
+                    placeholder="Ex: 7º Ano B"
+                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                    Documento
+                  </label>
+                  <select
+                    value={rapidoDocTipo}
+                    onChange={(e) => setRapidoDocTipo(e.target.value as 'RG' | 'CERTIDAO')}
+                    className="w-full px-2.5 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none bg-white cursor-pointer"
+                  >
+                    <option value="RG">RG</option>
+                    <option value="CERTIDAO">Certidão</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                    Número do Documento *
+                  </label>
+                  <input
+                    type="text"
+                    value={rapidoDocNum}
+                    onChange={(e) => setRapidoDocNum(e.target.value)}
+                    placeholder="Ex: 05489721202"
+                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#E2EAE5] flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleSalvarAlunoRapido(true)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-all cursor-pointer"
+                >
+                  Salvar e + Adicionar Outro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSalvarAlunoRapido(false)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Cadastrar e Conectar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

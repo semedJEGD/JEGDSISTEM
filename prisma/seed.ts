@@ -117,7 +117,7 @@ async function main() {
       dataEvento: new Date('2026-12-05T08:00:00Z'),
       prazoInscricao: new Date('2026-11-28T23:59:59Z'),
       minAtletas: 5,
-      maxAtletas: 12,
+      maxAtletas: 10,
       maxProvasPorAtleta: 1,
       descricao: 'Apenas Masculino na areia a partir do Infantil (12 anos).'
     },
