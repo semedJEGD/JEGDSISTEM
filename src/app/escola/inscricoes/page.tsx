@@ -104,6 +104,7 @@ export default function EscolaInscricoesPage() {
   const [atletasSelecionadosIds, setAtletasSelecionadosIds] = useState<string[]>([]);
   const [provasPorAtleta, setProvasPorAtleta] = useState<Record<string, string[]>>({});
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
+  const [equipeEmEdicaoId, setEquipeEmEdicaoId] = useState<string | null>(null);
 
   // Estado do Cadastro Rápido de Aluno direto no Painel da Modalidade
   const [modalRapidoAberto, setModalRapidoAberto] = useState(false);
@@ -227,6 +228,27 @@ export default function EscolaInscricoesPage() {
     ? JegdsRulesService.getMaxEquipesPorModalidade(modalidadeAtual.codigo as any)
     : 1;
 
+  // Equipes que excedem o teto da modalidade (legadas ou importadas)
+  const equipesComExcesso = React.useMemo(() => {
+    return inscricoes.filter(insc => {
+      const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
+      const limiteMax = modConfig?.maxAtletas || 10;
+      return (insc.atletaIds?.length || 0) > limiteMax;
+    });
+  }, [inscricoes, modalidades]);
+
+  // Contagem de nomes de equipes para alertar sobre duplicatas
+  const contagemNomesEquipes = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    inscricoes.forEach(i => {
+      const nomeLimpo = (i.nomeEquipe || i.modalidadeNome || '').trim().toLowerCase();
+      if (nomeLimpo) {
+        counts[nomeLimpo] = (counts[nomeLimpo] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [inscricoes]);
+
   // Validação da Matriz
   const validacaoMatriz = JegdsRulesService.validarMatriz(modalidadeSelCodigo, categoriaSel, sexoSel);
 
@@ -304,6 +326,11 @@ export default function EscolaInscricoesPage() {
       return;
     }
 
+    if (atletasSelecionadosIds.length > modalidadeAtual.maxAtletas) {
+      alert(`⚠️ Limite Máximo Excedido!\n\nA modalidade ${modalidadeAtual.nome} permite no máximo ${modalidadeAtual.maxAtletas} atletas.\nVocê selecionou ${atletasSelecionadosIds.length} atletas.\n\nPor favor, desmarque ${atletasSelecionadosIds.length - modalidadeAtual.maxAtletas} atleta(s) antes de confirmar.`);
+      return;
+    }
+
     // Se for Atletismo, validar se cada atleta selecionou entre 1 e 2 provas válidas
     if (modalidadeSelCodigo === 'atletismo') {
       for (const atlId of atletasSelecionadosIds) {
@@ -317,8 +344,8 @@ export default function EscolaInscricoesPage() {
       }
     }
 
-    // Verificar se já existe inscrição da mesma modalidade + categoria + sexo + numeroEquipe
-    const existente = inscricoes.find(
+    // Verificar se já existe inscrição da mesma modalidade + categoria + sexo + numeroEquipe ou se estamos editando
+    const existente = (equipeEmEdicaoId ? inscricoes.find(i => i.id === equipeEmEdicaoId) : null) || inscricoes.find(
       i =>
         i.modalidadeCodigo === modalidadeAtual.codigo &&
         i.categoria === categoriaSel &&
@@ -326,9 +353,17 @@ export default function EscolaInscricoesPage() {
         (i.numeroEquipe === numeroEquipeSel || (!i.numeroEquipe && numeroEquipeSel === 1))
     );
 
-    const nomeFinal =
-      nomeEquipeSel.trim() ||
-      `${escola.sigla || escola.nome} ${maxEquipesPermitidas > 1 ? `- Equipe ${numeroEquipeSel}` : ''}`;
+    const nomePadrao = `${escola.sigla || escola.nome} - ${modalidadeAtual.nome} ${categoriaSel} (${sexoSel.slice(0, 4)}) ${maxEquipesPermitidas > 1 ? `• Equipe ${numeroEquipeSel}` : ''}`.trim();
+    const nomeFinal = nomeEquipeSel.trim() || nomePadrao;
+
+    // Regra: Não permitir nomes de equipes duplicados na mesma escola
+    const nomeJaExiste = inscricoes.find(
+      i => i.id !== (existente?.id) && (i.nomeEquipe?.trim().toLowerCase() === nomeFinal.toLowerCase())
+    );
+    if (nomeJaExiste) {
+      alert(`⚠️ Nome de Equipe já existente!\n\nJá existe uma equipe registrada nesta escola com o nome "${nomeFinal}".\n\nPor favor, insira um nome diferente (por exemplo: "${nomeFinal} B" ou "${nomeFinal} - Time 2") para evitar confusões nas súmulas e no chaveamento.`);
+      return;
+    }
 
     const novaInscricao: InscricaoEquipe = {
       id: existente ? existente.id : `insc-${Date.now()}-${modalidadeAtual.codigo}-eq${numeroEquipeSel}`,
@@ -356,10 +391,11 @@ export default function EscolaInscricoesPage() {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     } catch {}
 
-    alert(`Inscrição de ${nomeFinal} (${modalidadeAtual.nome} - ${categoriaSel} ${sexoSel}) submetida com sucesso!`);
+    alert(`Inscrição de ${nomeFinal} (${modalidadeAtual.nome} - ${categoriaSel} ${sexoSel}) salva com sucesso!`);
     setAtletasSelecionadosIds([]);
     setProvasPorAtleta({});
     setNomeEquipeSel('');
+    setEquipeEmEdicaoId(null);
   };
 
   const handleGerarPdf = async (insc: InscricaoEquipe) => {
@@ -410,6 +446,30 @@ export default function EscolaInscricoesPage() {
 
   const handleToggleValidarEquipe = (insc: InscricaoEquipe) => {
     if (!escola) return;
+    const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
+    const limiteMax = modConfig?.maxAtletas || 10;
+    const limiteMin = modConfig?.minAtletas || 1;
+
+    // Se estiver tentando validar (mudar para VALIDADA), aplicar regras estritas
+    if (insc.status !== 'VALIDADA') {
+      if (insc.atletaIds.length > limiteMax) {
+        alert(
+          `⚠️ Atenção: Não é possível validar a equipe "${insc.nomeEquipe || insc.modalidadeNome}"!\n\n` +
+          `O regulamento oficial de ${insc.modalidadeNome} permite no máximo ${limiteMax} atletas por equipe, mas atualmente existem ${insc.atletaIds.length} atletas convocados.\n\n` +
+          `Por favor, clique no botão "Ajustar Elenco" no card da equipe e desmarque ${insc.atletaIds.length - limiteMax} atleta(s) excedente(s) antes de validar.`
+        );
+        return;
+      }
+      if (insc.atletaIds.length < limiteMin) {
+        alert(
+          `⚠️ Atenção: Equipe incompleta!\n\n` +
+          `A equipe "${insc.nomeEquipe || insc.modalidadeNome}" possui apenas ${insc.atletaIds.length} atleta(s), mas o mínimo exigido pelo regulamento de ${insc.modalidadeNome} é de ${limiteMin} atletas.\n\n` +
+          `Por favor, clique em "Ajustar Elenco" e convoque pelo menos ${limiteMin} atletas antes de validar.`
+        );
+        return;
+      }
+    }
+
     const novoStatus = insc.status === 'VALIDADA' ? 'PENDENTE' : 'VALIDADA';
     const autor = nomeOperador || escola.responsavelNome || 'Professor / Diretor da Escola';
 
@@ -433,6 +493,7 @@ export default function EscolaInscricoesPage() {
   };
 
   const handleCarregarEquipeParaEdicao = (insc: InscricaoEquipe) => {
+    setEquipeEmEdicaoId(insc.id);
     setModalidadeSelCodigo(insc.modalidadeCodigo);
     setCategoriaSel(insc.categoria);
     setSexoSel(insc.sexo);
@@ -629,6 +690,34 @@ export default function EscolaInscricoesPage() {
             <p className="text-xs sm:text-sm text-[#4B5563] mb-4 font-medium">
               Selecione a modalidade, categoria, nomeie a equipe e convoque os atletas conforme as regras do JEGDS 2026.
             </p>
+
+            {/* Banner de Modo de Edição / Ajuste */}
+            {equipeEmEdicaoId && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-start gap-2.5">
+                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black">
+                      Modo de Ajuste de Elenco Ativado
+                    </h4>
+                    <p className="text-xs text-amber-800 mt-0.5">
+                      Você está editando a equipe selecionada. Desmarque atletas para respeitar o limite máximo ou renomeie a equipe e clique em <strong>Confirmar e Enviar</strong> para atualizar.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEquipeEmEdicaoId(null);
+                    setAtletasSelecionadosIds([]);
+                    setNomeEquipeSel('');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black shrink-0 transition-colors cursor-pointer"
+                >
+                  Cancelar Edição
+                </button>
+              </div>
+            )}
 
             {/* Banner Oficial da Etapa do Calendário */}
             {modalidadeAtual && (() => {
@@ -1007,6 +1096,26 @@ export default function EscolaInscricoesPage() {
           <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs space-y-4">
             <h3 className="text-lg font-black text-[#17221D]">Equipes Submetidas ({inscricoes.length})</h3>
 
+            {/* Card Informativo sobre Equipes com Elenco Excedente */}
+            {equipesComExcesso.length > 0 && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-amber-950">
+                      Atenção: Equipe(s) com elenco excedendo o limite oficial
+                    </h4>
+                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                      Identificamos que <strong>{equipesComExcesso.length} equipe(s)</strong> possuem mais atletas do que o teto da modalidade permite (ex: equipe com 14 alunos quando o limite é 10).
+                    </p>
+                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                      👉 <strong>Para regularizar:</strong> Clique no botão <span className="bg-slate-800 text-white px-1.5 py-0.5 rounded font-bold text-[10px]">Ajustar Elenco</span> no card da equipe, desmarque os atletas excedentes e salve para liberar a validação oficial.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {inscricoes.length === 0 ? (
               <p className="text-sm text-[#4B5563] text-center py-8">
                 Nenhuma equipe submetida ainda.
@@ -1020,6 +1129,13 @@ export default function EscolaInscricoesPage() {
                   const limiteMin = modConfig?.minAtletas || 1;
                   const excedeLimite = insc.atletaIds.length > limiteMax;
                   const abaixoMinimo = insc.atletaIds.length < limiteMin;
+                  const nomeLimpo = (insc.nomeEquipe || insc.modalidadeNome || '').trim().toLowerCase();
+                  const nomeDuplicado = (contagemNomesEquipes[nomeLimpo] || 0) > 1;
+
+                  // Se o nome da equipe for apenas o nome da modalidade, gera um identificador claro
+                  const nomeExibicao = (insc.nomeEquipe && insc.nomeEquipe.trim().toLowerCase() !== insc.modalidadeNome.toLowerCase())
+                    ? insc.nomeEquipe
+                    : `${insc.modalidadeNome} • ${insc.categoria} (${insc.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) ${numEq > 1 ? `- Time ${numEq}` : ''}`;
 
                   return (
                     <div
@@ -1038,7 +1154,7 @@ export default function EscolaInscricoesPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <h4 className="text-sm sm:text-base font-black text-[#17221D] truncate">
-                                {insc.nomeEquipe || `${insc.modalidadeNome} - Equipe ${numEq}`}
+                                {nomeExibicao}
                               </h4>
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
                                 numEq === 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-blue-50 text-blue-800 border-blue-300'
@@ -1080,6 +1196,27 @@ export default function EscolaInscricoesPage() {
                             </span>
                           )}
                         </div>
+
+                        {/* Avisos Visuais no Card da Equipe */}
+                        {excedeLimite && (
+                          <div className="p-2.5 rounded-xl bg-rose-100/70 border border-rose-300 text-rose-900 text-xs space-y-1 mt-1">
+                            <div className="flex items-center gap-1.5 font-black text-rose-950">
+                              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                              <span>Elenco Excedendo Limite ({insc.atletaIds.length}/{limiteMax} atletas)</span>
+                            </div>
+                            <p className="text-[11px] text-rose-800 leading-snug">
+                              Esta equipe possui <strong>{insc.atletaIds.length - limiteMax} aluno(s) a mais</strong> que o regulamento oficial permite. Clique no botão <strong>Ajustar Elenco</strong> abaixo e desmarque os excedentes para poder validar a equipe.
+                            </p>
+                          </div>
+                        )}
+
+                        {nomeDuplicado && (
+                          <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5 mt-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>Nome repetido nesta escola. Recomendamos clicar em <strong>Ajustar Elenco</strong> para renomear e diferenciar as equipes.</span>
+                          </div>
+                        )}
+
                         {insc.motivoRejeicao && (
                           <p className="text-red-600 text-xs font-medium">
                             Motivo Rejeição: {insc.motivoRejeicao}
@@ -1094,12 +1231,20 @@ export default function EscolaInscricoesPage() {
                           className={`py-1.5 px-2.5 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
                             insc.status === 'VALIDADA'
                               ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300'
+                              : (excedeLimite || abaixoMinimo)
+                              ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
                           }`}
-                          title={insc.status === 'VALIDADA' ? 'Equipe já validada pela escola. Clique para reabrir.' : 'Validar e homologar esta equipe'}
+                          title={
+                            insc.status === 'VALIDADA'
+                              ? 'Equipe já validada pela escola. Clique para reabrir.'
+                              : excedeLimite
+                              ? 'Equipe irregular (excede limite). Clique para instruções.'
+                              : 'Validar e homologar esta equipe'
+                          }
                         >
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>{insc.status === 'VALIDADA' ? 'Validada' : 'Validar'}</span>
+                          <span>{insc.status === 'VALIDADA' ? 'Validada' : (excedeLimite || abaixoMinimo) ? 'Regularizar' : 'Validar'}</span>
                         </button>
 
                         <button

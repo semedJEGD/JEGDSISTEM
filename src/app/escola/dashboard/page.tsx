@@ -523,6 +523,29 @@ export default function EscolaDashboardPage() {
 
   const handleToggleValidarEquipe = (insc: InscricaoEquipe) => {
     if (!escola) return;
+    const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
+    const limiteMax = modConfig?.maxAtletas || 10;
+    const limiteMin = modConfig?.minAtletas || 1;
+
+    if (insc.status !== 'VALIDADA') {
+      if (insc.atletaIds.length > limiteMax) {
+        alert(
+          `⚠️ Equipe com Atletas Excedentes!\n\n` +
+          `A equipe "${insc.nomeEquipe || insc.modalidadeNome}" possui ${insc.atletaIds.length} atletas convocados, mas o limite oficial de ${insc.modalidadeNome} é de até ${limiteMax} atletas.\n\n` +
+          `Por favor, acesse o menu de Inscrições por Modalidade para ajustar o elenco e remover os excedentes antes de validar.`
+        );
+        return;
+      }
+      if (insc.atletaIds.length < limiteMin) {
+        alert(
+          `⚠️ Equipe Incompleta!\n\n` +
+          `A equipe "${insc.nomeEquipe || insc.modalidadeNome}" possui apenas ${insc.atletaIds.length} atleta(s), mas o mínimo exigido pelo regulamento de ${insc.modalidadeNome} é de ${limiteMin} atletas.\n\n` +
+          `Por favor, acesse o menu de Inscrições para completar o elenco antes de validar.`
+        );
+        return;
+      }
+    }
+
     const novoStatus = insc.status === 'VALIDADA' ? 'PENDENTE' : 'VALIDADA';
     const autor = perfilAtivo?.nome || escola.responsavelNome || 'Professor / Diretor da Escola';
 
@@ -1149,14 +1172,28 @@ export default function EscolaDashboardPage() {
                   .map(id => atletas.find(a => a.id === id))
                   .filter((a): a is Atleta => a !== undefined);
 
+                const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
+                const limiteMax = modConfig?.maxAtletas || 10;
+                const limiteMin = modConfig?.minAtletas || 1;
+                const excedeLimite = atletasEquipe.length > limiteMax;
+                const abaixoMinimo = atletasEquipe.length < limiteMin;
+
+                const nomeExibicao = (insc.nomeEquipe && insc.nomeEquipe.trim().toLowerCase() !== insc.modalidadeNome.toLowerCase())
+                  ? insc.nomeEquipe
+                  : `${insc.modalidadeNome} • ${insc.categoria} (${insc.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) ${insc.numeroEquipe && insc.numeroEquipe > 1 ? `- Time ${insc.numeroEquipe}` : ''}`;
+
                 return (
                   <div
                     key={insc.id}
-                    className="p-4 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] hover:border-[#00A878]/50 hover:bg-white transition-all shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4"
+                    className={`p-4 rounded-xl border transition-all shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 ${
+                      excedeLimite
+                        ? 'bg-rose-50/40 border-rose-300'
+                        : 'bg-[#F7F9F8] border-[#E2EAE5] hover:border-[#00A878]/50 hover:bg-white'
+                    }`}
                   >
                     <div className="space-y-1.5 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm sm:text-base font-black text-[#17221D]">{insc.modalidadeNome}</span>
+                        <span className="text-sm sm:text-base font-black text-[#17221D]">{nomeExibicao}</span>
                         <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white border border-[#E2EAE5] text-[#17221D] font-bold">
                           {insc.categoria} • {insc.sexo}
                         </span>
@@ -1173,7 +1210,21 @@ export default function EscolaDashboardPage() {
                       </div>
 
                       <div className="text-xs text-[#64748B] flex flex-wrap items-center gap-3">
-                        <span><strong className="text-[#17221D]">{atletasEquipe.length}</strong> Atletas convocados</span>
+                        <span>
+                          <strong className={excedeLimite ? 'text-rose-600 font-black' : 'text-[#17221D]'}>
+                            {atletasEquipe.length}/{limiteMax}
+                          </strong> Atletas convocados
+                        </span>
+                        {excedeLimite && (
+                          <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
+                            ⚠️ Excede teto de {limiteMax}
+                          </span>
+                        )}
+                        {abaixoMinimo && (
+                          <span className="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                            Mínimo: {limiteMin}
+                          </span>
+                        )}
                         <span>•</span>
                         <span>Data: {insc.dataInscricao || 'Automática'}</span>
                         {insc.motivoRejeicao && (
@@ -1189,12 +1240,20 @@ export default function EscolaDashboardPage() {
                         className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs transition-all ${
                           insc.status === 'VALIDADA'
                             ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
+                            : (excedeLimite || abaixoMinimo)
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white'
                             : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                         }`}
-                        title={insc.status === 'VALIDADA' ? 'Equipe validada pela escola. Clique para reabrir.' : 'Validar e homologar esta equipe'}
+                        title={
+                          insc.status === 'VALIDADA'
+                            ? 'Equipe validada pela escola. Clique para reabrir.'
+                            : (excedeLimite || abaixoMinimo)
+                            ? 'Equipe irregular (excede limite). Clique para instruções.'
+                            : 'Validar e homologar esta equipe'
+                        }
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>{insc.status === 'VALIDADA' ? 'Validada' : 'Validar Equipe'}</span>
+                        <span>{insc.status === 'VALIDADA' ? 'Validada' : (excedeLimite || abaixoMinimo) ? 'Regularizar' : 'Validar Equipe'}</span>
                       </button>
 
                       <button
