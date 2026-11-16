@@ -135,6 +135,22 @@ export class JegdStorage {
 
     if (!localStorage.getItem(STORAGE_KEYS.MODALIDADES)) {
       localStorage.setItem(STORAGE_KEYS.MODALIDADES, JSON.stringify(MODALIDADES_OFICIAIS_JEGDS));
+    } else {
+      try {
+        const storedMods: ModalidadeConfig[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.MODALIDADES) || '[]');
+        let updatedMods = false;
+        const newMods = storedMods.map(sm => {
+          const official = MODALIDADES_OFICIAIS_JEGDS.find(m => m.codigo === sm.codigo);
+          if (official && (sm.maxAtletas !== official.maxAtletas || sm.minAtletas !== official.minAtletas)) {
+            updatedMods = true;
+            return { ...sm, minAtletas: official.minAtletas, maxAtletas: official.maxAtletas };
+          }
+          return sm;
+        });
+        if (updatedMods) {
+          localStorage.setItem(STORAGE_KEYS.MODALIDADES, JSON.stringify(newMods));
+        }
+      } catch {}
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.COMUNICADOS)) {
