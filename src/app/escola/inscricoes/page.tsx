@@ -105,6 +105,8 @@ export default function EscolaInscricoesPage() {
   const [provasPorAtleta, setProvasPorAtleta] = useState<Record<string, string[]>>({});
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
   const [equipeEmEdicaoId, setEquipeEmEdicaoId] = useState<string | null>(null);
+  const [filtroEtapaForm, setFiltroEtapaForm] = useState<number | 'TODAS'>('TODAS');
+  const [filtroEtapaLista, setFiltroEtapaLista] = useState<number | 'TODAS'>('TODAS');
 
   // Estado do Cadastro Rápido de Aluno direto no Painel da Modalidade
   const [modalRapidoAberto, setModalRapidoAberto] = useState(false);
@@ -187,6 +189,11 @@ export default function EscolaInscricoesPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const modParam = urlParams.get('modalidade') as ModalidadeCodigo | null;
     const etapaParam = urlParams.get('etapa');
+    if (etapaParam && ['1', '2', '3'].includes(etapaParam)) {
+      const numEtapa = Number(etapaParam);
+      setFiltroEtapaForm(numEtapa);
+      setFiltroEtapaLista(numEtapa);
+    }
 
     if (modParam && mods.some(m => m.codigo === modParam)) {
       setModalidadeSelCodigo(modParam);
@@ -248,6 +255,40 @@ export default function EscolaInscricoesPage() {
     });
     return counts;
   }, [inscricoes]);
+
+  // Equipes já cadastradas para esta mesma modalidade, categoria e sexo
+  const equipesMesmaModalidadeCat = React.useMemo(() => {
+    return inscricoes.filter(
+      i =>
+        i.modalidadeCodigo === modalidadeSelCodigo &&
+        i.categoria === categoriaSel &&
+        i.sexo === sexoSel
+    );
+  }, [inscricoes, modalidadeSelCodigo, categoriaSel, sexoSel]);
+
+  const equipe1Existente = equipesMesmaModalidadeCat.find(i => (i.numeroEquipe === 1 || !i.numeroEquipe));
+  const equipe2Existente = equipesMesmaModalidadeCat.find(i => i.numeroEquipe === 2);
+
+  // Verificação de Limite de Equipes da Escola para a Modalidade + Categoria + Sexo atuais
+  const validacaoLimiteEquipes = React.useMemo(() => {
+    if (!modalidadeAtual) return { permitido: true, maxPermitidas: 1, totalExistentes: 0 };
+    return JegdsRulesService.validarLimiteEquipesEscola(
+      modalidadeAtual.codigo as any,
+      categoriaSel,
+      sexoSel,
+      inscricoes,
+      equipeEmEdicaoId
+    );
+  }, [modalidadeAtual, categoriaSel, sexoSel, inscricoes, equipeEmEdicaoId]);
+
+  // Equipes submetidas filtradas por Etapa
+  const inscricoesFiltradas = React.useMemo(() => {
+    if (filtroEtapaLista === 'TODAS') return inscricoes;
+    return inscricoes.filter(insc => {
+      const info = getEtapaInfo(insc.modalidadeCodigo);
+      return info.etapa === filtroEtapaLista;
+    });
+  }, [inscricoes, filtroEtapaLista]);
 
   // Validação da Matriz
   const validacaoMatriz = JegdsRulesService.validarMatriz(modalidadeSelCodigo, categoriaSel, sexoSel);
@@ -331,6 +372,12 @@ export default function EscolaInscricoesPage() {
       return;
     }
 
+    // Regra do Regulamento Oficial: Limite de equipes por escola para esta modalidade/categoria/sexo
+    if (!validacaoLimiteEquipes.permitido && !equipeEmEdicaoId) {
+      alert(`⚠️ ${validacaoLimiteEquipes.erro}`);
+      return;
+    }
+
     // Se for Atletismo, validar se cada atleta selecionou entre 1 e 2 provas válidas
     if (modalidadeSelCodigo === 'atletismo') {
       for (const atlId of atletasSelecionadosIds) {
@@ -396,6 +443,17 @@ export default function EscolaInscricoesPage() {
     setProvasPorAtleta({});
     setNomeEquipeSel('');
     setEquipeEmEdicaoId(null);
+  };
+
+  const handleExcluirAtleta = async (id: string, nome: string) => {
+    if (confirm(`Deseja realmente remover o aluno "${nome}"? Ele será excluído da delegação da escola e sairá de quaisquer equipes.`)) {
+      await JegdStorage.deleteAtleta(id);
+      if (escola) {
+        setTodosAtletas(JegdStorage.getAtletas(escola.id));
+        setInscricoes(JegdStorage.getInscricoes(escola.id));
+        setAtletasSelecionadosIds(prev => prev.filter(aId => aId !== id));
+      }
+    }
   };
 
   const handleGerarPdf = async (insc: InscricaoEquipe) => {
@@ -746,49 +804,126 @@ export default function EscolaInscricoesPage() {
 
             <form onSubmit={handleSubmeterInscricao} className="space-y-5 sm:space-y-6">
               
-              {/* Seleção de Modalidade */}
+              {/* Seleção de Modalidade com Filtro de Etapa Oficial */}
               <div>
-                <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2.5">
-                  1. Selecione a Modalidade Esportiva
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-                  {modalidades.map((mod) => {
-                    const sel = modalidadeSelCodigo === mod.codigo;
-                    const maxEq = JegdsRulesService.getMaxEquipesPorModalidade(mod.codigo as any);
-                    return (
-                      <button
-                        type="button"
-                        key={mod.id}
-                        onClick={() => {
-                          setModalidadeSelCodigo(mod.codigo);
-                          setNumeroEquipeSel(1);
-                          setAtletasSelecionadosIds([]);
-                          setProvasPorAtleta({});
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
+                    1. Selecione a Modalidade Esportiva
+                  </label>
+                  <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+                    <button
+                      type="button"
+                      onClick={() => setFiltroEtapaForm('TODAS')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                        filtroEtapaForm === 'TODAS'
+                          ? 'bg-white text-slate-900 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Todas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroEtapaForm(1);
+                        setModalidadeSelCodigo('queimada');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                        filtroEtapaForm === 1
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      1ª Etapa (28/11)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroEtapaForm(2);
+                        setModalidadeSelCodigo('beach_soccer');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                        filtroEtapaForm === 2
+                          ? 'bg-cyan-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      2ª Etapa (05/12)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroEtapaForm(3);
+                        setModalidadeSelCodigo('futsal');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                        filtroEtapaForm === 3
+                          ? 'bg-amber-600 text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      3ª Etapa (12/12)
+                    </button>
+                  </div>
+                </div>
 
-                          if (mod.categoriasPermitidas && !mod.categoriasPermitidas.includes(categoriaSel)) {
-                            setCategoriaSel(mod.categoriasPermitidas[0] as CategoriaIdade);
-                          }
-                          if (mod.sexosPermitidos && !mod.sexosPermitidos.includes(sexoSel)) {
-                            setSexoSel(mod.sexosPermitidos[0] as Genero);
-                          }
-                        }}
-                        className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border text-left transition-all ${
-                          sel
-                            ? 'bg-[#E8F7F1] border-[#00A878] text-[#087A5B] font-bold shadow-sm'
-                            : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#4B5563] hover:bg-white hover:border-[#00A878]/50'
-                        }`}
-                      >
-                        <p className="text-xs sm:text-sm font-black truncate">{mod.nome}</p>
-                        <p className="text-[10px] sm:text-xs text-[#00A878] font-bold mt-0.5">
-                          {mod.minAtletas}-{mod.maxAtletas} atletas {maxEq > 1 ? `• Até ${maxEq} times` : ''}
-                        </p>
-                      </button>
-                    );
-                  })}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+                  {modalidades
+                    .filter(mod => {
+                      if (filtroEtapaForm === 'TODAS') return true;
+                      const info = getEtapaInfo(mod.codigo);
+                      return info.etapa === filtroEtapaForm;
+                    })
+                    .map((mod) => {
+                      const sel = modalidadeSelCodigo === mod.codigo;
+                      const maxEq = JegdsRulesService.getMaxEquipesPorModalidade(mod.codigo as any);
+                      const etapaInfo = getEtapaInfo(mod.codigo);
+                      return (
+                        <button
+                          type="button"
+                          key={mod.id}
+                          onClick={() => {
+                            setModalidadeSelCodigo(mod.codigo);
+                            setNumeroEquipeSel(1);
+                            setAtletasSelecionadosIds([]);
+                            setProvasPorAtleta({});
+
+                            if (mod.categoriasPermitidas && !mod.categoriasPermitidas.includes(categoriaSel)) {
+                              setCategoriaSel(mod.categoriasPermitidas[0] as CategoriaIdade);
+                            }
+                            if (mod.sexosPermitidos && !mod.sexosPermitidos.includes(sexoSel)) {
+                              setSexoSel(mod.sexosPermitidos[0] as Genero);
+                            }
+                          }}
+                          className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all relative ${
+                            sel
+                              ? 'bg-[#E8F7F1] border-[#00A878] text-[#087A5B] font-bold shadow-sm ring-2 ring-[#00A878]/30'
+                              : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#4B5563] hover:bg-white hover:border-[#00A878]/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
+                              etapaInfo.etapa === 1 ? 'bg-emerald-100 text-emerald-800' : etapaInfo.etapa === 2 ? 'bg-cyan-100 text-cyan-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {etapaInfo.etapa}ª Etapa
+                            </span>
+                            {maxEq > 1 && (
+                              <span className="text-[9px] font-black text-slate-500">
+                                Até 2 times
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm font-black truncate text-[#17221D]">{mod.nome}</p>
+                          <p className="text-[10px] text-[#00A878] font-bold mt-0.5">
+                            {mod.minAtletas}-{mod.maxAtletas} atletas
+                          </p>
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
 
-              {/* Seletor de Equipe 1 / Equipe 2 (Para Futebol e Futsal) */}
+              {/* Seletor de Equipe 1 / Equipe 2 (Para Futebol e Futsal) com Travas */}
               {maxEquipesPermitidas > 1 && (
                 <div className="bg-[#E8F7F1]/60 border border-[#00A878]/30 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -805,26 +940,67 @@ export default function EscolaInscricoesPage() {
                     <button
                       type="button"
                       onClick={() => setNumeroEquipeSel(1)}
-                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all ${
                         numeroEquipeSel === 1
                           ? 'bg-[#00A878] text-white shadow-sm'
                           : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
                       }`}
                     >
                       <span>Equipe 1 (Principal)</span>
+                      {equipe1Existente ? (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 1 ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          ✓ Já Cadastrada ({equipe1Existente.atletaIds.length} atl)
+                        </span>
+                      ) : (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 1 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          Disponível
+                        </span>
+                      )}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setNumeroEquipeSel(2)}
-                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all ${
                         numeroEquipeSel === 2
                           ? 'bg-[#00A878] text-white shadow-sm'
                           : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
                       }`}
                     >
                       <span>Equipe 2 (Secundária)</span>
+                      {equipe2Existente ? (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 2 ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          ✓ Já Cadastrada ({equipe2Existente.atletaIds.length} atl)
+                        </span>
+                      ) : (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 2 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          Disponível
+                        </span>
+                      )}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Alerta de Equipe Única Já Cadastrada (Para modalidades com limite estrito de 1 equipe) */}
+              {maxEquipesPermitidas === 1 && equipe1Existente && equipeEmEdicaoId !== equipe1Existente.id && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-black text-amber-950">
+                      Equipe já cadastrada: {modalidadeAtual?.nome} {categoriaSel} ({sexoSel})
+                    </p>
+                    <p className="text-amber-800 leading-snug">
+                      O regulamento oficial ({modalidadeAtual?.codigo ? getEtapaInfo(modalidadeAtual.codigo).etapaNome : 'Regulamento Oficial'}) permite <strong>no máximo 1 equipe por categoria e sexo</strong> nesta modalidade. Para alterar os atletas convocados ou renomear esta equipe, clique no botão <strong>"Ajustar Elenco"</strong> no card à direita.
+                    </p>
                   </div>
                 </div>
               )}
@@ -1005,26 +1181,40 @@ export default function EscolaInscricoesPage() {
                                 : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] hover:bg-white hover:border-[#00A878]/40'
                             }`}
                           >
-                            <div
-                              onClick={() => toggleAtleta(atleta.id)}
-                              className="flex items-center justify-between cursor-pointer"
-                            >
-                              <div className="flex items-center gap-3.5">
-                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
+                            <div className="flex items-center justify-between gap-2">
+                              <div
+                                onClick={() => toggleAtleta(atleta.id)}
+                                className="flex items-center gap-3.5 cursor-pointer flex-1 min-w-0"
+                              >
+                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
                                   selecionado ? 'bg-[#00A878] border-[#00A878] text-white' : 'border-[#CBD5E1] bg-white'
-                                }}`}>
+                                }`}>
                                   {selecionado && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
                                 </div>
-                                <div>
-                                  <p className="text-sm font-bold text-[#17221D]">{atleta.nomeCompleto}</p>
-                                  <p className="text-xs text-[#4B5563] mt-0.5">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-[#17221D] truncate">{atleta.nomeCompleto}</p>
+                                  <p className="text-xs text-[#4B5563] mt-0.5 truncate">
                                     Doc: {atleta.documentoTipo} {atleta.documentoNumero} • Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}
                                   </p>
                                 </div>
                               </div>
-                              <span className="text-xs font-bold text-[#087A5B] bg-white px-2.5 py-1 rounded-lg border border-[#E2EAE5]">
-                                {atleta.matricula}
-                              </span>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-xs font-bold text-[#087A5B] bg-white px-2 py-0.5 rounded-lg border border-[#E2EAE5]">
+                                  {atleta.matricula}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleExcluirAtleta(atleta.id, atleta.nomeCompleto);
+                                  }}
+                                  className="p-1.5 rounded-lg hover:bg-rose-100 text-[#64748B] hover:text-rose-600 transition-colors"
+                                  title="Excluir este aluno do cadastro da escola"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Seletor de Provas para Atletismo */}
@@ -1094,7 +1284,55 @@ export default function EscolaInscricoesPage() {
         {/* Resumo das Inscrições Efetuadas */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs space-y-4">
-            <h3 className="text-lg font-black text-[#17221D]">Equipes Submetidas ({inscricoes.length})</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-lg font-black text-[#17221D]">Equipes Submetidas ({inscricoes.length})</h3>
+              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setFiltroEtapaLista('TODAS')}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                    filtroEtapaLista === 'TODAS'
+                      ? 'bg-white text-slate-900 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Todas ({inscricoes.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroEtapaLista(1)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                    filtroEtapaLista === 1
+                      ? 'bg-emerald-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  1ª Etapa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroEtapaLista(2)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                    filtroEtapaLista === 2
+                      ? 'bg-cyan-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  2ª Etapa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroEtapaLista(3)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                    filtroEtapaLista === 3
+                      ? 'bg-amber-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  3ª Etapa
+                </button>
+              </div>
+            </div>
 
             {/* Card Informativo sobre Equipes com Elenco Excedente */}
             {equipesComExcesso.length > 0 && (
@@ -1116,13 +1354,15 @@ export default function EscolaInscricoesPage() {
               </div>
             )}
 
-            {inscricoes.length === 0 ? (
+            {inscricoesFiltradas.length === 0 ? (
               <p className="text-sm text-[#4B5563] text-center py-8">
-                Nenhuma equipe submetida ainda.
+                {filtroEtapaLista === 'TODAS'
+                  ? 'Nenhuma equipe submetida ainda.'
+                  : `Nenhuma equipe submetida para a ${filtroEtapaLista}ª Etapa.`}
               </p>
             ) : (
               <div className="space-y-3.5">
-                {inscricoes.map((insc) => {
+                {inscricoesFiltradas.map((insc) => {
                   const numEq = insc.numeroEquipe || 1;
                   const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
                   const limiteMax = modConfig?.maxAtletas || 10;

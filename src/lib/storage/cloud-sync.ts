@@ -44,10 +44,14 @@ export class JegdCloudSync {
   /**
    * Remove um atleta do PostgreSQL
    */
-  static async deleteAtleta(id: string): Promise<boolean> {
+  static async deleteAtleta(id: string, matricula?: string, documento?: string): Promise<boolean> {
     try {
       if (typeof window === 'undefined') return false;
-      const res = await fetch(`/api/atletas?id=${encodeURIComponent(id)}`, {
+      const params = new URLSearchParams();
+      if (id) params.set('id', id);
+      if (matricula) params.set('matricula', matricula);
+      if (documento) params.set('documento', documento);
+      const res = await fetch(`/api/atletas?${params.toString()}`, {
         method: 'DELETE'
       });
       return res.ok;

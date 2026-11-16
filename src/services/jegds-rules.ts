@@ -329,6 +329,79 @@ export class JegdsRulesService {
   }
 
   /**
+   * Retorna a etapa oficial do regulamento em que a modalidade é disputada.
+   */
+  public static getEtapaPorModalidade(modalidade: ModalidadeCodigoJEGDS): {
+    etapa: number;
+    etapaNome: string;
+    dataEvento: string;
+    prazoInscricao: string;
+    descricao: string;
+  } {
+    if (modalidade === 'queimada' || modalidade === 'tenis_mesa') {
+      return {
+        etapa: 1,
+        etapaNome: '1ª ETAPA OFICIAL',
+        dataEvento: '28/11/2026',
+        prazoInscricao: '21/11/2026',
+        descricao: 'Queimada (8 atletas) e Tênis de Mesa (até 4 atletas)'
+      };
+    }
+    if (modalidade === 'atletismo' || modalidade === 'beach_soccer') {
+      return {
+        etapa: 2,
+        etapaNome: '2ª ETAPA OFICIAL',
+        dataEvento: '05/12/2026',
+        prazoInscricao: '28/11/2026',
+        descricao: 'Atletismo (até 8 atletas) e Beach Soccer (5 a 10 atletas)'
+      };
+    }
+    return {
+      etapa: 3,
+      etapaNome: '3ª ETAPA OFICIAL',
+      dataEvento: '12/12/2026',
+      prazoInscricao: '05/12/2026',
+      descricao: 'Futsal (até 2 times), Futebol de Campo (até 2 times), Voleibol e Xadrez'
+    };
+  }
+
+  /**
+   * Validação de limite de equipes por escola para uma modalidade, categoria e sexo.
+   * - Futsal e Futebol de Campo: até 2 equipes por categoria e sexo (Equipe 1 e Equipe 2).
+   * - Todas as demais modalidades: no máximo 1 equipe por categoria e sexo.
+   */
+  public static validarLimiteEquipesEscola(
+    modalidade: ModalidadeCodigoJEGDS,
+    categoria: CategoriaEtariaJEGDS,
+    sexo: SexoJEGDS,
+    equipesExistentesEscola: { modalidadeCodigo: string; categoria: string; sexo: string; id: string; numeroEquipe?: number }[],
+    equipeAtualId?: string | null
+  ): { permitido: boolean; maxPermitidas: number; totalExistentes: number; erro?: string } {
+    const maxPermitidas = this.getMaxEquipesPorModalidade(modalidade);
+    const outrasEquipes = equipesExistentesEscola.filter(
+      e =>
+        e.modalidadeCodigo === modalidade &&
+        e.categoria === categoria &&
+        e.sexo === sexo &&
+        e.id !== equipeAtualId
+    );
+
+    const totalExistentes = outrasEquipes.length;
+    if (totalExistentes >= maxPermitidas) {
+      const nomeMod = MODALIDADES_JEGDS[modalidade]?.nome || modalidade;
+      const etapaInfo = this.getEtapaPorModalidade(modalidade);
+      return {
+        permitido: false,
+        maxPermitidas,
+        totalExistentes,
+        erro: `Limite do Regulamento Atingido: A escola já possui ${totalExistentes} equipe(s) em ${nomeMod} ${categoria} (${sexo}). O regulamento oficial (${etapaInfo.etapaNome}) permite no máximo ${maxPermitidas} equipe(s) por categoria/sexo nesta modalidade.`
+      };
+    }
+
+    return { permitido: true, maxPermitidas, totalExistentes };
+  }
+
+  /**
    * Normaliza texto para comparação sem acentos, pontuação e maiúsculas
    */
   public static normalizarTexto(texto: string): string {

@@ -236,12 +236,17 @@ export class JegdStorage {
 
         // Filtra da nuvem qualquer atleta que foi excluído ou que seja de teste
         const cloudValidos = data.atletas.filter((a: Atleta) => {
-          if (deletedIds.includes(a.id)) {
-            JegdCloudSync.deleteAtleta(a.id).catch(() => {});
+          const isDeleted = deletedIds.includes(a.id) ||
+            (a.matricula && deletedIds.includes(a.matricula)) ||
+            (a.crachaToken && deletedIds.includes(a.crachaToken)) ||
+            (a.documentoNumero && deletedIds.includes(a.documentoNumero));
+
+          if (isDeleted) {
+            JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
             return false;
           }
           if (a.nomeCompleto?.toUpperCase().includes('TESTE') || a.id?.includes('teste') || a.documentoNumero?.includes('TESTE')) {
-            JegdCloudSync.deleteAtleta(a.id).catch(() => {});
+            JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
             return false;
           }
           return true;
@@ -251,8 +256,13 @@ export class JegdStorage {
 
         for (const localAtl of storedAtletas) {
           // Ignora excluídos ou testes locais
+          const isLocalDeleted = deletedIds.includes(localAtl.id) ||
+            (localAtl.matricula && deletedIds.includes(localAtl.matricula)) ||
+            (localAtl.crachaToken && deletedIds.includes(localAtl.crachaToken)) ||
+            (localAtl.documentoNumero && deletedIds.includes(localAtl.documentoNumero));
+
           if (
-            deletedIds.includes(localAtl.id) ||
+            isLocalDeleted ||
             localAtl.nomeCompleto?.toUpperCase().includes('TESTE') ||
             localAtl.id?.includes('teste') ||
             localAtl.documentoNumero?.includes('TESTE')
@@ -800,44 +810,73 @@ export class JegdStorage {
   public static async deleteAtleta(id: string): Promise<void> {
     if (!this.isClient()) return;
 
+    // Localiza o atleta para capturar todos os seus identificadores (id, matricula, crachaToken, documento)
+    const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+    const list: Atleta[] = data ? JSON.parse(data) : [];
+    const targetAtleta = list.find(a => a.id === id || a.matricula === id || a.crachaToken === id);
+    const idReal = targetAtleta?.id || id;
+    const matriculaReal = targetAtleta?.matricula;
+    const crachaReal = targetAtleta?.crachaToken;
+    const docReal = targetAtleta?.documentoNumero;
+
     // 1. Registra no tombstone para o polling nunca re-inserir
     try {
       const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
       const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
-      if (!deletedIds.includes(id)) {
-        deletedIds.push(id);
+      const novosIds = [id, idReal, matriculaReal, crachaReal, docReal].filter((v): v is string => Boolean(v && v.trim()));
+      let mudouTomb = false;
+      for (const nid of novosIds) {
+        if (!deletedIds.includes(nid)) {
+          deletedIds.push(nid);
+          mudouTomb = true;
+        }
+      }
+      if (mudouTomb) {
         localStorage.setItem(STORAGE_KEYS.DELETED_ATLETAS_IDS, JSON.stringify(deletedIds));
       }
     } catch {}
 
     // 2. Remove do localStorage de atletas
-    const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
-    const list: Atleta[] = data ? JSON.parse(data) : [];
-    const updated = list.filter(a => a.id !== id);
+    const updated = list.filter(a =>
+      a.id !== id &&
+      a.id !== idReal &&
+      (!matriculaReal || a.matricula !== matriculaReal) &&
+      (!docReal || a.documentoNumero !== docReal)
+    );
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(updated));
 
-    // 3. Remove das equipes vinculadas
-    let inscricoes = this.getInscricoes();
-    inscricoes = inscricoes.map(insc => {
-      if (insc.atletaIds.includes(id)) {
-        const newIds = insc.atletaIds.filter(aId => aId !== id);
-        const newProvas = { ...(insc.provasPorAtleta || {}) };
-        delete newProvas[id];
-        return {
-          ...insc,
-          atletaIds: newIds,
-          provasPorAtleta: newProvas,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return insc;
-    }).filter(insc => insc.atletaIds.length > 0);
-
-    localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoes));
-
-    // 4. Remove do banco de dados na nuvem (Neon PostgreSQL)
+    // 3. Remove das equipes vinculadas com segurança total
     try {
-      await JegdCloudSync.deleteAtleta(id);
+      const rawInsc = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
+      let todasInscricoes: InscricaoEquipe[] = rawInsc ? JSON.parse(rawInsc) : [];
+      let mudouInsc = false;
+      todasInscricoes = todasInscricoes.map(insc => {
+        if (Array.isArray(insc.atletaIds) && (insc.atletaIds.includes(id) || insc.atletaIds.includes(idReal) || (matriculaReal && insc.atletaIds.includes(matriculaReal)))) {
+          mudouInsc = true;
+          const newIds = insc.atletaIds.filter(aId => aId !== id && aId !== idReal && aId !== matriculaReal);
+          const newProvas = { ...(insc.provasPorAtleta || {}) };
+          delete newProvas[id];
+          delete newProvas[idReal];
+          if (matriculaReal) delete newProvas[matriculaReal];
+          return {
+            ...insc,
+            atletaIds: newIds,
+            provasPorAtleta: newProvas,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return insc;
+      });
+      if (mudouInsc) {
+        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
+      }
+    } catch (e) {
+      console.error('Erro ao remover atleta das equipes:', e);
+    }
+
+    // 4. Remove do banco de dados na nuvem (Neon PostgreSQL) passando múltiplos identificadores
+    try {
+      await JegdCloudSync.deleteAtleta(idReal, matriculaReal, docReal);
     } catch {}
 
     // 5. Dispara evento para atualizar a interface imediatamente

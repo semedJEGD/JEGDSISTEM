@@ -210,25 +210,54 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const matricula = searchParams.get('matricula');
+    const documento = searchParams.get('documento');
 
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'ID do atleta não informado' }, { status: 400 });
+    if (!id && !matricula && !documento) {
+      return NextResponse.json({ success: false, error: 'Identificador do atleta não informado' }, { status: 400 });
     }
 
-    // Remove dependências primeiro para evitar violações de integridade referencial
-    await prisma.registroControle.deleteMany({
-      where: { atletaId: id }
+    // Busca o atleta no banco por id, crachaToken, matricula ou documento
+    const whereOr: any[] = [];
+    if (id) {
+      whereOr.push({ id });
+      whereOr.push({ crachaToken: id });
+      whereOr.push({ matricula: id });
+    }
+    if (matricula) {
+      whereOr.push({ matricula });
+      whereOr.push({ crachaToken: matricula });
+    }
+    if (documento) {
+      whereOr.push({ documentoNumero: documento });
+    }
+
+    const atletasDb = await prisma.atleta.findMany({
+      where: { OR: whereOr },
+      select: { id: true, matricula: true, crachaToken: true }
     });
 
-    await prisma.inscricao.deleteMany({
-      where: { atletaId: id }
-    });
+    const targetIds = Array.from(new Set([
+      ...(id ? [id] : []),
+      ...atletasDb.map(a => a.id)
+    ]));
 
-    await prisma.atleta.deleteMany({
-      where: { id }
-    });
+    if (targetIds.length > 0) {
+      // Remove dependências primeiro para evitar violações de integridade referencial
+      await prisma.registroControle.deleteMany({
+        where: { atletaId: { in: targetIds } }
+      });
 
-    return NextResponse.json({ success: true, message: 'Atleta removido com sucesso' });
+      await prisma.inscricao.deleteMany({
+        where: { atletaId: { in: targetIds } }
+      });
+
+      await prisma.atleta.deleteMany({
+        where: { id: { in: targetIds } }
+      });
+    }
+
+    return NextResponse.json({ success: true, message: 'Atleta removido com sucesso', deletedIds: targetIds });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao remover atleta' },
