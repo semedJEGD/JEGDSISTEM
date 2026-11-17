@@ -61,6 +61,7 @@ export default function EscolaAtletasPage() {
   const [sexo, setSexo] = useState<Genero>('MASCULINO');
   const [documentoTipo, setDocumentoTipo] = useState<TipoDocumento>('RG');
   const [documentoNumero, setDocumentoNumero] = useState('');
+  const [semDocumento, setSemDocumento] = useState<boolean>(false);
   const [matricula, setMatricula] = useState('');
   const [serieTurma, setSerieTurma] = useState('7º Ano A');
   const [nomeMae, setNomeMae] = useState('');
@@ -81,11 +82,12 @@ export default function EscolaAtletasPage() {
     return JegdStorage.verificarDuplicidadeAtleta({
       nomeCompleto,
       dataNascimento,
-      documentoNumero,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero,
       matricula,
+      semDocumento,
       escolaIdAtual: escola.id
     });
-  }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula]);
+  }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento]);
 
   const listaProfessoresCadastrantes = React.useMemo(() => {
     const setProfs = new Set<string>();
@@ -146,7 +148,7 @@ export default function EscolaAtletasPage() {
     window.addEventListener('jegd-data-synced', handleSync);
 
     const interval = setInterval(() => {
-      JegdStorage.sincronizarComNuvem().catch(() => {});
+      JegdStorage.sincronizarComNuvem().catch(() => { });
     }, 60000);
 
     return () => {
@@ -160,6 +162,7 @@ export default function EscolaAtletasPage() {
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
+    setSemDocumento(false);
     setDocumentoTipo('RG');
     setDocumentoNumero('');
     const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(escola?.municipioId);
@@ -180,8 +183,10 @@ export default function EscolaAtletasPage() {
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
-    setDocumentoTipo(atleta.documentoTipo || 'RG');
-    setDocumentoNumero(atleta.documentoNumero || '');
+    const atletaSemDoc = Boolean(atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO');
+    setSemDocumento(atletaSemDoc);
+    setDocumentoTipo(atleta.documentoTipo || (atletaSemDoc ? 'SEM_DOCUMENTO' : 'RG'));
+    setDocumentoNumero(atletaSemDoc ? 'SEM DOCUMENTO' : (atleta.documentoNumero || ''));
     setMatricula(atleta.matricula);
     setSerieTurma(atleta.serieTurma);
     setNomeMae(atleta.nomeMae || '');
@@ -189,7 +194,7 @@ export default function EscolaAtletasPage() {
     setTipoSanguineo(atleta.tipoSanguineo || 'O+');
     setConsentimentoResponsavel(atleta.consentimentoResponsavel);
     setFotoBase64(atleta.documentos?.foto3x4);
-    
+
     const modsInsc = atleta.modalidadesInscritas?.map(m => m.modalidadeCodigo) || [];
     setModalidadesEscolhidas(modsInsc);
     const atletismoInsc = atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo');
@@ -216,8 +221,8 @@ export default function EscolaAtletasPage() {
   const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
 
   // Modalidades elegíveis para este aluno
-  const listaModalidadesBase = modalidades.length > 0 
-    ? modalidades 
+  const listaModalidadesBase = modalidades.length > 0
+    ? modalidades
     : (typeof window !== 'undefined' ? JegdStorage.getModalidades() : []);
 
   const modalidadesDisponiveis = listaModalidadesBase.filter(mod => {
@@ -258,8 +263,8 @@ export default function EscolaAtletasPage() {
   const handleSalvarAtleta = (cadastrarProximo: boolean = false) => {
     if (!escola) return;
 
-    if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
-      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+    if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
+      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque a opção "Aluno sem documentos").');
       return;
     }
 
@@ -310,8 +315,9 @@ export default function EscolaAtletasPage() {
       nomeCompleto: nomeCompleto.toUpperCase(),
       dataNascimento,
       sexo,
-      documentoTipo,
-      documentoNumero,
+      semDocumento,
+      documentoTipo: semDocumento ? 'SEM_DOCUMENTO' : documentoTipo,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero.trim(),
       matricula: codigoFinal,
       crachaToken: atletaEditando?.crachaToken || codigoFinal,
       serieTurma: serieTurma || '7º Ano (Fundamental)',
@@ -343,7 +349,7 @@ export default function EscolaAtletasPage() {
 
     try {
       confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-    } catch {}
+    } catch { }
 
     if (cadastrarProximo) {
       handleAbrirModalNovo();
@@ -370,10 +376,12 @@ export default function EscolaAtletasPage() {
 
   // Filtragem
   const atletasFiltrados = atletas.filter(atleta => {
+    const termo = busca.toLowerCase();
     const bateBusca =
-      atleta.nomeCompleto.toLowerCase().includes(busca.toLowerCase()) ||
-      atleta.documentoNumero.includes(busca) ||
-      atleta.matricula.toLowerCase().includes(busca.toLowerCase());
+      atleta.nomeCompleto.toLowerCase().includes(termo) ||
+      (atleta.documentoNumero && atleta.documentoNumero.toLowerCase().includes(termo)) ||
+      (Boolean(atleta.semDocumento) && (termo.includes('sem') || termo.includes('doc'))) ||
+      atleta.matricula.toLowerCase().includes(termo);
     const bateSexo = filtroSexo === 'TODOS' || atleta.sexo === filtroSexo;
     const bateCat = filtroCategoria === 'TODOS' || atleta.categoriaCalculada === filtroCategoria;
     const bateProfessor = filtroProfessor === 'TODOS' || atleta.cadastradoPor === filtroProfessor;
@@ -404,23 +412,21 @@ export default function EscolaAtletasPage() {
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
+
       {/* 1. BARRA DE PERFIL ATIVO (DIRETOR / PROFESSOR) */}
       <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-2xs ${
-            perfilAtivo?.tipo === 'DIRECAO' 
-              ? 'bg-[#00A878] text-white shadow-[#00A878]/30' 
-              : 'bg-indigo-600 text-white shadow-indigo-500/30'
-          }`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-2xs ${perfilAtivo?.tipo === 'DIRECAO'
+            ? 'bg-[#00A878] text-white shadow-[#00A878]/30'
+            : 'bg-indigo-600 text-white shadow-indigo-500/30'
+            }`}>
             {perfilAtivo?.tipo === 'DIRECAO' ? 'DIR' : 'PROF'}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-[#64748B] font-bold">Navegando no cadastro de atletas como:</span>
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                perfilAtivo?.tipo === 'DIRECAO' ? 'bg-emerald-100 text-[#087A5B]' : 'bg-indigo-100 text-indigo-700'
-              }`}>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${perfilAtivo?.tipo === 'DIRECAO' ? 'bg-emerald-100 text-[#087A5B]' : 'bg-indigo-100 text-indigo-700'
+                }`}>
                 {perfilAtivo?.tipo === 'DIRECAO' ? 'Direção / Coordenação' : 'Professor de Ed. Física'}
               </span>
             </div>
@@ -624,6 +630,8 @@ export default function EscolaAtletasPage() {
         setDataNascimento={setDataNascimento}
         sexo={sexo}
         setSexo={setSexo}
+        semDocumento={semDocumento}
+        setSemDocumento={setSemDocumento}
         documentoTipo={documentoTipo}
         setDocumentoTipo={setDocumentoTipo}
         documentoNumero={documentoNumero}

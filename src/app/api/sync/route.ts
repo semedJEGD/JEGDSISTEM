@@ -73,6 +73,7 @@ export async function GET(request: Request) {
         nomeCompleto: a.nomeCompleto,
         dataNascimento: dataNascStr,
         sexo: a.sexo,
+        semDocumento: Boolean(a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO'),
         documentoTipo: a.documentoTipo || 'RG',
         documentoNumero: a.documentoNumero,
         matricula: a.matricula || a.crachaToken || '',

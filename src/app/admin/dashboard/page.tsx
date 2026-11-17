@@ -125,6 +125,7 @@ export default function AdminDashboardPage() {
   const [sexo, setSexo] = useState<Genero>('MASCULINO');
   const [documentoTipo, setDocumentoTipo] = useState<TipoDocumento>('RG');
   const [documentoNumero, setDocumentoNumero] = useState('');
+  const [semDocumento, setSemDocumento] = useState(false);
   const [matricula, setMatricula] = useState('');
   const [serieTurma, setSerieTurma] = useState('7º Ano (Fundamental)');
   const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
@@ -653,11 +654,12 @@ export default function AdminDashboardPage() {
     return JegdStorage.verificarDuplicidadeAtleta({
       nomeCompleto,
       dataNascimento,
-      documentoNumero,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero,
       matricula,
+      semDocumento,
       escolaIdAtual: escolaSelecionada.id
     });
-  }, [atletaEditando, escolaSelecionada, nomeCompleto, dataNascimento, documentoNumero, matricula]);
+  }, [atletaEditando, escolaSelecionada, nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento]);
 
   const handleAbrirModalNovoAtleta = (esc?: Escola) => {
     const targetEsc = esc || escolaSelecionada;
@@ -666,6 +668,7 @@ export default function AdminDashboardPage() {
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
+    setSemDocumento(false);
     setDocumentoTipo('RG');
     setDocumentoNumero('');
     const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(targetEsc?.municipioId || municipioAtual?.id);
@@ -684,8 +687,10 @@ export default function AdminDashboardPage() {
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
-    setDocumentoTipo(atleta.documentoTipo || 'RG');
-    setDocumentoNumero(atleta.documentoNumero || '');
+    const atletaSemDoc = Boolean(atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO');
+    setSemDocumento(atletaSemDoc);
+    setDocumentoTipo(atleta.documentoTipo || (atletaSemDoc ? 'SEM_DOCUMENTO' : 'RG'));
+    setDocumentoNumero(atletaSemDoc ? 'SEM DOCUMENTO' : (atleta.documentoNumero || ''));
     setMatricula(atleta.matricula);
     setSerieTurma(atleta.serieTurma);
     setFotoBase64(atleta.documentos?.foto3x4);
@@ -703,8 +708,8 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
-      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+    if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
+      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque a opção "Aluno sem documentos").');
       return;
     }
 
@@ -749,8 +754,9 @@ export default function AdminDashboardPage() {
       nomeCompleto: nomeCompleto.toUpperCase(),
       dataNascimento,
       sexo,
-      documentoTipo,
-      documentoNumero,
+      semDocumento,
+      documentoTipo: semDocumento ? 'SEM_DOCUMENTO' : documentoTipo,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero.trim(),
       matricula: codigoFinal,
       crachaToken: atletaEditando?.crachaToken || codigoFinal,
       serieTurma: serieTurma || '7º Ano (Fundamental)',
@@ -1286,6 +1292,8 @@ export default function AdminDashboardPage() {
           setDataNascimento={setDataNascimento}
           sexo={sexo}
           setSexo={setSexo}
+          semDocumento={semDocumento}
+          setSemDocumento={setSemDocumento}
           documentoTipo={documentoTipo}
           setDocumentoTipo={setDocumentoTipo}
           documentoNumero={documentoNumero}

@@ -258,7 +258,9 @@ export class FichaInscricaoService {
       doc.text(dataNascStr, margin + 120, currentY + 4.5);
 
       // Documento
-      const docStr = `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
+      const docStr = (atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO')
+        ? 'SEM DOCUMENTO'
+        : `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
       doc.text(docStr.slice(0, 20), margin + 140, currentY + 4.5);
 
       // Matrícula / Série

@@ -38,7 +38,8 @@ import {
   InscricaoEquipe,
   CategoriaIdade,
   Genero,
-  ModalidadeCodigo
+  ModalidadeCodigo,
+  TipoDocumento
 } from '@/types/jegd';
 import {
   JegdsRulesService,
@@ -112,8 +113,9 @@ export default function EscolaInscricoesPage() {
   const [modalRapidoAberto, setModalRapidoAberto] = useState(false);
   const [rapidoNome, setRapidoNome] = useState('');
   const [rapidoDataNasc, setRapidoDataNasc] = useState('2013-05-10');
-  const [rapidoDocTipo, setRapidoDocTipo] = useState<'RG' | 'CERTIDAO'>('RG');
+  const [rapidoDocTipo, setRapidoDocTipo] = useState<TipoDocumento>('RG');
   const [rapidoDocNum, setRapidoDocNum] = useState('');
+  const [rapidoSemDoc, setRapidoSemDoc] = useState(false);
   const [rapidoSerie, setRapidoSerie] = useState('7º Ano A');
 
   // Helper oficial das Etapas
@@ -572,14 +574,15 @@ export default function EscolaInscricoesPage() {
 
     setRapidoDocTipo('RG');
     setRapidoDocNum('');
+    setRapidoSemDoc(false);
     setRapidoSerie('7º Ano A');
     setModalRapidoAberto(true);
   };
 
   const handleSalvarAlunoRapido = (adicionarMais: boolean = false) => {
     if (!escola || !modalidadeAtual) return;
-    if (!rapidoNome.trim() || !rapidoDataNasc || !rapidoDocNum.trim()) {
-      alert('Preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+    if (!rapidoNome.trim() || !rapidoDataNasc || (!rapidoSemDoc && !rapidoDocNum.trim())) {
+      alert('Preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque "Aluno sem documentos").');
       return;
     }
 
@@ -612,8 +615,9 @@ export default function EscolaInscricoesPage() {
       nomeCompleto: rapidoNome.trim().toUpperCase(),
       dataNascimento: rapidoDataNasc,
       sexo: sexoSel,
-      documentoTipo: rapidoDocTipo,
-      documentoNumero: rapidoDocNum.trim(),
+      semDocumento: rapidoSemDoc,
+      documentoTipo: rapidoSemDoc ? 'SEM_DOCUMENTO' : rapidoDocTipo,
+      documentoNumero: rapidoSemDoc ? 'SEM DOCUMENTO' : rapidoDocNum.trim(),
       matricula: codigoFinal,
       crachaToken: codigoFinal,
       serieTurma: rapidoSerie,
@@ -652,6 +656,7 @@ export default function EscolaInscricoesPage() {
     if (adicionarMais) {
       setRapidoNome('');
       setRapidoDocNum('');
+      setRapidoSemDoc(false);
     } else {
       setModalRapidoAberto(false);
     }
@@ -1193,8 +1198,15 @@ export default function EscolaInscricoesPage() {
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-sm font-bold text-[#17221D] truncate">{atleta.nomeCompleto}</p>
-                                  <p className="text-xs text-[#4B5563] mt-0.5 truncate">
-                                    Doc: {atleta.documentoTipo} {atleta.documentoNumero} • Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}
+                                  <p className="text-xs text-[#4B5563] mt-0.5 truncate flex items-center gap-1.5 flex-wrap">
+                                    {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                      <span className="font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
+                                        ⚠️ Sem Documento
+                                      </span>
+                                    ) : (
+                                      <span>Doc: {atleta.documentoTipo} {atleta.documentoNumero}</span>
+                                    )}
+                                    <span>• Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</span>
                                   </p>
                                 </div>
                               </div>
@@ -1606,31 +1618,67 @@ export default function EscolaInscricoesPage() {
                 </div>
               </div>
 
+              {/* Caixinha: Aluno sem Documento */}
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2.5">
+                <div>
+                  <label htmlFor="chk-rapido-semdoc" className="text-xs font-black text-amber-950 cursor-pointer block">
+                    Aluno sem documentos
+                  </label>
+                  <p className="text-[10px] text-amber-800 leading-tight">
+                    Marque caso o estudante ainda não possua RG/Certidão
+                  </p>
+                </div>
+                <input
+                  id="chk-rapido-semdoc"
+                  type="checkbox"
+                  checked={rapidoSemDoc}
+                  onChange={(e) => {
+                    const chk = e.target.checked;
+                    setRapidoSemDoc(chk);
+                    if (chk) {
+                      setRapidoDocTipo('SEM_DOCUMENTO');
+                      setRapidoDocNum('SEM DOCUMENTO');
+                    } else {
+                      setRapidoDocTipo('RG');
+                      setRapidoDocNum('');
+                    }
+                  }}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer accent-emerald-600"
+                />
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
-                    Documento
+                    Documento {!rapidoSemDoc && '*'}
                   </label>
                   <select
-                    value={rapidoDocTipo}
-                    onChange={(e) => setRapidoDocTipo(e.target.value as 'RG' | 'CERTIDAO')}
-                    className="w-full px-2.5 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none bg-white cursor-pointer"
+                    value={rapidoSemDoc ? 'SEM_DOCUMENTO' : rapidoDocTipo}
+                    disabled={rapidoSemDoc}
+                    onChange={(e) => setRapidoDocTipo(e.target.value as TipoDocumento)}
+                    className={`w-full px-2.5 py-2 rounded-xl border text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none cursor-pointer ${
+                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 opacity-80 cursor-not-allowed' : 'bg-white border-[#CBD5E1]'
+                    }`}
                   >
                     <option value="RG">RG</option>
                     <option value="CERTIDAO">Certidão</option>
+                    <option value="SEM_DOCUMENTO">Sem Doc</option>
                   </select>
                 </div>
 
                 <div className="col-span-2">
                   <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
-                    Número do Documento *
+                    Número do Documento {!rapidoSemDoc && '*'}
                   </label>
                   <input
                     type="text"
-                    value={rapidoDocNum}
+                    disabled={rapidoSemDoc}
+                    value={rapidoSemDoc ? 'SEM DOCUMENTO' : rapidoDocNum}
                     onChange={(e) => setRapidoDocNum(e.target.value)}
-                    placeholder="Ex: 05489721202"
-                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                    placeholder={rapidoSemDoc ? 'Aluno sem documentação' : 'Ex: 05489721202'}
+                    className={`w-full px-3 py-2 rounded-xl border text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none ${
+                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold cursor-not-allowed uppercase' : 'border-[#CBD5E1]'
+                    }`}
                   />
                 </div>
               </div>

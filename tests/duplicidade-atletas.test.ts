@@ -143,4 +143,52 @@ assert.deepStrictEqual(inscAtletismo?.provasPorAtleta?.['atl-joao-01'], ['75m', 
 
 console.log('✅ SUCESSO: Aluno vinculado com precisão a múltiplas equipes sem duplicação de cadastro (1 único ID e Crachá).');
 
+console.log('\n4. Testes de Alunos Sem Documentos:');
+// Aluno 1 sem documentos
+const atletaSemDoc1: Atleta = {
+  id: 'atl-semdoc-01',
+  escolaId: 'esc-anisio',
+  nomeCompleto: 'MATEUS ALMEIDA LIMA',
+  dataNascimento: '2012-08-20',
+  sexo: 'MASCULINO',
+  semDocumento: true,
+  documentoTipo: 'SEM_DOCUMENTO',
+  documentoNumero: 'SEM DOCUMENTO',
+  matricula: 'MAT-2026-002',
+  serieTurma: '7º Ano B',
+  telefoneContato: '(99) 98800-2222',
+  consentimentoResponsavel: true,
+  categoriaCalculada: 'INFANTIL',
+  ativo: true,
+  documentos: {},
+  createdAt: new Date().toISOString()
+};
+JegdStorage.saveAtleta(atletaSemDoc1);
+
+// Aluno 2 sem documentos (outro nome e nascimento) não deve conflitar
+const checkSemDocOutro = JegdsRulesService.compararDuplicidade(
+  {
+    nomeCompleto: 'GABRIEL NUNES PEREIRA',
+    dataNascimento: '2012-10-15',
+    documentoNumero: 'SEM DOCUMENTO',
+    semDocumento: true
+  },
+  atletaSemDoc1
+);
+assert(!checkSemDocOutro.duplicado, 'Alunos diferentes sem documento não podem ser considerados duplicados');
+console.log('✅ SUCESSO: Alunos distintos com opção "Aluno sem documentos" não geram falso positivo de duplicidade.');
+
+// Tentativa de cadastrar o mesmo aluno sem documentos (mesmo nome + nascimento) deve detectar duplicidade
+const checkSemDocMesmo = JegdsRulesService.compararDuplicidade(
+  {
+    nomeCompleto: 'mateus almeida lima',
+    dataNascimento: '2012-08-20',
+    documentoNumero: 'SEM DOCUMENTO',
+    semDocumento: true
+  },
+  atletaSemDoc1
+);
+assert(checkSemDocMesmo.duplicado && checkSemDocMesmo.motivo === 'NOME_DATA_NASC', 'Deve detectar duplicidade de aluno sem documento por Nome + Data Nasc');
+console.log('✅ SUCESSO: Aluno sem documentos é protegido contra duplicidade por Nome Completo e Data de Nascimento.');
+
 console.log('\n🎉 TODOS OS TESTES DE AUDITORIA DE DUPLICIDADE E MULTI-INSCRIÇÃO FORAM APROVADOS COM 100% DE SUCESSO!\n');

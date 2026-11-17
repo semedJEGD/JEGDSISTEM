@@ -119,8 +119,9 @@ export function AbaEscolasLote({
         const termo = buscaAluno.toLowerCase();
         const matchNome = a.nomeCompleto.toLowerCase().includes(termo);
         const matchDoc = a.documentoNumero?.toLowerCase().includes(termo);
+        const matchSemDoc = Boolean(a.semDocumento) && (termo.includes('sem') || termo.includes('doc'));
         const matchMat = a.matricula?.toLowerCase().includes(termo);
-        if (!matchNome && !matchDoc && !matchMat) return false;
+        if (!matchNome && !matchDoc && !matchSemDoc && !matchMat) return false;
       }
       if (filtroCategoriaLote !== 'TODAS' && a.categoriaCalculada !== filtroCategoriaLote) return false;
       if (filtroSexoLote !== 'TODOS' && a.sexo !== filtroSexoLote) return false;
@@ -588,7 +589,13 @@ export function AbaEscolasLote({
                                       )}
                                     </div>
                                     <p className="text-[10px] text-[#64748B] mt-0.5 truncate">
-                                      {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'} • DOC: {atleta.documentoNumero}
+                                      {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'} • {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                        <span className="font-bold text-amber-800 bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
+                                          ⚠️ Sem Documento
+                                        </span>
+                                      ) : (
+                                        <span>DOC: {atleta.documentoNumero}</span>
+                                      )}
                                     </p>
                                     {modalidade.codigo === 'atletismo' && (
                                       <div className="flex flex-wrap gap-1 mt-1">
@@ -699,7 +706,13 @@ export function AbaEscolasLote({
                             </td>
 
                             <td className="p-3 text-[#17221D]">
-                              <strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}
+                              {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300 text-[10px]">
+                                  ⚠️ Sem Documento
+                                </span>
+                              ) : (
+                                <><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</>
+                              )}
                             </td>
 
                             <td className="p-3">

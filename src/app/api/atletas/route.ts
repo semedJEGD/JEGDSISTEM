@@ -78,14 +78,19 @@ export async function POST(request: Request) {
       if (esc) municipioId = esc.municipioId;
     }
 
+    const isSemDoc = Boolean(body.semDocumento || body.documentoTipo === 'SEM_DOCUMENTO');
+    const docTipoFinal = isSemDoc ? 'SEM_DOCUMENTO' : (body.documentoTipo || 'RG');
+    const docNumeroFinal = isSemDoc ? (body.documentoNumero || 'SEM DOCUMENTO') : (body.documentoNumero || 'SEM DOCUMENTO');
+
     const atleta = await prisma.atleta.upsert({
       where: { id: body.id || `atl-${Date.now()}` },
       update: {
         nomeCompleto: body.nomeCompleto,
         dataNascimento,
         sexo: body.sexo,
-        documentoTipo: body.documentoTipo || 'RG',
-        documentoNumero: body.documentoNumero,
+        semDocumento: isSemDoc,
+        documentoTipo: docTipoFinal,
+        documentoNumero: docNumeroFinal,
         crachaToken: body.crachaToken,
         matricula: body.matricula,
         turma: body.serieTurma || body.turma,
@@ -102,8 +107,9 @@ export async function POST(request: Request) {
         nomeCompleto: body.nomeCompleto,
         dataNascimento,
         sexo: body.sexo,
-        documentoTipo: body.documentoTipo || 'RG',
-        documentoNumero: body.documentoNumero,
+        semDocumento: isSemDoc,
+        documentoTipo: docTipoFinal,
+        documentoNumero: docNumeroFinal,
         crachaToken: body.crachaToken,
         matricula: body.matricula,
         turma: body.serieTurma || body.turma,
@@ -228,7 +234,7 @@ export async function DELETE(request: Request) {
       whereOr.push({ matricula });
       whereOr.push({ crachaToken: matricula });
     }
-    if (documento) {
+    if (documento && documento.toUpperCase() !== 'SEM DOCUMENTO' && documento.toUpperCase() !== 'SEM DOC') {
       whereOr.push({ documentoNumero: documento });
     }
 

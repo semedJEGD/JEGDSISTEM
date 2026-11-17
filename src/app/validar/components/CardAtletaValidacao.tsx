@@ -45,7 +45,7 @@ export function CardAtletaValidacao({
     <div className="space-y-6">
       {/* CARD DO ATLETA ENCONTRADO */}
       <div className="bg-white border-2 border-[#00A878] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm space-y-6 relative overflow-hidden">
-        
+
         {/* Badge de Status Topo */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2EAE5] pb-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E8F7F1] text-[#087A5B] text-xs font-black border border-[#00A878]/30">
@@ -102,7 +102,13 @@ export function CardAtletaValidacao({
                 Escola: <strong className="text-[#17221D]">{escolaAtleta?.nome} ({escolaAtleta?.sigla})</strong>
               </p>
               <p>
-                Documento: <strong className="text-[#17221D]">{atletaEncontrado.documentoTipo} {atletaEncontrado.documentoNumero}</strong>
+                Documento: {atletaEncontrado.semDocumento || atletaEncontrado.documentoTipo === 'SEM_DOCUMENTO' ? (
+                  <strong className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
+                    ⚠️ Aluno sem Documento
+                  </strong>
+                ) : (
+                  <strong className="text-[#17221D]">{atletaEncontrado.documentoTipo} {atletaEncontrado.documentoNumero}</strong>
+                )}
               </p>
               <p>
                 Série / Turma: <strong className="text-[#17221D]">{atletaEncontrado.serieTurma}</strong>

@@ -182,7 +182,9 @@ export class CrachaDobravelService {
     const dataNasc = new Date(atleta.dataNascimento).toLocaleDateString('pt-BR');
     doc.text(dataNasc, x + 3.5, y + 64.5);
 
-    const docStr = `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
+    const docStr = (atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO')
+      ? 'S/ DOCUMENTO'
+      : `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
     doc.setFontSize(4.0);
     doc.text(docStr.slice(0, 16), x + 25, y + 64.5);
 

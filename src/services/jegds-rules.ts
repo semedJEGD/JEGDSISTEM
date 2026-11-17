@@ -427,14 +427,28 @@ export class JegdsRulesService {
    * Avalia duplicidade de cadastro de estudante entre atletas cadastrados
    */
   public static compararDuplicidade(
-    novo: { nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string },
-    existente: { id: string; nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; escolaId: string }
+    novo: { nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; semDocumento?: boolean },
+    existente: { id: string; nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; escolaId: string; semDocumento?: boolean }
   ): { duplicado: boolean; motivo?: 'DOCUMENTO' | 'NOME_DATA_NASC' | 'MATRICULA'; descricao?: string } {
+    const isDocSemDoc = (doc?: string, semDoc?: boolean) => {
+      if (semDoc) return true;
+      if (!doc) return true;
+      const clean = doc.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().trim();
+      return !clean || clean === 'semdocumento' || clean === 'semdoc' || clean === 'pendente' || clean === 'naoinformado';
+    };
+
     const docNovo = this.normalizarDocumento(novo.documentoNumero || '');
     const docExistente = this.normalizarDocumento(existente.documentoNumero || '');
 
-    // 1. Coincidência estrita por Documento (RG / CPF / Certidão)
-    if (docNovo && docExistente && docNovo.length >= 4 && docNovo === docExistente) {
+    // 1. Coincidência estrita por Documento (RG / CPF / Certidão) — ignorando alunos declarados sem documento
+    if (
+      !isDocSemDoc(novo.documentoNumero, novo.semDocumento) &&
+      !isDocSemDoc(existente.documentoNumero, existente.semDocumento) &&
+      docNovo &&
+      docExistente &&
+      docNovo.length >= 4 &&
+      docNovo === docExistente
+    ) {
       return {
         duplicado: true,
         motivo: 'DOCUMENTO',

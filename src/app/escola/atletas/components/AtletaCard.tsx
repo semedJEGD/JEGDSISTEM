@@ -35,9 +35,17 @@ export function AtletaCard({
               <h3 className="text-base font-black text-[#17221D] leading-snug">
                 {atleta.nomeCompleto}
               </h3>
-              <p className="text-xs text-[#4B5563] mt-0.5 font-medium">
-                {atleta.documentoTipo}: <strong className="text-[#17221D]">{atleta.documentoNumero}</strong>
-              </p>
+              <div className="mt-0.5">
+                {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300 font-bold text-[11px]">
+                    ⚠️ Sem Documento
+                  </span>
+                ) : (
+                  <p className="text-xs text-[#4B5563] font-medium">
+                    {atleta.documentoTipo}: <strong className="text-[#17221D]">{atleta.documentoNumero}</strong>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

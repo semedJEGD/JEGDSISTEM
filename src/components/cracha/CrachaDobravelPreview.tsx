@@ -107,7 +107,11 @@ export function CrachaDobravelPreview({
             </div>
             <div>
               <span className="text-[5.0px] font-bold text-slate-400 uppercase block">DOCUMENTO</span>
-              <span className="text-[6.5px] font-black text-slate-800 truncate block">{atleta.documentoTipo}: {atleta.documentoNumero}</span>
+              <span className="text-[6.5px] font-black text-slate-800 truncate block">
+                {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO'
+                  ? 'SEM DOCUMENTO'
+                  : `${atleta.documentoTipo}: ${atleta.documentoNumero}`}
+              </span>
             </div>
           </div>
         </div>

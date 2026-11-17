@@ -2,7 +2,7 @@ export type CategoriaIdade = 'MIRIM' | 'INFANTIL' | 'INFANTO' | 'JUNIOR';
 
 export type Genero = 'MASCULINO' | 'FEMININO';
 
-export type TipoDocumento = 'RG' | 'CERTIDAO';
+export type TipoDocumento = 'RG' | 'CERTIDAO' | 'SEM_DOCUMENTO';
 
 export type RedeEscolar = 'MUNICIPAL' | 'ESTADUAL' | 'PARTICULAR' | 'FEDERAL';
 
@@ -106,6 +106,7 @@ export interface Usuario {
 }
 
 export interface DocumentosAluno {
+  semDocumento?: boolean;
   foto3x4?: string; // Data URL / Base64
   documentoIdentidade?: string; // RG ou Certidão
   comprovanteMatricula?: string;
@@ -119,6 +120,7 @@ export interface Atleta {
   nomeCompleto: string;
   dataNascimento: string; // YYYY-MM-DD
   sexo: Genero;
+  semDocumento?: boolean;
   documentoTipo: TipoDocumento;
   documentoNumero: string;
   matricula: string;

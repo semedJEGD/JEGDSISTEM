@@ -94,6 +94,7 @@ export default function EscolaDashboardPage() {
   const [sexo, setSexo] = useState<Genero>('MASCULINO');
   const [documentoTipo, setDocumentoTipo] = useState<TipoDocumento>('RG');
   const [documentoNumero, setDocumentoNumero] = useState('');
+  const [semDocumento, setSemDocumento] = useState(false);
   const [matricula, setMatricula] = useState('');
   const [serieTurma, setSerieTurma] = useState('7º Ano A');
   const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
@@ -136,7 +137,7 @@ export default function EscolaDashboardPage() {
     window.addEventListener('jegd-data-synced', handleSync);
 
     const interval = setInterval(() => {
-      JegdStorage.sincronizarComNuvem().catch(() => {});
+      JegdStorage.sincronizarComNuvem().catch(() => { });
     }, 60000);
 
     return () => {
@@ -224,17 +225,19 @@ export default function EscolaDashboardPage() {
     return JegdStorage.verificarDuplicidadeAtleta({
       nomeCompleto,
       dataNascimento,
-      documentoNumero,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero,
       matricula,
+      semDocumento,
       escolaIdAtual: escola.id
     });
-  }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula]);
+  }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento]);
 
   const handleAbrirModalNovoAtleta = () => {
     setAtletaEditando(null);
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
+    setSemDocumento(false);
     setDocumentoTipo('RG');
     setDocumentoNumero('');
     const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(escola?.municipioId);
@@ -251,8 +254,10 @@ export default function EscolaDashboardPage() {
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
-    setDocumentoTipo(atleta.documentoTipo || 'RG');
-    setDocumentoNumero(atleta.documentoNumero || '');
+    const atletaSemDoc = Boolean(atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO');
+    setSemDocumento(atletaSemDoc);
+    setDocumentoTipo(atleta.documentoTipo || (atletaSemDoc ? 'SEM_DOCUMENTO' : 'RG'));
+    setDocumentoNumero(atletaSemDoc ? 'SEM DOCUMENTO' : (atleta.documentoNumero || ''));
     setMatricula(atleta.matricula);
     setSerieTurma(atleta.serieTurma);
     setFotoBase64(atleta.documentos?.foto3x4);
@@ -266,8 +271,8 @@ export default function EscolaDashboardPage() {
   const handleSalvarAtleta = (continuar: boolean = false) => {
     if (!escola) return;
 
-    if (!nomeCompleto.trim() || !dataNascimento || !documentoNumero.trim()) {
-      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante.');
+    if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
+      alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque a opção "Aluno sem documentos").');
       return;
     }
 
@@ -308,8 +313,9 @@ export default function EscolaDashboardPage() {
       nomeCompleto: nomeCompleto.toUpperCase(),
       dataNascimento,
       sexo,
-      documentoTipo,
-      documentoNumero,
+      semDocumento,
+      documentoTipo: semDocumento ? 'SEM_DOCUMENTO' : documentoTipo,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero.trim(),
       matricula: codigoFinal,
       crachaToken: atletaEditando?.crachaToken || codigoFinal,
       serieTurma: serieTurma || '7º Ano A',
@@ -339,7 +345,7 @@ export default function EscolaDashboardPage() {
 
     try {
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-    } catch {}
+    } catch { }
 
     if (continuar) {
       handleAbrirModalNovoAtleta();
@@ -464,7 +470,7 @@ export default function EscolaDashboardPage() {
       const modalidadesCompletas = modalidades.map(mod => {
         const inscsMod = inscricoesEscola.filter(
           i => i.modalidadeCodigo?.toLowerCase() === mod.codigo.toLowerCase() ||
-               i.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
+            i.modalidadeNome?.toLowerCase().includes(mod.nome.toLowerCase())
         );
 
         const categoriasData = inscsMod.map(insc => {
@@ -561,7 +567,7 @@ export default function EscolaDashboardPage() {
     if (novoStatus === 'VALIDADA') {
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-      } catch {}
+      } catch { }
       alert(`✅ Equipe "${insc.nomeEquipe || insc.modalidadeNome}" validada com sucesso por ${autor}!`);
     } else {
       alert(`Equipe "${insc.nomeEquipe || insc.modalidadeNome}" reaberta para edições.`);
@@ -628,8 +634,9 @@ export default function EscolaDashboardPage() {
         const termo = buscaAluno.toLowerCase();
         const matchNome = a.nomeCompleto.toLowerCase().includes(termo);
         const matchDoc = a.documentoNumero?.toLowerCase().includes(termo);
+        const matchSemDoc = Boolean(a.semDocumento) && (termo.includes('sem') || termo.includes('doc'));
         const matchMat = a.matricula?.toLowerCase().includes(termo);
-        if (!matchNome && !matchDoc && !matchMat) return false;
+        if (!matchNome && !matchDoc && !matchSemDoc && !matchMat) return false;
       }
       if (filtroCategoria !== 'TODAS' && a.categoriaCalculada !== filtroCategoria) return false;
       if (filtroSexo !== 'TODOS' && a.sexo !== filtroSexo) return false;
@@ -650,11 +657,11 @@ export default function EscolaDashboardPage() {
 
   return (
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 w-full">
-      
+
       {/* ================= TOP BAR COMPACTO E MODERNO ================= */}
       <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          
+
           {/* Identificação da Escola e Perfil Ativo */}
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-800 font-black text-sm shadow-2xs shrink-0">
@@ -684,7 +691,7 @@ export default function EscolaDashboardPage() {
 
           {/* Status Online e Ações Rápidas do Topo */}
           <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto justify-end">
-            
+
             {/* Trocar Perfil */}
             <button
               type="button"
@@ -737,12 +744,11 @@ export default function EscolaDashboardPage() {
 
       {/* ================= FAIXA COMPACTA DE MÉTRICAS (1 LINHA) ================= */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        
+
         <div
           onClick={() => setAbaAtiva('ALUNOS')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${
-            abaAtiva === 'ALUNOS' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
-          }`}
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'ALUNOS' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+            }`}
         >
           <div>
             <span className="text-[10px] font-black uppercase text-[#64748B]">Alunos</span>
@@ -753,9 +759,8 @@ export default function EscolaDashboardPage() {
 
         <div
           onClick={() => setAbaAtiva('EQUIPES')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${
-            abaAtiva === 'EQUIPES' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
-          }`}
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'EQUIPES' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+            }`}
         >
           <div>
             <span className="text-[10px] font-black uppercase text-[#64748B]">Equipes</span>
@@ -766,9 +771,8 @@ export default function EscolaDashboardPage() {
 
         <div
           onClick={() => setAbaAtiva('COMISSAO')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${
-            abaAtiva === 'COMISSAO' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
-          }`}
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'COMISSAO' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+            }`}
         >
           <div>
             <span className="text-[10px] font-black uppercase text-[#64748B]">Comissão</span>
@@ -790,9 +794,8 @@ export default function EscolaDashboardPage() {
 
         <div
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 cursor-pointer transition-all ${
-            homologacao.homologado ? 'border-emerald-300 bg-emerald-50/30' : 'border-amber-300 bg-amber-50/30'
-          }`}
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 cursor-pointer transition-all ${homologacao.homologado ? 'border-emerald-300 bg-emerald-50/30' : 'border-amber-300 bg-amber-50/30'
+            }`}
           title="Status de homologação da direção da escola"
         >
           <div>
@@ -815,11 +818,10 @@ export default function EscolaDashboardPage() {
       <div className="flex items-center gap-1.5 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ALUNOS')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            abaAtiva === 'ALUNOS'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'ALUNOS'
+            ? 'bg-[#00A878] text-white shadow-2xs font-black'
+            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+            }`}
         >
           <Users className="w-4 h-4" />
           <span>Alunos & Inscrições ({atletas.length})</span>
@@ -827,11 +829,10 @@ export default function EscolaDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('EQUIPES')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            abaAtiva === 'EQUIPES'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'EQUIPES'
+            ? 'bg-[#00A878] text-white shadow-2xs font-black'
+            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+            }`}
         >
           <Trophy className="w-4 h-4" />
           <span>Equipes em Disputa ({inscricoes.length})</span>
@@ -839,28 +840,25 @@ export default function EscolaDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            abaAtiva === 'HOMOLOGACAO'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'HOMOLOGACAO'
+            ? 'bg-[#00A878] text-white shadow-2xs font-black'
+            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+            }`}
         >
           <ShieldCheck className="w-4 h-4" />
           <span>Homologação da Direção</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-            homologacao.homologado ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-400 text-slate-950'
-          }`}>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${homologacao.homologado ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-400 text-slate-950'
+            }`}>
             {homologacao.homologado ? 'OK' : 'Pendente'}
           </span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('COMISSAO')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            abaAtiva === 'COMISSAO'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
-          }`}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'COMISSAO'
+            ? 'bg-[#00A878] text-white shadow-2xs font-black'
+            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+            }`}
         >
           <GraduationCap className="w-4 h-4" />
           <span>Comissão Técnica ({comissao.length})</span>
@@ -870,10 +868,10 @@ export default function EscolaDashboardPage() {
       {/* ================= ABA 1: ALUNOS & INSCRIÇÕES ================= */}
       {abaAtiva === 'ALUNOS' && (
         <div className="bg-white border border-[#E2EAE5] rounded-2xl shadow-xs overflow-hidden space-y-4">
-          
+
           {/* Barra de Filtros e Ações de Alunos */}
           <div className="p-4 border-b border-[#E2EAE5] bg-[#F7F9F8] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            
+
             {/* Campo de Busca */}
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-3" />
@@ -952,9 +950,8 @@ export default function EscolaDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setModoVisualizacao('CARDS')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    modoVisualizacao === 'CARDS' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all ${modoVisualizacao === 'CARDS' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
+                    }`}
                   title="Visualização em Cards"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
@@ -962,9 +959,8 @@ export default function EscolaDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setModoVisualizacao('TABELA')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    modoVisualizacao === 'TABELA' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all ${modoVisualizacao === 'TABELA' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
+                    }`}
                   title="Visualização em Tabela"
                 >
                   <List className="w-3.5 h-3.5" />
@@ -1012,8 +1008,16 @@ export default function EscolaDashboardPage() {
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-[#64748B]">
-                        Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')} • {atleta.documentoTipo}: {atleta.documentoNumero}
+                      <p className="text-[11px] text-[#64748B] flex items-center gap-1.5 flex-wrap">
+                        <span>Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</span>
+                        <span>•</span>
+                        {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                          <span className="font-black text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
+                            ⚠️ Sem Documento
+                          </span>
+                        ) : (
+                          <span>{atleta.documentoTipo}: {atleta.documentoNumero}</span>
+                        )}
                       </p>
 
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -1088,7 +1092,15 @@ export default function EscolaDashboardPage() {
                             {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}
                           </span>
                         </td>
-                        <td className="p-3"><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</td>
+                        <td className="p-3">
+                          {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                            <span className="inline-flex items-center gap-1 font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300 text-[10px]">
+                              ⚠️ Sem Documento
+                            </span>
+                          ) : (
+                            <><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</>
+                          )}
+                        </td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-1">
                             {atleta.modalidadesInscritas?.map((m, idx) => (
@@ -1185,11 +1197,10 @@ export default function EscolaDashboardPage() {
                 return (
                   <div
                     key={insc.id}
-                    className={`p-4 rounded-xl border transition-all shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 ${
-                      excedeLimite
-                        ? 'bg-rose-50/40 border-rose-300'
-                        : 'bg-[#F7F9F8] border-[#E2EAE5] hover:border-[#00A878]/50 hover:bg-white'
-                    }`}
+                    className={`p-4 rounded-xl border transition-all shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 ${excedeLimite
+                      ? 'bg-rose-50/40 border-rose-300'
+                      : 'bg-[#F7F9F8] border-[#E2EAE5] hover:border-[#00A878]/50 hover:bg-white'
+                      }`}
                   >
                     <div className="space-y-1.5 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1198,13 +1209,12 @@ export default function EscolaDashboardPage() {
                           {insc.categoria} • {insc.sexo}
                         </span>
 
-                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black border ${
-                          insc.status === 'VALIDADA'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                            : insc.status === 'REJEITADA'
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black border ${insc.status === 'VALIDADA'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : insc.status === 'REJEITADA'
                             ? 'bg-rose-50 text-rose-700 border-rose-200'
                             : 'bg-amber-50 text-amber-800 border-amber-300'
-                        }`}>
+                          }`}>
                           {insc.status === 'VALIDADA' ? 'HOMOLOGADA' : insc.status === 'REJEITADA' ? 'REJEITADA' : 'EM ANÁLISE'}
                         </span>
                       </div>
@@ -1237,19 +1247,18 @@ export default function EscolaDashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleValidarEquipe(insc)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs transition-all ${
-                          insc.status === 'VALIDADA'
-                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
-                            : (excedeLimite || abaixoMinimo)
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs transition-all ${insc.status === 'VALIDADA'
+                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
+                          : (excedeLimite || abaixoMinimo)
                             ? 'bg-amber-500 hover:bg-amber-600 text-white'
                             : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        }`}
+                          }`}
                         title={
                           insc.status === 'VALIDADA'
                             ? 'Equipe validada pela escola. Clique para reabrir.'
                             : (excedeLimite || abaixoMinimo)
-                            ? 'Equipe irregular (excede limite). Clique para instruções.'
-                            : 'Validar e homologar esta equipe'
+                              ? 'Equipe irregular (excede limite). Clique para instruções.'
+                              : 'Validar e homologar esta equipe'
                         }
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
@@ -1305,16 +1314,14 @@ export default function EscolaDashboardPage() {
       {abaAtiva === 'HOMOLOGACAO' && (
         <div className="bg-white border border-[#E2EAE5] rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
           <div className="flex items-start gap-3.5 pb-4 border-b border-[#E2EAE5]">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-              homologacao.homologado ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-            }`}>
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${homologacao.homologado ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              }`}>
               {homologacao.homologado ? <ShieldCheck className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                  homologacao.homologado ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
-                }`}>
+                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${homologacao.homologado ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                  }`}>
                   {homologacao.homologado ? 'Homologação Concluída' : 'Aguardando Homologação da Direção'}
                 </span>
                 <span className="text-xs text-[#64748B] font-bold">
@@ -1454,6 +1461,8 @@ export default function EscolaDashboardPage() {
         setDataNascimento={setDataNascimento}
         sexo={sexo}
         setSexo={setSexo}
+        semDocumento={semDocumento}
+        setSemDocumento={setSemDocumento}
         documentoTipo={documentoTipo}
         setDocumentoTipo={setDocumentoTipo}
         documentoNumero={documentoNumero}

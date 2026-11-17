@@ -239,7 +239,7 @@ export class JegdStorage {
           const isDeleted = deletedIds.includes(a.id) ||
             (a.matricula && deletedIds.includes(a.matricula)) ||
             (a.crachaToken && deletedIds.includes(a.crachaToken)) ||
-            (a.documentoNumero && deletedIds.includes(a.documentoNumero));
+            (a.documentoNumero && a.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(a.documentoNumero));
 
           if (isDeleted) {
             JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
@@ -259,7 +259,7 @@ export class JegdStorage {
           const isLocalDeleted = deletedIds.includes(localAtl.id) ||
             (localAtl.matricula && deletedIds.includes(localAtl.matricula)) ||
             (localAtl.crachaToken && deletedIds.includes(localAtl.crachaToken)) ||
-            (localAtl.documentoNumero && deletedIds.includes(localAtl.documentoNumero));
+            (localAtl.documentoNumero && localAtl.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(localAtl.documentoNumero));
 
           if (
             isLocalDeleted ||
@@ -749,6 +749,7 @@ export class JegdStorage {
     dataNascimento: string;
     documentoNumero?: string;
     matricula?: string;
+    semDocumento?: boolean;
     escolaIdAtual: string;
     atletaIdIgnorado?: string;
   }): {
@@ -776,7 +777,8 @@ export class JegdStorage {
           nomeCompleto: params.nomeCompleto,
           dataNascimento: params.dataNascimento,
           documentoNumero: params.documentoNumero,
-          matricula: params.matricula
+          matricula: params.matricula,
+          semDocumento: params.semDocumento
         },
         atl
       );
@@ -823,7 +825,8 @@ export class JegdStorage {
     try {
       const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
       const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
-      const novosIds = [id, idReal, matriculaReal, crachaReal, docReal].filter((v): v is string => Boolean(v && v.trim()));
+      const docValidoParaTomb = docReal && docReal.trim().toUpperCase() !== 'SEM DOCUMENTO' && docReal.trim().toUpperCase() !== 'SEM DOC' ? docReal : null;
+      const novosIds = [id, idReal, matriculaReal, crachaReal, docValidoParaTomb].filter((v): v is string => Boolean(v && v.trim()));
       let mudouTomb = false;
       for (const nid of novosIds) {
         if (!deletedIds.includes(nid)) {
@@ -841,7 +844,7 @@ export class JegdStorage {
       a.id !== id &&
       a.id !== idReal &&
       (!matriculaReal || a.matricula !== matriculaReal) &&
-      (!docReal || a.documentoNumero !== docReal)
+      (!docReal || docReal.toUpperCase() === 'SEM DOCUMENTO' || a.documentoNumero !== docReal)
     );
     localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(updated));
 

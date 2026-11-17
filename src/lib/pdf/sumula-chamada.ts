@@ -221,11 +221,15 @@ export class SumulaChamadaService {
           cabecalhoTabela();
         }
 
+        const docExibicao = (item.atleta.semDocumento || item.atleta.documentoTipo === 'SEM_DOCUMENTO' || item.atleta.documentoNumero === 'SEM DOCUMENTO')
+          ? 'SEM DOC'
+          : (item.atleta.documentoNumero || 'SEM DOC');
+
         renderRow(
           index,
           item.atleta.nomeCompleto.toUpperCase(),
           item.escola.sigla || item.escola.nome,
-          item.atleta.documentoNumero
+          docExibicao
         );
       });
 

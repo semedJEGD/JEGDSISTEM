@@ -15,7 +15,8 @@ import {
   UserCheck,
   CheckCircle2,
   Calendar,
-  Layers
+  Layers,
+  FileQuestion
 } from 'lucide-react';
 import { Atleta, Genero, TipoDocumento, ModalidadeConfig, ModalidadeCodigo, CategoriaIdade, Escola, OPCOES_SERIE_TURMA } from '@/types/jegd';
 import { JegdStorage } from '@/lib/storage';
@@ -40,6 +41,8 @@ interface ModalCadastroAtletaProps {
   setDataNascimento: (val: string) => void;
   sexo: Genero;
   setSexo: (val: Genero) => void;
+  semDocumento?: boolean;
+  setSemDocumento?: (val: boolean) => void;
   documentoTipo: TipoDocumento;
   setDocumentoTipo: (val: TipoDocumento) => void;
   documentoNumero: string;
@@ -74,6 +77,8 @@ export function ModalCadastroAtleta({
   setDataNascimento,
   sexo,
   setSexo,
+  semDocumento,
+  setSemDocumento,
   documentoTipo,
   setDocumentoTipo,
   documentoNumero,
@@ -96,6 +101,24 @@ export function ModalCadastroAtleta({
   diagnosticoDuplicidade,
   onCarregarAtletaDuplicado
 }: ModalCadastroAtletaProps) {
+  const [internalSemDoc, setInternalSemDoc] = React.useState(false);
+  const semDocAtivo = semDocumento !== undefined ? semDocumento : internalSemDoc;
+
+  const handleToggleSemDoc = (checked: boolean) => {
+    if (setSemDocumento) {
+      setSemDocumento(checked);
+    } else {
+      setInternalSemDoc(checked);
+    }
+    if (checked) {
+      setDocumentoTipo('SEM_DOCUMENTO');
+      setDocumentoNumero('SEM DOCUMENTO');
+    } else {
+      setDocumentoTipo('RG');
+      setDocumentoNumero('');
+    }
+  };
+
   if (!isOpen) return null;
 
   const bloqueadoPorOutraEscola = diagnosticoDuplicidade?.duplicado && diagnosticoDuplicidade.tipoConflito === 'OUTRA_ESCOLA';
@@ -243,33 +266,71 @@ export function ModalCadastroAtleta({
                 </div>
               </div>
 
+              {/* Opção Caixinha: Aluno sem Documentos */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                    <FileQuestion className="w-4 h-4 text-amber-700" />
+                  </div>
+                  <div>
+                    <label htmlFor="chk-sem-documento" className="text-xs font-black text-[#17221D] cursor-pointer flex items-center gap-1.5">
+                      <span>Aluno sem documentos</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 uppercase">
+                        Exceção JEGDS
+                      </span>
+                    </label>
+                    <p className="text-[10.5px] text-amber-800 leading-tight mt-0.5">
+                      Marque esta caixinha se o aluno ainda não possui RG ou Certidão. Ele será aceito e sinalizado nas súmulas.
+                    </p>
+                  </div>
+                </div>
+                <input
+                  id="chk-sem-documento"
+                  type="checkbox"
+                  checked={semDocAtivo}
+                  onChange={(e) => handleToggleSemDoc(e.target.checked)}
+                  className="w-5 h-5 rounded text-[#00A878] focus:ring-[#00A878] border-[#CBD5E1] cursor-pointer accent-[#00A878] shrink-0"
+                />
+              </div>
+
               {/* Documento (Tipo e Número) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1">
                   <label className="block text-xs font-bold text-[#17221D] mb-1">
-                    Documento *
+                    Documento {!semDocAtivo && '*'}
                   </label>
                   <select
-                    value={documentoTipo}
+                    value={semDocAtivo ? 'SEM_DOCUMENTO' : documentoTipo}
+                    disabled={semDocAtivo}
                     onChange={(e) => setDocumentoTipo(e.target.value as TipoDocumento)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors cursor-pointer"
+                    className={`w-full px-3 py-2.5 rounded-xl border text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] transition-colors cursor-pointer ${
+                      semDocAtivo
+                        ? 'bg-amber-50/60 border-amber-300 text-amber-900 cursor-not-allowed opacity-90'
+                        : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] focus:bg-white'
+                    }`}
                   >
                     <option value="RG">RG</option>
                     <option value="CERTIDAO">Certidão</option>
+                    <option value="SEM_DOCUMENTO">Sem Documento</option>
                   </select>
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-[#17221D] mb-1">
-                    Número do Documento *
+                    Número do Documento {!semDocAtivo && '*'}
                   </label>
                   <input
                     type="text"
-                    required
-                    value={documentoNumero}
+                    required={!semDocAtivo}
+                    disabled={semDocAtivo}
+                    value={semDocAtivo ? 'SEM DOCUMENTO' : documentoNumero}
                     onChange={(e) => setDocumentoNumero(e.target.value)}
-                    placeholder="Ex: 0001234567-8"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    placeholder={semDocAtivo ? 'Aluno sem documentação (Pendente)' : 'Ex: 0001234567-8'}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-bold focus:outline-none focus:border-[#00A878] transition-colors ${
+                      semDocAtivo
+                        ? 'bg-amber-50/60 border-amber-300 text-amber-900 font-bold cursor-not-allowed uppercase'
+                        : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] focus:bg-white'
+                    }`}
                   />
                 </div>
               </div>

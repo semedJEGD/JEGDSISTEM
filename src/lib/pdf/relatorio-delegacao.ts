@@ -212,7 +212,9 @@ export class RelatorioDelegacaoService {
       doc.text(`${cat} (${sexo})`, margin + 125, currentY + 4.2);
 
       // Documento
-      const docStr = `${atleta.documentoTipo.slice(0, 3)}: ${atleta.documentoNumero}`;
+      const docStr = (atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO')
+        ? 'SEM DOC'
+        : `${(atleta.documentoTipo || 'DOC').slice(0, 3)}: ${atleta.documentoNumero}`;
       doc.text(docStr.slice(0, 13), margin + 142, currentY + 4.2);
 
       // Modalidades

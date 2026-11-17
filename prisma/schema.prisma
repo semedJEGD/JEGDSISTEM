@@ -21,6 +21,7 @@ enum SexoAtleta {
 enum DocumentoTipo {
   RG
   CERTIDAO
+  SEM_DOCUMENTO
 }
 
 enum CategoriaEtaria {
@@ -114,6 +115,7 @@ model Atleta {
   nomeCompleto             String
   dataNascimento           DateTime
   sexo                     SexoAtleta
+  semDocumento             Boolean            @default(false)
   documentoTipo            DocumentoTipo      @default(RG)
   documentoNumero          String
   documentoUrl             String?
