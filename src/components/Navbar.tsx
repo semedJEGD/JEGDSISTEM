@@ -95,15 +95,14 @@ export default function Navbar() {
     : `/?m=${munSlug}`;
 
   return (
-    <header className="sticky top-0 z-50 w-full pt-2.5 sm:pt-3 px-3 sm:px-6 lg:px-8 pb-1.5 transition-all">
-      <div className="max-w-[1500px] mx-auto">
-        {/* CONTAINER DO HEADER EM PAINEL FLUTUANTE PREMIUM */}
-        <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl sm:rounded-full px-3.5 sm:px-6 py-2 sm:py-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="h-16 flex items-center justify-between gap-4">
           
-          {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + SIGLA | ANO + SUBTÍTULO */}
-          <Link href={homeHref} className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0 select-none">
+          {/* COMPOSIÇÃO DA MARCA: LOGO OFICIAL + IDENTIDADE */}
+          <Link href={homeHref} className="flex items-center gap-3 group shrink-0 select-none">
             {/* Logo Oficial */}
-            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-[#E2EAE5] bg-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform duration-300 p-0.5">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-slate-200 bg-white flex items-center justify-center shrink-0 shadow-2xs group-hover:border-slate-300 transition-colors p-0.5">
               <img 
                 src={municipioAtual?.brasaoUrl || municipioAtual?.logoUrl || "/logo-jegd.png"} 
                 alt={`Logo Oficial ${siglaEvento}`} 
@@ -113,88 +112,79 @@ export default function Navbar() {
 
             {/* Identidade Textual */}
             <div className="flex flex-col justify-center">
-              <div className="flex items-baseline gap-1.5 sm:gap-2">
-                <span className="font-black text-xl sm:text-2xl tracking-tighter text-[#0B4B88] leading-none">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base sm:text-lg tracking-tight text-slate-900 leading-none">
                   {siglaTexto}
                 </span>
-                
-                {/* Divisória Vertical Elegante */}
-                <span className="text-slate-300 font-light text-xl sm:text-2xl leading-none select-none">
-                  |
-                </span>
-
-                {/* Ano */}
-                <span className="font-black text-2xl sm:text-[28px] italic tracking-tight text-[#00A878] leading-none">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 leading-none">
                   {anoTexto}
                 </span>
               </div>
-
-              {/* Subtítulo Discreto e Institucional */}
-              <p className="hidden sm:block text-[8px] sm:text-[9.5px] font-bold tracking-widest text-[#6B7280] uppercase mt-0.5 max-w-[240px] truncate">
+              <p className="hidden sm:block text-[11px] font-medium text-slate-500 mt-0.5 max-w-[220px] truncate">
                 {nomeEvento}
               </p>
             </div>
           </Link>
 
-          {/* NAVEGAÇÃO CENTRAL DESKTOP (CLEAN & OUTLINE) */}
-          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2" aria-label="Navegação Principal">
+          {/* NAVEGAÇÃO CENTRAL DESKTOP (CLEAN & SUBTLE) */}
+          <nav className="hidden md:flex items-center gap-1" aria-label="Navegação Principal">
             <Link
               href={homeHref}
-              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname === homeHref || pathname === '/'
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
-                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
               }`}
             >
-              <Home className={`w-4 h-4 ${pathname === homeHref || pathname === '/' ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <Home className={`w-3.5 h-3.5 ${pathname === homeHref || pathname === '/' ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Início</span>
             </Link>
 
             <Link
               href={`/modalidades?m=${munSlug}`}
-              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/modalidades')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
-                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
               }`}
             >
-              <Medal className={`w-4 h-4 ${pathname.startsWith('/modalidades') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <Medal className={`w-3.5 h-3.5 ${pathname.startsWith('/modalidades') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Modalidades</span>
             </Link>
 
             <Link
               href={`/regulamento?m=${munSlug}`}
-              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/regulamento')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
-                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
               }`}
             >
-              <BookOpen className={`w-4 h-4 ${pathname.startsWith('/regulamento') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <BookOpen className={`w-3.5 h-3.5 ${pathname.startsWith('/regulamento') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Regulamento</span>
             </Link>
 
             <Link
               href={`/validar?m=${munSlug}`}
-              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/validar')
-                  ? 'bg-[#E8F7F1] text-[#087A5B] shadow-2xs font-black'
-                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
               }`}
             >
-              <QrCode className={`w-4 h-4 ${pathname.startsWith('/validar') ? 'text-[#00A878]' : 'text-[#6B7280]'}`} aria-hidden="true" />
-              <span>Crachá Oficial</span>
+              <QrCode className={`w-3.5 h-3.5 ${pathname.startsWith('/validar') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <span>Crachá</span>
             </Link>
 
             <Link
               href="/portal"
-              className={`px-3.5 py-2 rounded-xl sm:rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/portal')
-                  ? 'bg-blue-50 text-blue-700 shadow-2xs font-black'
-                  : 'text-[#4B5563] hover:text-[#17221D] hover:bg-[#F7F9F8]'
+                  ? 'bg-blue-50 text-blue-800 font-semibold border border-blue-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
               }`}
             >
-              <MapPin className={`w-4 h-4 ${pathname.startsWith('/portal') ? 'text-blue-600' : 'text-[#6B7280]'}`} aria-hidden="true" />
+              <MapPin className={`w-3.5 h-3.5 ${pathname.startsWith('/portal') ? 'text-blue-600' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Municípios</span>
             </Link>
           </nav>
@@ -202,19 +192,19 @@ export default function Navbar() {
           {/* BOTÃO DE LOGIN / ÁREA AUTENTICADA & MENU MOBILE */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {escolaAtual ? (
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1.5">
                 <Link
                   href="/escola/dashboard"
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#E8F7F1] hover:bg-[#d8f1e7] border border-[#00A878]/30 text-xs sm:text-sm font-black text-[#087A5B] transition-all shadow-2xs"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 text-xs sm:text-sm font-semibold text-emerald-900 transition-colors"
                 >
-                  <School className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-                  <span className="max-w-[100px] sm:max-w-none truncate">{escolaAtual.sigla || 'Painel'}</span>
+                  <School className="w-4 h-4 text-emerald-700" aria-hidden="true" />
+                  <span className="max-w-[120px] sm:max-w-none truncate">{escolaAtual.sigla || escolaAtual.nome}</span>
                 </Link>
                 <button
                   onClick={handleLogoutEscola}
                   title="Sair da Escola"
                   aria-label="Sair da Escola"
-                  className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" aria-hidden="true" />
                 </button>
@@ -223,16 +213,16 @@ export default function Navbar() {
               <div className="flex items-center gap-1.5">
                 <Link
                   href="/admin/dashboard"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-black shadow-xs hover:shadow-md transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-950 text-xs sm:text-sm font-semibold transition-colors"
                 >
-                  <Shield className="w-4 h-4" aria-hidden="true" />
+                  <Shield className="w-4 h-4 text-amber-700" aria-hidden="true" />
                   <span>Painel SEMED</span>
                 </Link>
                 <button
                   onClick={handleLogoutAdmin}
                   title="Sair do Painel SEMED"
                   aria-label="Sair do Painel SEMED"
-                  className="p-2 rounded-full bg-white hover:bg-rose-50 hover:text-rose-600 border border-[#E2EAE5] text-[#4B5563] transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" aria-hidden="true" />
                 </button>
@@ -240,20 +230,20 @@ export default function Navbar() {
             ) : (
               <Link
                 href={`/escola/login?m=${munSlug}`}
-                className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-[13px] font-black tracking-wide shadow-[0_2px_12px_rgba(0,168,120,0.25)] hover:shadow-[0_4px_16px_rgba(0,168,120,0.35)] transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors whitespace-nowrap"
               >
-                <LogIn className="w-4 h-4" aria-hidden="true" />
-                <span>LOGIN PROFESSORES / SEMED</span>
+                <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Entrar</span>
               </Link>
             )}
 
             {/* Botão Hamburger Mobile */}
             <button
               onClick={() => setMenuMobileAberto(!menuMobileAberto)}
-              className="md:hidden p-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] hover:bg-[#E8F7F1] transition-colors flex items-center justify-center"
+              className="md:hidden p-2 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
               aria-label={menuMobileAberto ? 'Fechar Menu de Navegação' : 'Abrir Menu de Navegação'}
             >
-              {menuMobileAberto ? <X className="w-5 h-5 text-[#087A5B]" aria-hidden="true" /> : <Menu className="w-5 h-5 text-[#17221D]" aria-hidden="true" />}
+              {menuMobileAberto ? <X className="w-5 h-5 text-slate-700" aria-hidden="true" /> : <Menu className="w-5 h-5 text-slate-700" aria-hidden="true" />}
             </button>
           </div>
 
@@ -262,98 +252,96 @@ export default function Navbar() {
 
       {/* MENU MOBILE DROPDOWN DRAWER */}
       {menuMobileAberto && (
-        <div className="md:hidden max-w-[1500px] mx-auto mt-2">
-          <div className="bg-white/98 backdrop-blur-md border border-[#E2EAE5] rounded-2xl p-4 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col space-y-1.5" aria-label="Navegação Mobile">
+        <div className="md:hidden border-t border-slate-200/80 bg-white px-4 py-3 shadow-lg">
+          <nav className="flex flex-col space-y-1" aria-label="Navegação Mobile">
+            <Link
+              href={homeHref}
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === homeHref || pathname === '/'
+                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Home className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Início</span>
+            </Link>
+
+            <Link
+              href={`/modalidades?m=${munSlug}`}
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/modalidades')
+                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Medal className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Modalidades & Regras</span>
+            </Link>
+
+            <Link
+              href={`/regulamento?m=${munSlug}`}
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/regulamento')
+                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Regulamento Geral</span>
+            </Link>
+
+            <Link
+              href={`/validar?m=${munSlug}`}
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/validar')
+                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <QrCode className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Crachá Oficial & Guia</span>
+            </Link>
+
+            <Link
+              href="/portal"
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/portal')
+                  ? 'bg-blue-50 text-blue-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <MapPin className="w-4 h-4 text-blue-600" aria-hidden="true" />
+              <span>Portal de Municípios</span>
+            </Link>
+          </nav>
+
+          <div className="pt-2.5 mt-2 border-t border-slate-100 space-y-2">
+            {!escolaAtual && !isAdmin && (
               <Link
-                href={homeHref}
+                href={`/escola/login?m=${munSlug}`}
                 onClick={() => setMenuMobileAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname === homeHref || pathname === '/'
-                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
-                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-                }`}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-semibold shadow-xs"
               >
-                <Home className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-                <span>Início</span>
+                <LogIn className="w-4 h-4" aria-hidden="true" />
+                <span>Entrar no Sistema</span>
               </Link>
+            )}
 
-              <Link
-                href={`/modalidades?m=${munSlug}`}
-                onClick={() => setMenuMobileAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname.startsWith('/modalidades')
-                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
-                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-                }`}
+            {(escolaAtual || isAdmin) && (
+              <button
+                onClick={escolaAtual ? handleLogoutEscola : handleLogoutAdmin}
+                aria-label="Sair da Sessão"
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-rose-50 hover:text-rose-600 text-xs font-medium transition-colors"
               >
-                <Medal className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-                <span>Modalidades & Regras</span>
-              </Link>
-
-              <Link
-                href={`/regulamento?m=${munSlug}`}
-                onClick={() => setMenuMobileAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname.startsWith('/regulamento')
-                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
-                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-                }`}
-              >
-                <BookOpen className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-                <span>Regulamento Geral</span>
-              </Link>
-
-              <Link
-                href={`/validar?m=${munSlug}`}
-                onClick={() => setMenuMobileAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname.startsWith('/validar')
-                    ? 'bg-[#E8F7F1] text-[#087A5B] font-black'
-                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-                }`}
-              >
-                <QrCode className="w-4 h-4 text-[#00A878]" aria-hidden="true" />
-                <span>Crachá Oficial & Guia</span>
-              </Link>
-
-              <Link
-                href="/portal"
-                onClick={() => setMenuMobileAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  pathname.startsWith('/portal')
-                    ? 'bg-blue-50 text-blue-700 font-black'
-                    : 'text-[#4B5563] hover:bg-[#F7F9F8]'
-                }`}
-              >
-                <MapPin className="w-4 h-4 text-blue-600" aria-hidden="true" />
-                <span>Portal de Municípios</span>
-              </Link>
-            </nav>
-
-            <div className="pt-3 border-t border-[#E2EAE5] space-y-2">
-              {!escolaAtual && !isAdmin && (
-                <Link
-                  href={`/escola/login?m=${munSlug}`}
-                  onClick={() => setMenuMobileAberto(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00A878] text-white text-sm font-black shadow-xs"
-                >
-                  <LogIn className="w-4 h-4" aria-hidden="true" />
-                  <span>LOGIN PROFESSORES / SEMED</span>
-                </Link>
-              )}
-
-              {(escolaAtual || isAdmin) && (
-                <button
-                  onClick={escolaAtual ? handleLogoutEscola : handleLogoutAdmin}
-                  aria-label="Sair da Sessão"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold"
-                >
-                  <LogOut className="w-4 h-4" aria-hidden="true" />
-                  <span>Sair da Sessão</span>
-                </button>
-              )}
-            </div>
+                <LogOut className="w-4 h-4" aria-hidden="true" />
+                <span>Sair da Sessão</span>
+              </button>
+            )}
           </div>
         </div>
       )}

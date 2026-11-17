@@ -411,26 +411,28 @@ export default function EscolaAtletasPage() {
   };
 
   return (
-    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
 
       {/* 1. BARRA DE PERFIL ATIVO (DIRETOR / PROFESSOR) */}
-      <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-3.5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-2xs ${perfilAtivo?.tipo === 'DIRECAO'
-            ? 'bg-[#00A878] text-white shadow-[#00A878]/30'
-            : 'bg-indigo-600 text-white shadow-indigo-500/30'
-            }`}>
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs ${
+            perfilAtivo?.tipo === 'DIRECAO'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-indigo-600 text-white'
+          }`}>
             {perfilAtivo?.tipo === 'DIRECAO' ? 'DIR' : 'PROF'}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-[#64748B] font-bold">Navegando no cadastro de atletas como:</span>
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${perfilAtivo?.tipo === 'DIRECAO' ? 'bg-emerald-100 text-[#087A5B]' : 'bg-indigo-100 text-indigo-700'
-                }`}>
-                {perfilAtivo?.tipo === 'DIRECAO' ? 'Direção / Coordenação' : 'Professor de Ed. Física'}
+              <span className="text-xs text-slate-500 font-medium">Operador ativo:</span>
+              <span className={`text-[10px] font-semibold uppercase px-2 py-0.2 rounded-md ${
+                perfilAtivo?.tipo === 'DIRECAO' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/50' : 'bg-indigo-50 text-indigo-700 border border-indigo-200/50'
+              }`}>
+                {perfilAtivo?.tipo === 'DIRECAO' ? 'Direção / Coordenação' : 'Professor'}
               </span>
             </div>
-            <p className="text-sm font-black text-[#17221D]">
+            <p className="text-xs sm:text-sm font-semibold text-slate-900 mt-0.5">
               {perfilAtivo ? perfilAtivo.nome : 'Perfil não selecionado'}
             </p>
           </div>
@@ -439,9 +441,9 @@ export default function EscolaAtletasPage() {
         <button
           type="button"
           onClick={() => setModalPerfilAberto(true)}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#E2EAE5] hover:border-[#00A878]/30 text-xs font-black text-[#087A5B] transition-all flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors flex items-center justify-center gap-1.5"
         >
-          <span>Trocar Perfil (Diretor / Professor)</span>
+          <span>Trocar Perfil</span>
         </button>
       </div>
 
@@ -450,14 +452,14 @@ export default function EscolaAtletasPage() {
         <div className="flex items-center gap-3">
           <Link
             href={isCoordenador ? "/admin/dashboard" : "/escola/dashboard"}
-            className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all shrink-0"
+            className="p-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-2xs transition-colors shrink-0"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Cadastro Rápido & Inscrições</h1>
-            <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 font-medium truncate">
-              Escola: <strong className="text-[#17221D]">{escola.nome}</strong> ({escola.sigla})
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Cadastro Rápido & Inscrições</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">
+              Escola: <strong className="text-slate-700 font-semibold">{escola.nome}</strong> ({escola.sigla})
             </p>
           </div>
         </div>
@@ -466,45 +468,45 @@ export default function EscolaAtletasPage() {
           {atletas.length > 0 && (
             <button
               onClick={handleGerarCrachasEscola}
-              className="w-full sm:w-auto px-4 sm:px-5 py-3 rounded-xl sm:rounded-2xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-black text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-2 transition-colors"
             >
-              <Printer className="w-4 h-4" />
-              <span>Crachás Desta Escola (PDF)</span>
+              <Printer className="w-4 h-4 text-slate-500" />
+              <span>Crachás da Escola (PDF)</span>
             </button>
           )}
 
           <button
             onClick={handleAbrirModalNovo}
-            className="w-full sm:w-auto px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 shrink-0"
+            className="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-colors shrink-0"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>+ Cadastrar Aluno & Inscrever</span>
+            <Plus className="w-4 h-4" />
+            <span>Cadastrar Aluno & Inscrever</span>
           </button>
         </div>
       </div>
 
       {/* Banner de Operação Especial para a Coordenação SEMED */}
       {isCoordenador && (
-        <div className="bg-[#0b291e] border-2 border-emerald-500/40 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn">
+        <div className="bg-slate-900 border border-slate-800 text-white p-4 rounded-xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center font-bold text-lg shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
               👑
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
                 <span>Modo Coordenação SEMED Ativo</span>
               </div>
-              <h3 className="text-sm sm:text-base font-black text-white">
+              <h3 className="text-sm font-semibold text-white">
                 Operador: {nomeOperador || 'Elias Veloso / Herbert (SEMED)'}
               </h3>
-              <p className="text-xs text-emerald-100/80">
+              <p className="text-xs text-slate-400">
                 Você pode cadastrar e matricular alunos em qualquer escola e modalidade dos jogos.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <span className="text-xs font-bold text-emerald-200 shrink-0">Alternar Escola:</span>
+            <span className="text-xs font-medium text-slate-300 shrink-0">Alternar Escola:</span>
             <select
               value={escola.id}
               onChange={(e) => {
@@ -515,7 +517,7 @@ export default function EscolaAtletasPage() {
                   setAtletas(JegdStorage.getAtletas(esc.id));
                 }
               }}
-              className="px-3.5 py-2 rounded-xl bg-emerald-950 border border-emerald-500/60 text-white text-xs font-bold focus:outline-none focus:border-emerald-300 cursor-pointer w-full md:w-auto"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-emerald-500 cursor-pointer w-full md:w-auto"
             >
               {todasEscolas.map(e => (
                 <option key={e.id} value={e.id}>
@@ -526,7 +528,7 @@ export default function EscolaAtletasPage() {
 
             <Link
               href="/admin/dashboard"
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 whitespace-nowrap text-center"
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-medium transition-colors shrink-0 whitespace-nowrap text-center"
             >
               Painel SEMED
             </Link>
@@ -535,23 +537,23 @@ export default function EscolaAtletasPage() {
       )}
 
       {/* Barra de Busca & Filtros */}
-      <div className="bg-white border border-[#E2EAE5] rounded-3xl p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 shadow-xs">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 shadow-2xs">
         <div className="sm:col-span-2 relative">
           <input
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome do aluno, RG ou matrícula..."
-            className="w-full px-4 py-3 pl-11 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm focus:outline-none focus:border-[#00A878] focus:bg-white font-medium"
+            className="w-full px-3.5 py-2 pl-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-normal"
           />
-          <Search className="w-4 h-4 text-[#4B5563] absolute left-4 top-3.5" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
 
         <div>
           <select
             value={filtroCategoria}
             onChange={(e) => setFiltroCategoria(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
+            className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white cursor-pointer"
           >
             <option value="TODOS">Todas Categorias</option>
             <option value="MIRIM">Mirim (9 a 11)</option>
@@ -565,7 +567,7 @@ export default function EscolaAtletasPage() {
           <select
             value={filtroSexo}
             onChange={(e) => setFiltroSexo(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
+            className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white cursor-pointer"
           >
             <option value="TODOS">Todos Gêneros</option>
             <option value="MASCULINO">Masculino</option>
@@ -577,7 +579,7 @@ export default function EscolaAtletasPage() {
           <select
             value={filtroProfessor}
             onChange={(e) => setFiltroProfessor(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white"
+            className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white cursor-pointer"
           >
             <option value="TODOS">Cadastrado por: Todos</option>
             {listaProfessoresCadastrantes.map(prof => (
@@ -589,24 +591,24 @@ export default function EscolaAtletasPage() {
 
       {/* Grid de Alunos Cadastrados */}
       {atletasFiltrados.length === 0 ? (
-        <div className="bg-white border border-[#E2EAE5] rounded-3xl p-12 text-center space-y-4 shadow-xs">
-          <div className="w-16 h-16 rounded-2xl bg-[#E8F7F1] text-[#00A878] flex items-center justify-center mx-auto shadow-2xs">
-            <Users className="w-8 h-8" />
+        <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
+            <Users className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-[#17221D]">Nenhum aluno encontrado</h3>
-          <p className="text-sm text-[#4B5563] max-w-md mx-auto">
+          <h3 className="text-base font-semibold text-slate-900">Nenhum aluno encontrado</h3>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
             Cadastre os alunos-atletas da sua escola. Na 2ª etapa você já escolhe a modalidade e forma a equipe automaticamente!
           </p>
           <button
             onClick={handleAbrirModalNovo}
-            className="px-6 py-3 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm inline-flex items-center gap-2 shadow-xs transition-all"
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-2xs transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Cadastrar Primeiro Aluno</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {atletasFiltrados.map((atleta) => (
             <AtletaCard
               key={atleta.id}

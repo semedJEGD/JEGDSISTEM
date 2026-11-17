@@ -659,30 +659,30 @@ export default function EscolaDashboardPage() {
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 w-full">
 
       {/* ================= TOP BAR COMPACTO E MODERNO ================= */}
-      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
 
           {/* Identificação da Escola e Perfil Ativo */}
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-800 font-black text-sm shadow-2xs shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-800 font-bold text-xs shadow-2xs shrink-0">
               {escola.sigla.slice(0, 3)}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-lg font-black text-[#17221D] truncate">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">
                   {escola.nome}
                 </h1>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 shrink-0">
                   {escola.sigla}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200 shrink-0">
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                   INEP: {escola.inep}
                 </span>
               </div>
-              <p className="text-xs text-[#64748B] mt-0.5 truncate flex items-center gap-2">
+              <p className="text-xs text-slate-500 mt-0.5 truncate flex items-center gap-2">
                 <span>Perfil:</span>
-                <strong className="text-[#17221D]">{perfilAtivo?.nome || 'Direção Escolar'}</strong>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                <strong className="text-slate-800 font-semibold">{perfilAtivo?.nome || 'Direção Escolar'}</strong>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-medium border border-slate-200">
                   {perfilAtivo?.tipo === 'DIRECAO' ? 'Direção' : 'Professor(a)'}
                 </span>
               </p>
@@ -696,10 +696,10 @@ export default function EscolaDashboardPage() {
             <button
               type="button"
               onClick={() => setModalPerfilAberto(true)}
-              className="px-3 py-1.5 rounded-xl bg-[#F7F9F8] hover:bg-gray-100 border border-[#E2EAE5] text-[#17221D] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors"
               title="Trocar entre Direção e Professores"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
               <span>Trocar Perfil</span>
             </button>
 
@@ -708,7 +708,7 @@ export default function EscolaDashboardPage() {
               type="button"
               onClick={handleForcarSincronizacao}
               disabled={sincronizandoOnline}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-60"
+              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-60"
               title="Sincronizar instantaneamente com o servidor central"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${sincronizandoOnline ? 'animate-spin' : ''}`} />
@@ -720,10 +720,10 @@ export default function EscolaDashboardPage() {
             <button
               type="button"
               onClick={handleAbrirModalNovoAtleta}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all hover:scale-[1.01] active:scale-95"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors active:scale-95"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>+ Cadastrar Aluno</span>
+              <span>Cadastrar Aluno</span>
             </button>
 
             {/* Sair */}
@@ -733,7 +733,7 @@ export default function EscolaDashboardPage() {
                 JegdStorage.logoutEscola();
                 window.location.href = '/escola/login';
               }}
-              className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all"
+              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
               title="Sair da escola"
             >
               <LogOut className="w-4 h-4" />
@@ -747,80 +747,80 @@ export default function EscolaDashboardPage() {
 
         <div
           onClick={() => setAbaAtiva('ALUNOS')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'ALUNOS' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-colors ${abaAtiva === 'ALUNOS' ? 'border-emerald-600 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'
             }`}
         >
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Alunos</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{atletas.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Alunos</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{atletas.length}</p>
           </div>
-          <Users className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <Users className="w-5 h-5 text-slate-400" />
         </div>
 
         <div
           onClick={() => setAbaAtiva('EQUIPES')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'EQUIPES' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-colors ${abaAtiva === 'EQUIPES' ? 'border-emerald-600 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'
             }`}
         >
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Equipes</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{inscricoes.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Equipes</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{inscricoes.length}</p>
           </div>
-          <Trophy className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <Trophy className="w-5 h-5 text-slate-400" />
         </div>
 
         <div
           onClick={() => setAbaAtiva('COMISSAO')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-all ${abaAtiva === 'COMISSAO' ? 'border-[#00A878] bg-emerald-50/20' : 'border-[#E2EAE5] hover:border-emerald-300'
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer transition-colors ${abaAtiva === 'COMISSAO' ? 'border-emerald-600 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'
             }`}
         >
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Comissão</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{comissao.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Comissão</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{comissao.length}</p>
           </div>
-          <GraduationCap className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <GraduationCap className="w-5 h-5 text-slate-400" />
         </div>
 
         <div
           onClick={() => setAbaAtiva('EQUIPES')}
-          className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer hover:border-emerald-300 transition-all"
+          className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex items-center justify-between cursor-pointer hover:border-slate-300 transition-colors"
         >
           <div>
-            <span className="text-[10px] font-black uppercase text-emerald-700">Homologados SEMED</span>
-            <p className="text-xl font-black text-emerald-700 mt-0.5">{totalValidadas}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Homologados SEMED</span>
+            <p className="text-xl font-bold text-emerald-700 mt-0.5">{totalValidadas}</p>
           </div>
-          <CheckCircle2 className="w-6 h-6 text-emerald-500 opacity-60" />
+          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
         </div>
 
         <div
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 cursor-pointer transition-all ${homologacao.homologado ? 'border-emerald-300 bg-emerald-50/30' : 'border-amber-300 bg-amber-50/30'
+          className={`bg-white border rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 cursor-pointer transition-colors ${homologacao.homologado ? 'border-emerald-300 bg-emerald-50/30' : 'border-amber-300 bg-amber-50/30'
             }`}
           title="Status de homologação da direção da escola"
         >
           <div>
-            <span className={`text-[10px] font-black uppercase ${homologacao.homologado ? 'text-emerald-800' : 'text-amber-800'}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-wider ${homologacao.homologado ? 'text-emerald-800' : 'text-amber-800'}`}>
               Status Direção
             </span>
-            <p className={`text-xs font-black mt-0.5 ${homologacao.homologado ? 'text-emerald-700' : 'text-amber-700'}`}>
+            <p className={`text-xs font-bold mt-0.5 ${homologacao.homologado ? 'text-emerald-700' : 'text-amber-700'}`}>
               {homologacao.homologado ? 'Aprovado Direção' : 'Pendente Direção'}
             </p>
           </div>
           {homologacao.homologado ? (
-            <ShieldCheck className="w-6 h-6 text-emerald-600 opacity-80" />
+            <ShieldCheck className="w-5 h-5 text-emerald-600" />
           ) : (
-            <Clock className="w-6 h-6 text-amber-600 opacity-80" />
+            <Clock className="w-5 h-5 text-amber-600" />
           )}
         </div>
       </div>
 
       {/* ================= NAVEGAÇÃO POR ABAS FOCADAS ================= */}
-      <div className="flex items-center gap-1.5 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ALUNOS')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'ALUNOS'
-            ? 'bg-[#00A878] text-white shadow-2xs font-black'
-            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'ALUNOS'
+            ? 'bg-slate-900 text-white shadow-2xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <Users className="w-4 h-4" />
@@ -829,9 +829,9 @@ export default function EscolaDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('EQUIPES')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'EQUIPES'
-            ? 'bg-[#00A878] text-white shadow-2xs font-black'
-            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'EQUIPES'
+            ? 'bg-slate-900 text-white shadow-2xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <Trophy className="w-4 h-4" />
@@ -840,14 +840,14 @@ export default function EscolaDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'HOMOLOGACAO'
-            ? 'bg-[#00A878] text-white shadow-2xs font-black'
-            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'HOMOLOGACAO'
+            ? 'bg-slate-900 text-white shadow-2xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <ShieldCheck className="w-4 h-4" />
           <span>Homologação da Direção</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${homologacao.homologado ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-400 text-slate-950'
+          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${homologacao.homologado ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
             }`}>
             {homologacao.homologado ? 'OK' : 'Pendente'}
           </span>
@@ -855,9 +855,9 @@ export default function EscolaDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('COMISSAO')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'COMISSAO'
-            ? 'bg-[#00A878] text-white shadow-2xs font-black'
-            : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'COMISSAO'
+            ? 'bg-slate-900 text-white shadow-2xs'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
         >
           <GraduationCap className="w-4 h-4" />
@@ -867,20 +867,20 @@ export default function EscolaDashboardPage() {
 
       {/* ================= ABA 1: ALUNOS & INSCRIÇÕES ================= */}
       {abaAtiva === 'ALUNOS' && (
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl shadow-xs overflow-hidden space-y-4">
+        <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden space-y-4">
 
           {/* Barra de Filtros e Ações de Alunos */}
-          <div className="p-4 border-b border-[#E2EAE5] bg-[#F7F9F8] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="p-3 sm:p-4 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
 
             {/* Campo de Busca */}
             <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-3" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={buscaAluno}
                 onChange={(e) => setBuscaAluno(e.target.value)}
                 placeholder="Buscar aluno por nome ou documento..."
-                className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-medium text-[#17221D] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#00A878]"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600"
               />
             </div>
 
@@ -889,7 +889,7 @@ export default function EscolaDashboardPage() {
               <select
                 value={filtroModalidade}
                 onChange={(e) => setFiltroModalidade(e.target.value)}
-                className="px-2.5 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-600 cursor-pointer"
               >
                 <option value="TODAS">Todas Modalidades</option>
                 {modalidades.map(m => (
@@ -901,7 +901,7 @@ export default function EscolaDashboardPage() {
               <select
                 value={filtroCategoria}
                 onChange={(e) => setFiltroCategoria(e.target.value)}
-                className="px-2.5 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-600 cursor-pointer"
               >
                 <option value="TODAS">Todas Categorias</option>
                 <option value="MIRIM">Mirim (9-11)</option>
@@ -914,7 +914,7 @@ export default function EscolaDashboardPage() {
               <select
                 value={filtroSexo}
                 onChange={(e) => setFiltroSexo(e.target.value)}
-                className="px-2.5 py-2 rounded-xl bg-white border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-600 cursor-pointer"
               >
                 <option value="TODOS">Todos os Naipes</option>
                 <option value="MASCULINO">Masculino</option>
@@ -926,10 +926,10 @@ export default function EscolaDashboardPage() {
                 type="button"
                 onClick={handleGerarCrachasEscola}
                 disabled={gerandoCrachasLote || atletas.length === 0}
-                className="px-3 py-2 rounded-xl bg-white hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
                 title="Baixar todos os crachás desta escola em PDF"
               >
-                <QrCode className="w-3.5 h-3.5" />
+                <QrCode className="w-3.5 h-3.5 text-slate-500" />
                 <span>Crachás (PDF)</span>
               </button>
 
@@ -938,19 +938,19 @@ export default function EscolaDashboardPage() {
                 type="button"
                 onClick={handleGerarCadernoSumulasMinhaEscola}
                 disabled={gerandoPdfLote || atletas.length === 0}
-                className="px-3 py-2 rounded-xl bg-white hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
                 title="Baixar caderno de súmulas da minha escola em PDF"
               >
-                <BookOpen className="w-3.5 h-3.5" />
+                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
                 <span>Súmulas (PDF)</span>
               </button>
 
               {/* Alternador de Modo de Visualização */}
-              <div className="flex items-center gap-0.5 bg-white p-0.5 rounded-xl border border-[#E2EAE5]">
+              <div className="flex items-center gap-0.5 bg-white p-0.5 rounded-lg border border-slate-200">
                 <button
                   type="button"
                   onClick={() => setModoVisualizacao('CARDS')}
-                  className={`p-1.5 rounded-lg transition-all ${modoVisualizacao === 'CARDS' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
+                  className={`p-1.5 rounded-md transition-colors ${modoVisualizacao === 'CARDS' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   title="Visualização em Cards"
                 >
@@ -959,7 +959,7 @@ export default function EscolaDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setModoVisualizacao('TABELA')}
-                  className={`p-1.5 rounded-lg transition-all ${modoVisualizacao === 'TABELA' ? 'bg-[#00A878] text-white' : 'text-[#64748B] hover:text-[#17221D]'
+                  className={`p-1.5 rounded-md transition-colors ${modoVisualizacao === 'TABELA' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   title="Visualização em Tabela"
                 >
@@ -972,23 +972,23 @@ export default function EscolaDashboardPage() {
           {/* Lista de Alunos */}
           <div className="p-4 sm:p-5 pt-0">
             {atletas.length === 0 ? (
-              <div className="py-12 text-center text-[#64748B] bg-[#F7F9F8] rounded-2xl border border-dashed border-[#E2EAE5]">
-                <School className="w-10 h-10 text-[#94A3B8] mx-auto mb-2 opacity-60" />
-                <p className="font-black text-sm text-[#17221D]">Nenhum aluno cadastrado nesta escola ainda.</p>
-                <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
+              <div className="py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <School className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="font-semibold text-sm text-slate-800">Nenhum aluno cadastrado nesta escola ainda.</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                   Cadastre seus atletas nas modalidades desejadas. As equipes serão formadas automaticamente em tempo real!
                 </p>
                 <button
                   type="button"
                   onClick={handleAbrirModalNovoAtleta}
-                  className="mt-4 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs inline-flex items-center gap-2 shadow-xs"
+                  className="mt-4 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Cadastrar Primeiro Aluno</span>
                 </button>
               </div>
             ) : atletasFiltrados.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[#64748B] bg-[#F7F9F8] rounded-xl border border-[#E2EAE5]">
+              <div className="py-8 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
                 Nenhum aluno corresponde aos filtros selecionados.
               </div>
             ) : modoVisualizacao === 'CARDS' ? (
@@ -996,23 +996,23 @@ export default function EscolaDashboardPage() {
                 {atletasFiltrados.map((atleta) => (
                   <div
                     key={atleta.id}
-                    className="p-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] hover:bg-white hover:border-[#00A878]/40 transition-all shadow-2xs flex flex-col justify-between gap-3"
+                    className="p-3.5 rounded-xl bg-white border border-slate-200/90 hover:border-slate-300 transition-colors shadow-2xs flex flex-col justify-between gap-3"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs font-black text-[#17221D] truncate" title={atleta.nomeCompleto}>
+                        <span className="text-xs font-semibold text-slate-900 truncate" title={atleta.nomeCompleto}>
                           {atleta.nomeCompleto}
                         </span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-white border border-[#E2EAE5] text-[#17221D] shrink-0">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 shrink-0">
                           {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-[#64748B] flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
                         <span>Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</span>
                         <span>•</span>
                         {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                          <span className="font-black text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
+                          <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/80 text-[10px]">
                             ⚠️ Sem Documento
                           </span>
                         ) : (
@@ -1023,26 +1023,26 @@ export default function EscolaDashboardPage() {
                       <div className="mt-2 flex flex-wrap gap-1">
                         {atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? (
                           atleta.modalidadesInscritas.map((m, idx) => (
-                            <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+                            <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-medium border border-emerald-200/60">
                               {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-gray-400 italic">Sem modalidades</span>
+                          <span className="text-[10px] text-slate-400 italic">Sem modalidades</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-[#E2EAE5] text-xs">
-                      <span className="text-[10px] text-[#64748B]">
-                        Cadastrado por: <strong className="text-[#17221D]">{atleta.cadastradoPor || 'Escola'}</strong>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                      <span className="text-[10px] text-slate-500">
+                        Por: <strong className="text-slate-700 font-medium">{atleta.cadastradoPor || 'Escola'}</strong>
                       </span>
 
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleAbrirModalEditarAtleta(atleta)}
-                          className="p-1.5 rounded-lg hover:bg-amber-100 text-amber-700 transition-colors"
+                          className="p-1 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
                           title="Editar aluno"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -1050,7 +1050,7 @@ export default function EscolaDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleExcluirAtleta(atleta)}
-                          className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors"
+                          className="p-1 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                           title="Excluir aluno"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1058,7 +1058,7 @@ export default function EscolaDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleGerarCrachaIndividual(atleta)}
-                          className="p-1.5 rounded-lg hover:bg-emerald-100 text-emerald-700 transition-colors"
+                          className="p-1 rounded-md hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
                           title="Crachá Individual"
                         >
                           <QrCode className="w-3.5 h-3.5" />
@@ -1069,9 +1069,9 @@ export default function EscolaDashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="overflow-x-auto border border-[#E2EAE5] rounded-xl">
-                <table className="w-full text-left text-xs text-[#17221D]">
-                  <thead className="bg-[#F7F9F8] text-[#64748B] uppercase text-[10px] font-black border-b border-[#E2EAE5]">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs text-slate-800">
+                  <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-semibold border-b border-slate-200">
                     <tr>
                       <th className="p-3">Aluno</th>
                       <th className="p-3">Nascimento</th>
@@ -1082,41 +1082,41 @@ export default function EscolaDashboardPage() {
                       <th className="p-3 text-right">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2EAE5]">
+                  <tbody className="divide-y divide-slate-100">
                     {atletasFiltrados.map((atleta) => (
-                      <tr key={atleta.id} className="hover:bg-[#F7F9F8]/60 transition-colors">
-                        <td className="p-3 font-black text-[#17221D]">{atleta.nomeCompleto}</td>
-                        <td className="p-3 text-[#64748B]">{new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</td>
+                      <tr key={atleta.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="p-3 font-semibold text-slate-900">{atleta.nomeCompleto}</td>
+                        <td className="p-3 text-slate-500">{new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded bg-gray-100 font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px] border border-slate-200">
                             {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}
                           </span>
                         </td>
                         <td className="p-3">
                           {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                            <span className="inline-flex items-center gap-1 font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300 text-[10px]">
+                            <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 text-[10px]">
                               ⚠️ Sem Documento
                             </span>
                           ) : (
-                            <><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</>
+                            <span className="text-slate-600"><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</span>
                           )}
                         </td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-1">
                             {atleta.modalidadesInscritas?.map((m, idx) => (
-                              <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-900 text-[10px] border border-emerald-200 font-medium">
+                              <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] border border-emerald-200/60 font-medium">
                                 {m.modalidadeNome}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td className="p-3 text-[#64748B]">{atleta.cadastradoPor || 'Escola'}</td>
+                        <td className="p-3 text-slate-500">{atleta.cadastradoPor || 'Escola'}</td>
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
                               onClick={() => handleAbrirModalEditarAtleta(atleta)}
-                              className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-700 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
                               title="Editar"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -1124,7 +1124,7 @@ export default function EscolaDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleExcluirAtleta(atleta)}
-                              className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                               title="Excluir"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1132,7 +1132,7 @@ export default function EscolaDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleGerarCrachaIndividual(atleta)}
-                              className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-700 transition-colors"
+                              className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
                               title="Crachá"
                             >
                               <QrCode className="w-3.5 h-3.5" />
@@ -1151,18 +1151,18 @@ export default function EscolaDashboardPage() {
 
       {/* ================= ABA 2: EQUIPES FORMADAS ================= */}
       {abaAtiva === 'EQUIPES' && (
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#E2EAE5]">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div>
-              <h2 className="text-base sm:text-lg font-black text-[#17221D]">Equipes em Disputa Formadas Automaticamente</h2>
-              <p className="text-xs text-[#64748B]">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Equipes em Disputa Formadas Automaticamente</h2>
+              <p className="text-xs text-slate-500">
                 À medida que os atletas são cadastrados nas modalidades, suas equipes são montadas aqui.
               </p>
             </div>
             <button
               type="button"
               onClick={handleAbrirModalNovoAtleta}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>+ Adicionar Aluno à Equipe</span>
@@ -1170,15 +1170,15 @@ export default function EscolaDashboardPage() {
           </div>
 
           {inscricoes.length === 0 ? (
-            <div className="text-center py-10 bg-[#F7F9F8] rounded-xl border border-dashed border-[#E2EAE5]">
-              <Trophy className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-black text-[#17221D]">Nenhuma equipe formada ainda.</p>
-              <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
+            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <Trophy className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-800">Nenhuma equipe formada ainda.</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                 Inscreva seus alunos na aba "Alunos & Inscrições" para que as equipes apareçam aqui organizadas.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {inscricoes.map((insc) => {
                 const atletasEquipe = insc.atletaIds
                   .map(id => atletas.find(a => a.id === id))
@@ -1197,41 +1197,41 @@ export default function EscolaDashboardPage() {
                 return (
                   <div
                     key={insc.id}
-                    className={`p-4 rounded-xl border transition-all shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 ${excedeLimite
-                      ? 'bg-rose-50/40 border-rose-300'
-                      : 'bg-[#F7F9F8] border-[#E2EAE5] hover:border-[#00A878]/50 hover:bg-white'
+                    className={`p-3.5 rounded-xl border transition-colors shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3.5 ${excedeLimite
+                      ? 'bg-rose-50/40 border-rose-200'
+                      : 'bg-white border-slate-200/90 hover:border-slate-300'
                       }`}
                   >
-                    <div className="space-y-1.5 min-w-0">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm sm:text-base font-black text-[#17221D]">{nomeExibicao}</span>
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white border border-[#E2EAE5] text-[#17221D] font-bold">
+                        <span className="text-sm font-semibold text-slate-900">{nomeExibicao}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium">
                           {insc.categoria} • {insc.sexo}
                         </span>
 
-                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black border ${insc.status === 'VALIDADA'
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${insc.status === 'VALIDADA'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
                           : insc.status === 'REJEITADA'
                             ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-300'
+                            : 'bg-amber-50 text-amber-800 border-amber-200/80'
                           }`}>
                           {insc.status === 'VALIDADA' ? 'HOMOLOGADA' : insc.status === 'REJEITADA' ? 'REJEITADA' : 'EM ANÁLISE'}
                         </span>
                       </div>
 
-                      <div className="text-xs text-[#64748B] flex flex-wrap items-center gap-3">
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2.5">
                         <span>
-                          <strong className={excedeLimite ? 'text-rose-600 font-black' : 'text-[#17221D]'}>
+                          <strong className={excedeLimite ? 'text-rose-600 font-semibold' : 'text-slate-800 font-medium'}>
                             {atletasEquipe.length}/{limiteMax}
                           </strong> Atletas convocados
                         </span>
                         {excedeLimite && (
-                          <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
+                          <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                             ⚠️ Excede teto de {limiteMax}
                           </span>
                         )}
                         {abaixoMinimo && (
-                          <span className="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                          <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
                             Mínimo: {limiteMin}
                           </span>
                         )}
@@ -1243,12 +1243,12 @@ export default function EscolaDashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full lg:w-auto justify-end flex-wrap shrink-0">
+                    <div className="flex items-center gap-1.5 w-full lg:w-auto justify-end flex-wrap shrink-0">
                       <button
                         type="button"
                         onClick={() => handleToggleValidarEquipe(insc)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs transition-all ${insc.status === 'VALIDADA'
-                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-colors ${insc.status === 'VALIDADA'
+                          ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
                           : (excedeLimite || abaixoMinimo)
                             ? 'bg-amber-500 hover:bg-amber-600 text-white'
                             : 'bg-emerald-600 hover:bg-emerald-700 text-white'
@@ -1268,36 +1268,36 @@ export default function EscolaDashboardPage() {
                       <button
                         onClick={() => handleGerarFichaPdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
                         title="Baixar ficha oficial de inscrição em PDF"
                       >
-                        <Printer className="w-3.5 h-3.5 text-[#00A878]" />
+                        <Printer className="w-3.5 h-3.5 text-slate-500" />
                         <span>Ficha PDF</span>
                       </button>
 
                       <button
                         onClick={() => handleGerarCrachasEquipePdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
                         title="Baixar crachás oficiais desta equipe em PDF"
                       >
-                        <QrCode className="w-3.5 h-3.5 text-[#00A878]" />
+                        <QrCode className="w-3.5 h-3.5 text-slate-500" />
                         <span>Crachás QR</span>
                       </button>
 
                       <button
                         onClick={() => handleGerarSumulaEquipePdf(insc)}
                         disabled={gerandoPdfId === insc.id}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] text-xs font-bold border border-[#E2EAE5] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors disabled:opacity-50"
                         title="Baixar súmula oficial desta equipe em PDF"
                       >
-                        <FileCheck2 className="w-3.5 h-3.5 text-[#00A878]" />
+                        <FileCheck2 className="w-3.5 h-3.5 text-slate-500" />
                         <span>Súmula PDF</span>
                       </button>
 
                       <Link
                         href="/escola/inscricoes"
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all shadow-2xs"
+                        className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-2xs"
                       >
                         Gerenciar Elenco
                       </Link>
@@ -1312,39 +1312,39 @@ export default function EscolaDashboardPage() {
 
       {/* ================= ABA 3: HOMOLOGAÇÃO DA DIREÇÃO ================= */}
       {abaAtiva === 'HOMOLOGACAO' && (
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
-          <div className="flex items-start gap-3.5 pb-4 border-b border-[#E2EAE5]">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${homologacao.homologado ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+        <div className="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex items-start gap-3.5 pb-4 border-b border-slate-200">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${homologacao.homologado ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60' : 'bg-amber-50 text-amber-800 border border-amber-200/80'
               }`}>
-              {homologacao.homologado ? <ShieldCheck className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
+              {homologacao.homologado ? <ShieldCheck className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${homologacao.homologado ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${homologacao.homologado ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60' : 'bg-amber-50 text-amber-800 border border-amber-200/80'
                   }`}>
                   {homologacao.homologado ? 'Homologação Concluída' : 'Aguardando Homologação da Direção'}
                 </span>
-                <span className="text-xs text-[#64748B] font-bold">
+                <span className="text-xs text-slate-500">
                   {atletas.length} atletas inscritos • {inscricoes.length} equipes montadas
                 </span>
               </div>
-              <h3 className="text-base sm:text-lg font-black text-[#17221D] mt-1">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
                 Atestado Oficial de Matrícula e Frequência Regular para a SEMED
               </h3>
-              <p className="text-xs sm:text-sm text-[#4B5563] mt-1 max-w-3xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed">
                 Em conformidade com o Regulamento Geral dos Jogos Escolares, a Direção da Unidade Escolar atesta formalmente perante o Comitê Organizador da SEMED que todos os estudantes atletas cadastrados encontram-se regularmente matriculados e com frequência escolar assídua no ano letivo.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold text-[#17221D]">
+              <p className="text-xs font-semibold text-slate-800">
                 {homologacao.homologado
                   ? `Delegação homologada por ${homologacao.responsavelNome || 'Professor/Direção'} em ${new Date(homologacao.dataHomologacao!).toLocaleString('pt-BR')}`
                   : 'O Professor ou a Direção Escolar deve validar os atletas cadastrados para atestar a delegação perante a SEMED.'}
               </p>
-              <p className="text-[11px] text-[#64748B] mt-0.5">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 {perfilAtivo?.nome
                   ? `Conectado como ${perfilAtivo.nome} (${perfilAtivo.tipo === 'DIRECAO' ? 'Direção Escolar' : 'Professor/Responsável'}). Autorização concedida para validar.`
                   : 'Responsável autorizado pela Escola para validar a delegação oficial.'}
@@ -1355,7 +1355,7 @@ export default function EscolaDashboardPage() {
               <button
                 type="button"
                 onClick={handleRevogarHomologacao}
-                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-all shadow-2xs shrink-0"
+                className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition-colors shadow-2xs shrink-0"
               >
                 Reabrir Delegação para Ajustes
               </button>
@@ -1363,7 +1363,7 @@ export default function EscolaDashboardPage() {
               <button
                 type="button"
                 onClick={handleHomologarDirecao}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all shrink-0 hover:scale-[1.01]"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs sm:text-sm shadow-2xs flex items-center gap-1.5 transition-colors shrink-0"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Homologar e Validar Delegação Escolar</span>
@@ -1375,18 +1375,18 @@ export default function EscolaDashboardPage() {
 
       {/* ================= ABA 4: COMISSÃO TÉCNICA ================= */}
       {abaAtiva === 'COMISSAO' && (
-        <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#E2EAE5]">
+        <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div>
-              <h2 className="text-base sm:text-lg font-black text-[#17221D]">Comissão Técnica & Professores</h2>
-              <p className="text-xs text-[#64748B]">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Comissão Técnica & Professores</h2>
+              <p className="text-xs text-slate-500">
                 Profissionais de Educação Física e técnicos autorizados a acompanhar os estudantes nas partidas.
               </p>
             </div>
             <button
               type="button"
               onClick={handleAbrirModalNovaComissao}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>+ Adicionar Profissional</span>
@@ -1394,10 +1394,10 @@ export default function EscolaDashboardPage() {
           </div>
 
           {comissao.length === 0 ? (
-            <div className="text-center py-10 bg-[#F7F9F8] rounded-xl border border-dashed border-[#E2EAE5]">
-              <GraduationCap className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-black text-[#17221D]">Nenhum membro cadastrado na comissão.</p>
-              <p className="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
+            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <GraduationCap className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-800">Nenhum membro cadastrado na comissão.</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                 Cadastre os técnicos e professores para que constem nas súmulas oficiais das partidas.
               </p>
             </div>
@@ -1406,28 +1406,28 @@ export default function EscolaDashboardPage() {
               {comissao.map((m) => (
                 <div
                   key={m.id}
-                  className="p-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] hover:bg-white hover:border-[#00A878]/40 transition-all shadow-2xs flex flex-col justify-between gap-2.5"
+                  className="p-3.5 rounded-xl bg-white border border-slate-200/90 hover:border-slate-300 transition-colors shadow-2xs flex flex-col justify-between gap-2.5"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black text-[#17221D] truncate">{m.nomeCompleto}</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                      <span className="text-xs font-semibold text-slate-900 truncate">{m.nomeCompleto}</span>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 shrink-0">
                         {m.funcao}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#64748B] mt-1">
-                      CPF: <strong>{m.cpf}</strong> • Registro: <strong>{m.registroProfissional || 'CREF Não informado'}</strong>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      CPF: <strong className="text-slate-700">{m.cpf}</strong> • Registro: <strong className="text-slate-700">{m.registroProfissional || 'CREF Não informado'}</strong>
                     </p>
-                    <p className="text-[11px] text-[#64748B]">
+                    <p className="text-[11px] text-slate-500">
                       Contato: {m.telefone || m.email}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-[#E2EAE5]">
+                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => handleAbrirModalEditarComissao(m)}
-                      className="p-1.5 rounded-lg hover:bg-amber-100 text-amber-700 transition-colors"
+                      className="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors"
                       title="Editar profissional"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -1435,7 +1435,7 @@ export default function EscolaDashboardPage() {
                     <button
                       type="button"
                       onClick={() => handleExcluirComissao(m)}
-                      className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors"
+                      className="p-1 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                       title="Excluir profissional"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1497,19 +1497,19 @@ export default function EscolaDashboardPage() {
 
       {/* Modal Cadastro de Membro da Comissão Técnica */}
       {modalComissaoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white border border-[#E2EAE5] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E2EAE5]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white border border-slate-200/90 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-black text-[#17221D]">
+                <h3 className="text-base font-bold text-slate-900">
                   {membroEditando ? 'Editar Profissional da Comissão' : 'Novo Membro da Comissão Técnica'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setModalComissaoAberto(false)}
-                className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1517,24 +1517,24 @@ export default function EscolaDashboardPage() {
 
             <form onSubmit={handleSalvarComissao} className="space-y-3">
               <div>
-                <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Nome Completo *</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome Completo *</label>
                 <input
                   type="text"
                   required
                   value={comissaoNome}
                   onChange={(e) => setComissaoNome(e.target.value)}
                   placeholder="Nome do professor ou técnico..."
-                  className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Função</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">Função</label>
                   <select
                     value={comissaoFuncao}
                     onChange={(e: any) => setComissaoFuncao(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-600 focus:bg-white cursor-pointer"
                   >
                     <option value="TECNICO">Técnico Principal</option>
                     <option value="AUXILIAR">Auxiliar Técnico</option>
@@ -1544,64 +1544,64 @@ export default function EscolaDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">CPF *</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">CPF *</label>
                   <input
                     type="text"
                     required
                     value={comissaoCpf}
                     onChange={(e) => setComissaoCpf(e.target.value)}
                     placeholder="000.000.000-00"
-                    className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Registro CREF</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">Registro CREF</label>
                   <input
                     type="text"
                     value={comissaoRegistro}
                     onChange={(e) => setComissaoRegistro(e.target.value)}
                     placeholder="CREF 000000-G/MA"
-                    className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">Telefone WhatsApp</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">Telefone WhatsApp</label>
                   <input
                     type="text"
                     value={comissaoTelefone}
                     onChange={(e) => setComissaoTelefone(e.target.value)}
                     placeholder="(99) 98800-0000"
-                    className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-[#4B5563] mb-1">E-mail Institucional</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">E-mail Institucional</label>
                 <input
                   type="email"
                   value={comissaoEmail}
                   onChange={(e) => setComissaoEmail(e.target.value)}
                   placeholder="professor@semed.gd.gov.br"
-                  className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-bold text-[#17221D] focus:outline-none focus:border-[#00A878]"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E2EAE5]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setModalComissaoAberto(false)}
-                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all"
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-all"
+                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-2xs transition-colors"
                 >
                   Salvar Profissional
                 </button>

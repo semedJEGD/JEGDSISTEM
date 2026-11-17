@@ -667,21 +667,21 @@ export default function EscolaInscricoesPage() {
   const provasPermitidasAtletismo = PROVAS_ATLETISMO_POR_CATEGORIA[categoriaSel] || [];
 
   return (
-    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href={isCoordenador ? "/admin/dashboard" : "/escola/dashboard"}
-            className="p-3 rounded-2xl bg-white border border-[#E2EAE5] text-[#4B5563] hover:text-[#087A5B] hover:border-[#00A878] shadow-xs transition-all shrink-0"
+            className="p-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-2xs transition-colors shrink-0"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-black text-[#17221D] break-words">Inscrição de Equipes & Atletas</h1>
-            <p className="text-xs sm:text-sm text-[#4B5563] mt-0.5 font-medium truncate">
-              Escola: <strong className="text-[#17221D]">{escola.nome}</strong> ({escola.sigla})
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Inscrição de Equipes & Atletas</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 truncate">
+              Escola: <strong className="text-slate-700 font-semibold">{escola.nome}</strong> ({escola.sigla})
             </p>
           </div>
         </div>
@@ -689,26 +689,26 @@ export default function EscolaInscricoesPage() {
 
       {/* Banner de Operação Especial para a Coordenação SEMED */}
       {isCoordenador && (
-        <div className="bg-[#0b291e] border-2 border-emerald-500/40 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn">
+        <div className="bg-slate-900 border border-slate-800 text-white p-4 rounded-xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center font-bold text-lg shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
               👑
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
                 <span>Modo Coordenação SEMED Ativo</span>
               </div>
-              <h3 className="text-sm sm:text-base font-black text-white">
+              <h3 className="text-sm font-semibold text-white">
                 Operador: {nomeOperador || 'Elias Veloso / Herbert (SEMED)'}
               </h3>
-              <p className="text-xs text-emerald-100/80">
+              <p className="text-xs text-slate-400">
                 Você tem permissão para inscrever atletas e homologar equipes para qualquer escola do município.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <span className="text-xs font-bold text-emerald-200 shrink-0">Alternar Escola:</span>
+            <span className="text-xs font-medium text-slate-300 shrink-0">Alternar Escola:</span>
             <select
               value={escola.id}
               onChange={(e) => {
@@ -722,7 +722,7 @@ export default function EscolaInscricoesPage() {
                   setProvasPorAtleta({});
                 }
               }}
-              className="px-3.5 py-2 rounded-xl bg-emerald-950 border border-emerald-500/60 text-white text-xs font-bold focus:outline-none focus:border-emerald-300 cursor-pointer w-full md:w-auto"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-emerald-500 cursor-pointer w-full md:w-auto"
             >
               {todasEscolas.map(e => (
                 <option key={e.id} value={e.id}>
@@ -733,7 +733,7 @@ export default function EscolaInscricoesPage() {
 
             <Link
               href="/admin/dashboard"
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all shrink-0 whitespace-nowrap text-center"
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-medium transition-colors shrink-0 whitespace-nowrap text-center"
             >
               Painel SEMED
             </Link>
@@ -741,26 +741,26 @@ export default function EscolaInscricoesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Formulário / Wizard */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xs">
-            <h2 className="text-lg sm:text-xl font-black text-[#17221D] mb-1 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-[#00A878]" />
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-6 shadow-2xs">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-emerald-600" />
               <span>Montar Inscrição de Equipe</span>
             </h2>
-            <p className="text-xs sm:text-sm text-[#4B5563] mb-4 font-medium">
+            <p className="text-xs sm:text-sm text-slate-500 mb-4">
               Selecione a modalidade, categoria, nomeie a equipe e convoque os atletas conforme as regras do JEGDS 2026.
             </p>
 
             {/* Banner de Modo de Edição / Ajuste */}
             {equipeEmEdicaoId && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-start gap-2.5">
-                  <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs sm:text-sm font-black">
+                    <h4 className="text-xs sm:text-sm font-semibold text-amber-950">
                       Modo de Ajuste de Elenco Ativado
                     </h4>
                     <p className="text-xs text-amber-800 mt-0.5">
@@ -775,7 +775,7 @@ export default function EscolaInscricoesPage() {
                     setAtletasSelecionadosIds([]);
                     setNomeEquipeSel('');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black shrink-0 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-medium shrink-0 transition-colors cursor-pointer"
                 >
                   Cancelar Edição
                 </button>
@@ -786,42 +786,42 @@ export default function EscolaInscricoesPage() {
             {modalidadeAtual && (() => {
               const etapaInfo = getEtapaInfo(modalidadeAtual.codigo);
               return (
-                <div className={`p-4 rounded-2xl border mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs ${etapaInfo.corFundo}`}>
+                <div className={`p-3.5 rounded-xl border mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs ${etapaInfo.corFundo}`}>
                   <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shrink-0 ${etapaInfo.badge}`}>
+                    <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider shrink-0 ${etapaInfo.badge}`}>
                       {etapaInfo.etapaNome}
                     </span>
                     <div>
-                      <h3 className="text-sm sm:text-base font-black">
+                      <h3 className="text-xs sm:text-sm font-semibold">
                         Data dos Jogos: {etapaInfo.data}
                       </h3>
-                      <p className="text-xs opacity-90 font-medium">
+                      <p className="text-xs opacity-90">
                         Modalidade: <strong>{modalidadeAtual.nome}</strong> • Limite oficial: <strong>{modalidadeAtual.maxAtletas} atletas</strong>
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/80 border border-current/20 shrink-0">
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/80 border border-current/20 shrink-0">
                     Prazo final: {etapaInfo.prazo}
                   </span>
                 </div>
               );
             })()}
 
-            <form onSubmit={handleSubmeterInscricao} className="space-y-5 sm:space-y-6">
+            <form onSubmit={handleSubmeterInscricao} className="space-y-5">
               
               {/* Seleção de Modalidade com Filtro de Etapa Oficial */}
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                     1. Selecione a Modalidade Esportiva
                   </label>
-                  <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+                  <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg overflow-x-auto">
                     <button
                       type="button"
                       onClick={() => setFiltroEtapaForm('TODAS')}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                         filtroEtapaForm === 'TODAS'
-                          ? 'bg-white text-slate-900 shadow-2xs'
+                          ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -833,9 +833,9 @@ export default function EscolaInscricoesPage() {
                         setFiltroEtapaForm(1);
                         setModalidadeSelCodigo('queimada');
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                         filtroEtapaForm === 1
-                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -847,9 +847,9 @@ export default function EscolaInscricoesPage() {
                         setFiltroEtapaForm(2);
                         setModalidadeSelCodigo('beach_soccer');
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                         filtroEtapaForm === 2
-                          ? 'bg-cyan-600 text-white shadow-2xs'
+                          ? 'bg-cyan-600 text-white shadow-2xs font-semibold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -861,9 +861,9 @@ export default function EscolaInscricoesPage() {
                         setFiltroEtapaForm(3);
                         setModalidadeSelCodigo('futsal');
                       }}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                         filtroEtapaForm === 3
-                          ? 'bg-amber-600 text-white shadow-2xs'
+                          ? 'bg-amber-600 text-white shadow-2xs font-semibold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
@@ -872,7 +872,7 @@ export default function EscolaInscricoesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {modalidades
                     .filter(mod => {
                       if (filtroEtapaForm === 'TODAS') return true;
@@ -900,26 +900,26 @@ export default function EscolaInscricoesPage() {
                               setSexoSel(mod.sexosPermitidos[0] as Genero);
                             }
                           }}
-                          className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all relative ${
+                          className={`p-2.5 rounded-xl border text-left transition-colors relative cursor-pointer ${
                             sel
-                              ? 'bg-[#E8F7F1] border-[#00A878] text-[#087A5B] font-bold shadow-sm ring-2 ring-[#00A878]/30'
-                              : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#4B5563] hover:bg-white hover:border-[#00A878]/50'
+                              ? 'bg-emerald-50/70 border-emerald-600 text-emerald-950 font-semibold shadow-2xs ring-1 ring-emerald-500/20'
+                              : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-center justify-between gap-1 mb-1">
-                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded ${
                               etapaInfo.etapa === 1 ? 'bg-emerald-100 text-emerald-800' : etapaInfo.etapa === 2 ? 'bg-cyan-100 text-cyan-800' : 'bg-amber-100 text-amber-800'
                             }`}>
                               {etapaInfo.etapa}ª Etapa
                             </span>
                             {maxEq > 1 && (
-                              <span className="text-[9px] font-black text-slate-500">
+                              <span className="text-[9px] font-medium text-slate-500">
                                 Até 2 times
                               </span>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm font-black truncate text-[#17221D]">{mod.nome}</p>
-                          <p className="text-[10px] text-[#00A878] font-bold mt-0.5">
+                          <p className="text-xs sm:text-sm font-semibold truncate text-slate-900">{mod.nome}</p>
+                          <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
                             {mod.minAtletas}-{mod.maxAtletas} atletas
                           </p>
                         </button>
@@ -930,37 +930,37 @@ export default function EscolaInscricoesPage() {
 
               {/* Seletor de Equipe 1 / Equipe 2 (Para Futebol e Futsal) com Travas */}
               {maxEquipesPermitidas > 1 && (
-                <div className="bg-[#E8F7F1]/60 border border-[#00A878]/30 rounded-2xl p-4 space-y-3">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-black text-[#087A5B] uppercase flex items-center gap-1.5">
-                      <Flame className="w-4 h-4 text-[#00A878]" />
+                    <label className="text-xs font-semibold text-slate-800 uppercase flex items-center gap-1.5">
+                      <Flame className="w-4 h-4 text-emerald-600" />
                       <span>Selecione qual equipe você está montando</span>
                     </label>
-                    <span className="text-[11px] font-bold text-[#087A5B] bg-white px-2 py-0.5 rounded-md border border-[#00A878]/25">
+                    <span className="text-[10px] font-medium text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                       Permitido até 2 equipes
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setNumeroEquipeSel(1)}
-                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`py-2.5 px-3 rounded-lg font-medium text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
                         numeroEquipeSel === 1
-                          ? 'bg-[#00A878] text-white shadow-sm'
-                          : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
+                          ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       <span>Equipe 1 (Principal)</span>
                       {equipe1Existente ? (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                           numeroEquipeSel === 1 ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         }`}>
                           ✓ Já Cadastrada ({equipe1Existente.atletaIds.length} atl)
                         </span>
                       ) : (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          numeroEquipeSel === 1 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 1 ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                         }`}>
                           Disponível
                         </span>
@@ -970,22 +970,22 @@ export default function EscolaInscricoesPage() {
                     <button
                       type="button"
                       onClick={() => setNumeroEquipeSel(2)}
-                      className={`py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`py-2.5 px-3 rounded-lg font-medium text-xs sm:text-sm flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
                         numeroEquipeSel === 2
-                          ? 'bg-[#00A878] text-white shadow-sm'
-                          : 'bg-white text-[#17221D] border border-[#E2EAE5] hover:border-[#00A878]'
+                          ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       <span>Equipe 2 (Secundária)</span>
                       {equipe2Existente ? (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
                           numeroEquipeSel === 2 ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         }`}>
                           ✓ Já Cadastrada ({equipe2Existente.atletaIds.length} atl)
                         </span>
                       ) : (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          numeroEquipeSel === 2 ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                          numeroEquipeSel === 2 ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                         }`}>
                           Disponível
                         </span>
@@ -997,10 +997,10 @@ export default function EscolaInscricoesPage() {
 
               {/* Alerta de Equipe Única Já Cadastrada (Para modalidades com limite estrito de 1 equipe) */}
               {maxEquipesPermitidas === 1 && equipe1Existente && equipeEmEdicaoId !== equipe1Existente.id && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2.5">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="font-black text-amber-950">
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-amber-950">
                       Equipe já cadastrada: {modalidadeAtual?.nome} {categoriaSel} ({sexoSel})
                     </p>
                     <p className="text-amber-800 leading-snug">
@@ -1011,9 +1011,9 @@ export default function EscolaInscricoesPage() {
               )}
 
               {/* Customização: Nome da Equipe e Logo/Escudo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Nome da Equipe (Para Identificação)
                   </label>
                   <input
@@ -1021,15 +1021,15 @@ export default function EscolaInscricoesPage() {
                     value={nomeEquipeSel}
                     onChange={(e) => setNomeEquipeSel(e.target.value)}
                     placeholder={`Ex: ${escola.sigla} ${maxEquipesPermitidas > 1 ? `- Time ${numeroEquipeSel}` : 'A'}`}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-xs sm:text-sm font-normal focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     Escudo / Logo da Equipe
                   </label>
-                  <div className="flex flex-wrap gap-2 items-center">
+                  <div className="flex flex-wrap gap-1.5 items-center">
                     {LOGOS_PREDEFINIDOS.map((badge) => {
                       const BadgeIcon = badge.Icon;
                       return (
@@ -1039,13 +1039,13 @@ export default function EscolaInscricoesPage() {
                           onClick={() => setLogoEquipeSel(badge.id)}
                           title={badge.label}
                           aria-label={badge.label}
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-colors cursor-pointer ${
                             logoEquipeSel === badge.id
-                              ? 'bg-[#E8F7F1] border-[#00A878] ring-2 ring-[#00A878]/30 scale-105 shadow-xs'
-                              : 'bg-[#F7F9F8] border-[#E2EAE5] hover:bg-white'
+                              ? 'bg-emerald-50 border-emerald-600 ring-1 ring-emerald-500/20 shadow-2xs'
+                              : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-slate-300'
                           }`}
                         >
-                          <BadgeIcon className={`w-5 h-5 ${badge.color}`} aria-hidden="true" />
+                          <BadgeIcon className={`w-4 h-4 ${badge.color}`} aria-hidden="true" />
                         </button>
                       );
                     })}
@@ -1055,14 +1055,14 @@ export default function EscolaInscricoesPage() {
 
               {/* Informação do Prazo e Limites da Modalidade */}
               {modalidadeAtual && (
-                <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
                   <div>
-                    <span className="text-[#4B5563]">Elenco Exigido:</span>{' '}
-                    <strong className="text-[#17221D]">
+                    <span className="text-slate-500">Elenco Exigido:</span>{' '}
+                    <strong className="text-slate-800 font-semibold">
                       Mínimo {modalidadeAtual.minAtletas} e Máximo {modalidadeAtual.maxAtletas} alunos
                     </strong>
                   </div>
-                  <div className="flex items-center gap-1.5 text-amber-800 font-bold bg-amber-50 px-3 py-1 rounded-xl border border-amber-200 text-xs">
+                  <div className="flex items-center gap-1.5 text-amber-800 font-medium bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 text-xs">
                     <Clock className="w-3.5 h-3.5" />
                     <span>Prazo: {new Date(modalidadeAtual.prazoInscricao).toLocaleDateString('pt-BR')}</span>
                   </div>
@@ -1070,9 +1070,9 @@ export default function EscolaInscricoesPage() {
               )}
 
               {/* Seleção de Categoria e Sexo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     2. Categoria Etária (Ref: 31/12/2026)
                   </label>
                   <select
@@ -1082,7 +1082,7 @@ export default function EscolaInscricoesPage() {
                       setAtletasSelecionadosIds([]);
                       setProvasPorAtleta({});
                     }}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
                   >
                     <option value="MIRIM">Mirim (9 a 11 anos: 2015-2017)</option>
                     <option value="INFANTIL">Infantil (12 a 14 anos: 2012-2014)</option>
@@ -1092,7 +1092,7 @@ export default function EscolaInscricoesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                     3. Gênero / Naipe
                   </label>
                   <select
@@ -1102,7 +1102,7 @@ export default function EscolaInscricoesPage() {
                       setAtletasSelecionadosIds([]);
                       setProvasPorAtleta({});
                     }}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-sm font-bold focus:outline-none focus:border-[#00A878] focus:bg-white transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
                   >
                     <option value="MASCULINO">Masculino</option>
                     <option value="FEMININO">Feminino</option>
@@ -1112,11 +1112,11 @@ export default function EscolaInscricoesPage() {
 
               {/* Alerta de Validação da Matriz */}
               {!validacaoMatriz.valido && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-2xl p-4 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl p-3.5 flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                   <div>
-                    <strong className="font-black">Combinação Bloqueada pelo Regulamento:</strong>
-                    <p className="mt-0.5 leading-relaxed font-medium">{validacaoMatriz.erro}</p>
+                    <strong className="font-semibold text-rose-950">Combinação Bloqueada pelo Regulamento:</strong>
+                    <p className="mt-0.5 leading-relaxed text-rose-800">{validacaoMatriz.erro}</p>
                   </div>
                 </div>
               )}
@@ -1124,17 +1124,17 @@ export default function EscolaInscricoesPage() {
               {/* Lista de Atletas Elegíveis */}
               {validacaoMatriz.valido && (
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <label className="block text-xs sm:text-sm font-black text-[#17221D] uppercase tracking-wider">
+                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                         4. Seleção de Alunos-Atletas
                       </label>
                       {modalidadeAtual && (
-                        <span className={`text-xs font-black px-3 py-0.5 rounded-full border ${
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${
                           atletasSelecionadosIds.length >= modalidadeAtual.minAtletas &&
                           atletasSelecionadosIds.length <= modalidadeAtual.maxAtletas
-                            ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60 font-semibold'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
                         }`}>
                           {atletasSelecionadosIds.length}/{modalidadeAtual.maxAtletas} (Mín: {modalidadeAtual.minAtletas})
                         </span>
@@ -1144,35 +1144,35 @@ export default function EscolaInscricoesPage() {
                     <button
                       type="button"
                       onClick={handleAbrirModalRapido}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>+ Cadastrar Aluno Rápido</span>
+                      <span>Cadastrar Aluno Rápido</span>
                     </button>
                   </div>
 
                   {atletasElegiveis.length === 0 ? (
-                    <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-3xl p-6 text-center space-y-3">
-                      <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center space-y-2.5">
+                      <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto" />
                       <div>
-                        <p className="text-sm font-bold text-[#17221D]">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800">
                           Nenhum aluno cadastrado na escola para a categoria {categoriaSel} ({sexoSel}).
                         </p>
-                        <p className="text-xs text-[#64748B] mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Cadastre os alunos agora mesmo sem burocracia para convocar para a equipe!
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={handleAbrirModalRapido}
-                        className="px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                       >
-                        <UserPlus className="w-4 h-4" />
+                        <UserPlus className="w-3.5 h-3.5" />
                         <span>Cadastrar Aluno Rápido Agora</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {atletasElegiveis.map((atleta) => {
                         const selecionado = atletasSelecionadosIds.includes(atleta.id);
                         const provasDoAtleta = provasPorAtleta[atleta.id] || [];
@@ -1180,27 +1180,27 @@ export default function EscolaInscricoesPage() {
                         return (
                           <div
                             key={atleta.id}
-                            className={`p-4 rounded-2xl border transition-all ${
+                            className={`p-3 rounded-xl border transition-colors ${
                               selecionado
-                                ? 'bg-[#E8F7F1] border-[#00A878] shadow-sm'
-                                : 'bg-[#F7F9F8] border-[#E2EAE5] text-[#17221D] hover:bg-white hover:border-[#00A878]/40'
+                                ? 'bg-emerald-50/70 border-emerald-600 shadow-2xs'
+                                : 'bg-white border-slate-200 text-slate-900 hover:border-slate-300'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div
                                 onClick={() => toggleAtleta(atleta.id)}
-                                className="flex items-center gap-3.5 cursor-pointer flex-1 min-w-0"
+                                className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
                               >
-                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors shrink-0 ${
-                                  selecionado ? 'bg-[#00A878] border-[#00A878] text-white' : 'border-[#CBD5E1] bg-white'
+                                <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                                  selecionado ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
                                 }`}>
-                                  {selecionado && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
+                                  {selecionado && <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-sm font-bold text-[#17221D] truncate">{atleta.nomeCompleto}</p>
-                                  <p className="text-xs text-[#4B5563] mt-0.5 truncate flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{atleta.nomeCompleto}</p>
+                                  <p className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-1.5 flex-wrap">
                                     {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                                      <span className="font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
+                                      <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/80 text-[10px]">
                                         ⚠️ Sem Documento
                                       </span>
                                     ) : (
@@ -1212,7 +1212,7 @@ export default function EscolaInscricoesPage() {
                               </div>
 
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-xs font-bold text-[#087A5B] bg-white px-2 py-0.5 rounded-lg border border-[#E2EAE5]">
+                                <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                                   {atleta.matricula}
                                 </span>
                                 <button
@@ -1221,7 +1221,7 @@ export default function EscolaInscricoesPage() {
                                     e.stopPropagation();
                                     handleExcluirAtleta(atleta.id, atleta.nomeCompleto);
                                   }}
-                                  className="p-1.5 rounded-lg hover:bg-rose-100 text-[#64748B] hover:text-rose-600 transition-colors"
+                                  className="p-1 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                                   title="Excluir este aluno do cadastro da escola"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1231,16 +1231,16 @@ export default function EscolaInscricoesPage() {
 
                             {/* Seletor de Provas para Atletismo */}
                             {selecionado && modalidadeSelCodigo === 'atletismo' && (
-                              <div className="mt-3.5 pt-3 border-t border-[#00A878]/20 space-y-2">
+                              <div className="mt-2.5 pt-2.5 border-t border-emerald-200/60 space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-bold text-[#087A5B]">
+                                  <span className="text-xs font-medium text-emerald-900">
                                     Selecione até 2 provas de Atletismo:
                                   </span>
-                                  <span className="text-xs font-bold text-[#4B5563]">
+                                  <span className="text-xs text-slate-500">
                                     {provasDoAtleta.length}/2 selecionadas
                                   </span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-1.5">
                                   {provasPermitidasAtletismo.map((prova) => {
                                     const provaAtiva = provasDoAtleta.includes(prova);
                                     return (
@@ -1251,10 +1251,10 @@ export default function EscolaInscricoesPage() {
                                           e.stopPropagation();
                                           toggleProvaAtleta(atleta.id, prova);
                                         }}
-                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                                           provaAtiva
-                                            ? 'bg-[#00A878] text-white shadow-sm'
-                                            : 'bg-white text-[#4B5563] border border-[#E2EAE5] hover:border-[#00A878]'
+                                            ? 'bg-emerald-600 text-white shadow-2xs'
+                                            : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
                                         }`}
                                       >
                                         {prova}
@@ -1283,9 +1283,9 @@ export default function EscolaInscricoesPage() {
                   atletasSelecionadosIds.length < (modalidadeAtual?.minAtletas || 1) ||
                   atletasSelecionadosIds.length > (modalidadeAtual?.maxAtletas || 99)
                 }
-                className="w-full py-4 px-6 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm sm:text-base shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3 px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
+                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                 <span>Confirmar e Enviar Inscrição da Equipe</span>
               </button>
 
@@ -1295,16 +1295,16 @@ export default function EscolaInscricoesPage() {
 
         {/* Resumo das Inscrições Efetuadas */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h3 className="text-lg font-black text-[#17221D]">Equipes Submetidas ({inscricoes.length})</h3>
-              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+              <h3 className="text-base font-bold text-slate-900">Equipes Submetidas ({inscricoes.length})</h3>
+              <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg overflow-x-auto">
                 <button
                   type="button"
                   onClick={() => setFiltroEtapaLista('TODAS')}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                     filtroEtapaLista === 'TODAS'
-                      ? 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1313,9 +1313,9 @@ export default function EscolaInscricoesPage() {
                 <button
                   type="button"
                   onClick={() => setFiltroEtapaLista(1)}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                     filtroEtapaLista === 1
-                      ? 'bg-emerald-600 text-white shadow-2xs'
+                      ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1324,9 +1324,9 @@ export default function EscolaInscricoesPage() {
                 <button
                   type="button"
                   onClick={() => setFiltroEtapaLista(2)}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                     filtroEtapaLista === 2
-                      ? 'bg-cyan-600 text-white shadow-2xs'
+                      ? 'bg-cyan-600 text-white shadow-2xs font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1335,9 +1335,9 @@ export default function EscolaInscricoesPage() {
                 <button
                   type="button"
                   onClick={() => setFiltroEtapaLista(3)}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-colors whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                     filtroEtapaLista === 3
-                      ? 'bg-amber-600 text-white shadow-2xs'
+                      ? 'bg-amber-600 text-white shadow-2xs font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1348,18 +1348,18 @@ export default function EscolaInscricoesPage() {
 
             {/* Card Informativo sobre Equipes com Elenco Excedente */}
             {equipesComExcesso.length > 0 && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs sm:text-sm font-black text-amber-950">
+                    <h4 className="text-xs font-semibold text-amber-950">
                       Atenção: Equipe(s) com elenco excedendo o limite oficial
                     </h4>
-                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                      Identificamos que <strong>{equipesComExcesso.length} equipe(s)</strong> possuem mais atletas do que o teto da modalidade permite (ex: equipe com 14 alunos quando o limite é 10).
+                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                      Identificamos que <strong>{equipesComExcesso.length} equipe(s)</strong> possuem mais atletas do que o teto da modalidade permite.
                     </p>
-                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                      👉 <strong>Para regularizar:</strong> Clique no botão <span className="bg-slate-800 text-white px-1.5 py-0.5 rounded font-bold text-[10px]">Ajustar Elenco</span> no card da equipe, desmarque os atletas excedentes e salve para liberar a validação oficial.
+                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                      👉 Clique em <span className="bg-slate-900 text-white px-1.5 py-0.5 rounded font-medium text-[10px]">Ajustar Elenco</span> para remover os excedentes.
                     </p>
                   </div>
                 </div>
@@ -1367,13 +1367,13 @@ export default function EscolaInscricoesPage() {
             )}
 
             {inscricoesFiltradas.length === 0 ? (
-              <p className="text-sm text-[#4B5563] text-center py-8">
+              <p className="text-xs text-slate-500 text-center py-6">
                 {filtroEtapaLista === 'TODAS'
                   ? 'Nenhuma equipe submetida ainda.'
                   : `Nenhuma equipe submetida para a ${filtroEtapaLista}ª Etapa.`}
               </p>
             ) : (
-              <div className="space-y-3.5">
+              <div className="space-y-2.5">
                 {inscricoesFiltradas.map((insc) => {
                   const numEq = insc.numeroEquipe || 1;
                   const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
@@ -1392,39 +1392,39 @@ export default function EscolaInscricoesPage() {
                   return (
                     <div
                       key={insc.id}
-                      className={`border rounded-2xl p-4 sm:p-5 space-y-3 transition-all ${
+                      className={`border rounded-xl p-3.5 space-y-2.5 transition-colors shadow-2xs ${
                         excedeLimite
-                          ? 'bg-rose-50/40 border-rose-300'
-                          : 'bg-[#F7F9F8] border-[#E2EAE5]'
+                          ? 'bg-rose-50/40 border-rose-200'
+                          : 'bg-white border-slate-200/90 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-9 h-9 rounded-xl bg-white border border-[#E2EAE5] flex items-center justify-center shrink-0 shadow-2xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
                             {renderEmblemaEquipe(insc.logoUrl)}
                           </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="text-sm sm:text-base font-black text-[#17221D] truncate">
+                              <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
                                 {nomeExibicao}
                               </h4>
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
-                                numEq === 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-blue-50 text-blue-800 border-blue-300'
+                              <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${
+                                numEq === 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-blue-50 text-blue-800 border-blue-200'
                               }`}>
                                 {numEq === 1 ? 'Equipe 1' : `Equipe ${numEq}`}
                               </span>
                             </div>
-                            <p className="text-xs text-[#4B5563] mt-0.5 font-medium truncate">
+                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                               {insc.modalidadeNome} • {insc.categoria} • {insc.sexo}
                             </p>
                           </div>
                         </div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full border shrink-0 ${
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
                           insc.status === 'VALIDADA'
-                            ? 'bg-[#E8F7F1] text-[#087A5B] border-[#00A878]/30'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
                             : insc.status === 'REJEITADA'
-                            ? 'bg-red-50 text-red-600 border-red-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-amber-50 text-amber-800 border-amber-200/80'
                         }`}>
                           {insc.status}
                         </span>
@@ -1476,13 +1476,13 @@ export default function EscolaInscricoesPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 pt-2 border-t border-[#E2EAE5] flex-wrap">
+                      <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
                         <button
                           type="button"
                           onClick={() => handleToggleValidarEquipe(insc)}
-                          className={`py-1.5 px-2.5 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
+                          className={`py-1 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
                             insc.status === 'VALIDADA'
-                              ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300'
+                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
                               : (excedeLimite || abaixoMinimo)
                               ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
                               : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
@@ -1502,7 +1502,7 @@ export default function EscolaInscricoesPage() {
                         <button
                           type="button"
                           onClick={() => handleCarregarEquipeParaEdicao(insc)}
-                          className="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all shadow-2xs"
+                          className="py-1 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-2xs"
                           title="Carregar esta equipe no formulário à esquerda para ajustar elenco"
                         >
                           <span>Ajustar Elenco</span>
@@ -1512,9 +1512,9 @@ export default function EscolaInscricoesPage() {
                           type="button"
                           onClick={() => handleGerarPdf(insc)}
                           disabled={gerandoPdfId === insc.id}
-                          className="py-1.5 px-2.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
+                          className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
                         >
-                          <Printer className="w-3.5 h-3.5 text-[#00A878]" />
+                          <Printer className="w-3.5 h-3.5 text-slate-500" />
                           <span>Ficha</span>
                         </button>
 
@@ -1522,16 +1522,16 @@ export default function EscolaInscricoesPage() {
                           type="button"
                           onClick={() => handleGerarCrachasPdf(insc)}
                           disabled={gerandoPdfId === insc.id}
-                          className="py-1.5 px-2.5 rounded-xl bg-white hover:bg-[#E8F7F1] text-[#17221D] hover:text-[#087A5B] border border-[#E2EAE5] text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
+                          className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
                         >
-                          <Download className="w-3.5 h-3.5 text-[#00A878]" />
+                          <Download className="w-3.5 h-3.5 text-slate-500" />
                           <span>Crachás</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleExcluirInscricao(insc.id, insc.nomeEquipe || `${insc.modalidadeNome} - Equipe ${numEq}`)}
-                          className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#4B5563] hover:text-red-600 border border-[#E2EAE5] hover:border-red-200 transition-colors shadow-2xs"
+                          className="p-1 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs"
                           title="Remover equipe"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1549,33 +1549,29 @@ export default function EscolaInscricoesPage() {
 
       {/* Modal de Cadastro Rápido de Aluno */}
       {modalRapidoAberto && modalidadeAtual && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white border border-[#E2EAE5] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl relative my-auto">
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#E2EAE5] mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200/90 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl relative my-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-black mb-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Cadastro Ágil & Direto</span>
-                </div>
-                <h3 className="text-lg font-black text-[#17221D]">
+                <h3 className="text-base font-bold text-slate-900">
                   Novo Aluno na Equipe
                 </h3>
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {modalidadeAtual.nome} • {categoriaSel} ({sexoSel})
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setModalRapidoAberto(false)}
-                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Nome Completo do Aluno *
                 </label>
                 <input
@@ -1583,29 +1579,29 @@ export default function EscolaInscricoesPage() {
                   value={rapidoNome}
                   onChange={(e) => setRapidoNome(e.target.value)}
                   placeholder="Ex: LUCAS HENRIQUE SILVA"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#CBD5E1] text-sm font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none uppercase"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white uppercase"
                   autoFocus
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                     Data de Nascimento *
                   </label>
                   <input
                     type="date"
                     value={rapidoDataNasc}
                     onChange={(e) => setRapidoDataNasc(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                   />
-                  <span className="text-[10px] text-emerald-700 font-bold mt-0.5 block">
+                  <span className="text-[10px] text-emerald-700 font-medium mt-0.5 block">
                     {JegdsRulesService.calcularCategoria(rapidoDataNasc).mensagem}
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                     Série / Turma
                   </label>
                   <input
@@ -1613,15 +1609,15 @@ export default function EscolaInscricoesPage() {
                     value={rapidoSerie}
                     onChange={(e) => setRapidoSerie(e.target.value)}
                     placeholder="Ex: 7º Ano B"
-                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
                   />
                 </div>
               </div>
 
               {/* Caixinha: Aluno sem Documento */}
-              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2.5">
+              <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-2.5">
                 <div>
-                  <label htmlFor="chk-rapido-semdoc" className="text-xs font-black text-amber-950 cursor-pointer block">
+                  <label htmlFor="chk-rapido-semdoc" className="text-xs font-semibold text-amber-950 cursor-pointer block">
                     Aluno sem documentos
                   </label>
                   <p className="text-[10px] text-amber-800 leading-tight">
@@ -1643,21 +1639,21 @@ export default function EscolaInscricoesPage() {
                       setRapidoDocNum('');
                     }
                   }}
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer accent-emerald-600"
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer accent-emerald-600"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                     Documento {!rapidoSemDoc && '*'}
                   </label>
                   <select
                     value={rapidoSemDoc ? 'SEM_DOCUMENTO' : rapidoDocTipo}
                     disabled={rapidoSemDoc}
                     onChange={(e) => setRapidoDocTipo(e.target.value as TipoDocumento)}
-                    className={`w-full px-2.5 py-2 rounded-xl border text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none cursor-pointer ${
-                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 opacity-80 cursor-not-allowed' : 'bg-white border-[#CBD5E1]'
+                    className={`w-full px-2 py-1.5 rounded-lg border text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-600 cursor-pointer ${
+                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 opacity-80 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
                     }`}
                   >
                     <option value="RG">RG</option>
@@ -1667,7 +1663,7 @@ export default function EscolaInscricoesPage() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-xs font-black text-[#17221D] uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                     Número do Documento {!rapidoSemDoc && '*'}
                   </label>
                   <input
@@ -1676,27 +1672,27 @@ export default function EscolaInscricoesPage() {
                     value={rapidoSemDoc ? 'SEM DOCUMENTO' : rapidoDocNum}
                     onChange={(e) => setRapidoDocNum(e.target.value)}
                     placeholder={rapidoSemDoc ? 'Aluno sem documentação' : 'Ex: 05489721202'}
-                    className={`w-full px-3 py-2 rounded-xl border text-xs font-bold text-[#17221D] focus:border-[#00A878] focus:outline-none ${
-                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold cursor-not-allowed uppercase' : 'border-[#CBD5E1]'
+                    className={`w-full px-3 py-1.5 rounded-lg border text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 ${
+                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 font-semibold cursor-not-allowed uppercase' : 'bg-slate-50 border-slate-200'
                     }`}
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#E2EAE5] flex items-center justify-end gap-2.5">
+              <div className="pt-2.5 border-t border-slate-200 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => handleSalvarAlunoRapido(true)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-all cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
                 >
-                  Salvar e + Adicionar Outro
+                  Salvar e + Outro
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSalvarAlunoRapido(false)}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Cadastrar e Conectar</span>
                 </button>
               </div>

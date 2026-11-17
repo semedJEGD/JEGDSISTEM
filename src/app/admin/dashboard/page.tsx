@@ -830,31 +830,31 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 w-full">
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 w-full">
       
       {/* ================= TOP BAR COMPACTO E MODERNO ================= */}
-      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           
           {/* Identificação do Coordenador e Município */}
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-800 shadow-2xs shrink-0">
-              <ShieldCheck className="w-6 h-6 stroke-[2]" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-800 shadow-2xs shrink-0">
+              <ShieldCheck className="w-5 h-5 stroke-[2]" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-lg font-black text-[#17221D] truncate">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">
                   Coordenação SEMED
                 </h1>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 shrink-0">
                   {municipioAtual ? municipioAtual.siglaEvento : 'JEGDS 2026'}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200 shrink-0">
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                   {municipioAtual?.nome || 'Gonçalves Dias'} - {municipioAtual?.uf || 'MA'}
                 </span>
               </div>
-              <p className="text-xs text-[#64748B] mt-0.5 truncate">
-                Operador: <strong className="text-[#17221D]">{currentUser?.nome || 'Elias Veloso / Herbert de Sá'}</strong> (Comitê Oficial)
+              <p className="text-xs text-slate-500 mt-0.5 truncate">
+                Operador: <strong className="text-slate-700 font-semibold">{currentUser?.nome || 'Elias Veloso / Herbert de Sá'}</strong> (Comitê Oficial)
               </p>
             </div>
           </div>
@@ -867,7 +867,7 @@ export default function AdminDashboardPage() {
               <select
                 value={municipioAtual?.id || ''}
                 onChange={(e) => handleMudarMunicipio(e.target.value)}
-                className="px-2.5 py-1.5 rounded-xl bg-[#F7F9F8] border border-emerald-300 text-emerald-900 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 {municipios.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -882,7 +882,7 @@ export default function AdminDashboardPage() {
               type="button"
               onClick={handleForcarSincronizacao}
               disabled={sincronizandoOnline}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-60"
+              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/60 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-60"
               title="Sincronizar instantaneamente com o banco central Neon"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${sincronizandoOnline ? 'animate-spin' : ''}`} />
@@ -895,10 +895,10 @@ export default function AdminDashboardPage() {
               type="button"
               onClick={handleGerarTodosCrachas}
               disabled={gerandoPdf || atletas.length === 0}
-              className="px-3 py-1.5 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
               title="Baixar todos os crachás de todos os atletas do município em PDF"
             >
-              <QrCode className="w-3.5 h-3.5" />
+              <QrCode className="w-3.5 h-3.5 text-slate-500" />
               <span>Todos os Crachás ({atletas.length})</span>
             </button>
 
@@ -906,9 +906,9 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setModalNovaEscolaAberto(true)}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-[#E2EAE5] text-[#17221D] text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors"
             >
-              <PlusCircle className="w-3.5 h-3.5 text-[#00A878]" />
+              <PlusCircle className="w-3.5 h-3.5 text-slate-500" />
               <span className="hidden sm:inline">Nova Escola</span>
             </button>
 
@@ -916,7 +916,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setModalAvisoAberto(true)}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-colors"
             >
               <Bell className="w-3.5 h-3.5" />
               <span>Avisos ({comunicados.length})</span>
@@ -929,7 +929,7 @@ export default function AdminDashboardPage() {
                 JegdStorage.logoutAdmin();
                 window.location.href = '/admin/login';
               }}
-              className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all"
+              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
               title="Desconectar do painel"
             >
               <LogOut className="w-4 h-4" />
@@ -940,61 +940,61 @@ export default function AdminDashboardPage() {
 
       {/* ================= FAIXA COMPACTA DE MÉTRICAS (1 LINHA) ================= */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Escolas</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{escolas.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Escolas</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{escolas.length}</p>
           </div>
-          <School className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <School className="w-5 h-5 text-slate-400" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Alunos</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{atletas.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Alunos</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{atletas.length}</p>
           </div>
-          <Users className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <Users className="w-5 h-5 text-slate-400" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-[#64748B]">Inscrições</span>
-            <p className="text-xl font-black text-[#17221D] mt-0.5">{inscricoes.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Inscrições</span>
+            <p className="text-xl font-bold text-slate-900 mt-0.5">{inscricoes.length}</p>
           </div>
-          <Trophy className="w-6 h-6 text-[#94A3B8] opacity-50" />
+          <Trophy className="w-5 h-5 text-slate-400" />
         </div>
 
-        <div className="bg-white border border-[#E2EAE5] rounded-xl p-3 shadow-2xs flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-emerald-700">Homologados</span>
-            <p className="text-xl font-black text-emerald-700 mt-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Homologados</span>
+            <p className="text-xl font-bold text-emerald-700 mt-0.5">
               {atletas.filter(a => a.conferidoPeloCoordenador).length}
             </p>
           </div>
-          <CheckCheck className="w-6 h-6 text-emerald-500 opacity-60" />
+          <CheckCheck className="w-5 h-5 text-emerald-600" />
         </div>
 
         <div
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className="bg-white border border-[#E2EAE5] hover:border-rose-300 cursor-pointer rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 transition-all"
+          className="bg-white border border-slate-200 hover:border-slate-300 cursor-pointer rounded-xl p-3 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1 transition-colors"
           title="Ver alertas e documentos pendentes na aba de homologação"
         >
           <div>
-            <span className="text-[10px] font-black uppercase text-rose-600">Pendências</span>
-            <p className="text-xl font-black text-rose-600 mt-0.5">{alertasInconsistencia.length}</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-600">Pendências</span>
+            <p className="text-xl font-bold text-rose-600 mt-0.5">{alertasInconsistencia.length}</p>
           </div>
-          <AlertTriangle className="w-6 h-6 text-rose-500 opacity-60" />
+          <AlertTriangle className="w-5 h-5 text-rose-500" />
         </div>
       </div>
 
       {/* ================= NAVEGAÇÃO REORGANIZADA POR 4 ABAS FOCADAS ================= */}
-      <div className="flex items-center gap-1.5 border-b border-[#E2EAE5] pb-2 overflow-x-auto no-scrollbar w-full">
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'ESCOLAS_LOTE'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <Building2 className="w-4 h-4" />
@@ -1003,16 +1003,16 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'HOMOLOGACAO'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <CheckCheck className="w-4 h-4" />
           <span>Homologação & Pendências</span>
           {alertasInconsistencia.length > 0 && (
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               abaAtiva === 'HOMOLOGACAO' ? 'bg-white text-rose-700' : 'bg-rose-500 text-white'
             }`}>
               {alertasInconsistencia.length}
@@ -1022,10 +1022,10 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'LISTAS_CHAMADA'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <ClipboardList className="w-4 h-4" />
@@ -1034,10 +1034,10 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'CRACHA_LOGISTICA'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <IdCard className="w-4 h-4" />
@@ -1046,10 +1046,10 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${
             abaAtiva === 'AVISOS'
-              ? 'bg-[#00A878] text-white shadow-2xs font-black'
-              : 'text-[#4B5563] hover:text-[#17221D] hover:bg-white'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <Megaphone className="w-4 h-4" />
