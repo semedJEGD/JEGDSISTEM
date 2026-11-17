@@ -230,19 +230,16 @@ export function AbaEscolasLote({
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full shrink-0 ${
                           temAlunos ? 'bg-emerald-500' : 'bg-slate-300'
                         }`} />
-                        <span className={`text-xs font-semibold truncate ${
-                          isSelected ? 'text-emerald-900 font-bold' : 'text-slate-900'
-                        }`}>
-                          {item.escola.sigla || item.escola.nome}
+                        <span className={`text-xs truncate ${
+                          isSelected ? 'text-emerald-900 font-bold' : 'text-slate-800 font-medium'
+                        }`} title={item.escola.nome}>
+                          {item.escola.nome}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5 pl-3.5">
-                        {item.escola.nome}
-                      </p>
                     </div>
 
                     <div className="text-right shrink-0">
@@ -270,23 +267,27 @@ export function AbaEscolasLote({
               <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200/60 shrink-0">
-                      {escolaSelecionada.sigla}
-                    </span>
+                    {escolaSelecionada.sigla &&
+                      escolaSelecionada.sigla.length <= 8 &&
+                      escolaSelecionada.sigla.toLowerCase() !== escolaSelecionada.nome.toLowerCase() && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200/60 shrink-0">
+                        {escolaSelecionada.sigla}
+                      </span>
+                    )}
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">
                       {escolaSelecionada.nome}
                     </h2>
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-4 text-xs text-slate-500 mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-500 mt-1 flex-wrap">
                     <span>INEP: <strong className="text-slate-700">{escolaSelecionada.inep || '—'}</strong></span>
                     <span>•</span>
-                    <span>Contato: <strong className="text-slate-700">{escolaSelecionada.responsavelTelefone || escolaSelecionada.loginEmail}</strong></span>
-                    {progressoAtual && (
+                    <span className="text-emerald-700 font-medium">
+                      {progressoAtual ? `${progressoAtual.totalConferidos}/${progressoAtual.totalAtletas} conferidos` : `${atletasDaEscolaSelecionada.length} alunos`}
+                    </span>
+                    {escolaSelecionada.responsavelTelefone && (
                       <>
                         <span>•</span>
-                        <span className="text-emerald-700 font-medium">
-                          {progressoAtual.totalConferidos}/{progressoAtual.totalAtletas} conferidos
-                        </span>
+                        <span>Tel: <strong className="text-slate-700">{escolaSelecionada.responsavelTelefone}</strong></span>
                       </>
                     )}
                   </div>
@@ -570,16 +571,16 @@ export function AbaEscolasLote({
                               </div>
                             </div>
 
-                            {/* Grid Compacto dos Atletas */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                            {/* Grid Arejado e Legível dos Atletas */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {atletasNestaMod.map((atleta) => (
                                 <div
                                   key={atleta.id}
-                                  className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200 flex items-center justify-between gap-2 hover:bg-white hover:border-slate-300 transition-colors shadow-2xs"
+                                  className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/90 flex items-center justify-between gap-3 hover:bg-white hover:border-slate-300 transition-colors shadow-2xs"
                                 >
                                   <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <p className="text-xs font-semibold text-slate-900 truncate" title={atleta.nomeCompleto}>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <p className="text-xs font-semibold text-slate-900" title={atleta.nomeCompleto}>
                                         {atleta.nomeCompleto}
                                       </p>
                                       {atleta.conferidoPeloCoordenador && (
@@ -588,17 +589,19 @@ export function AbaEscolasLote({
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                                      {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'} • {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                                        <span className="font-semibold text-amber-800 bg-amber-50 px-1 py-0.2 rounded border border-amber-200/80">
+                                    <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 flex-wrap">
+                                      <span className="font-medium text-slate-700">{atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}</span>
+                                      <span>•</span>
+                                      {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                        <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
                                           ⚠️ Sem Documento
                                         </span>
                                       ) : (
-                                        <span>DOC: {atleta.documentoNumero}</span>
+                                        <span>DOC: <strong className="text-slate-700">{atleta.documentoNumero}</strong></span>
                                       )}
-                                    </p>
+                                    </div>
                                     {modalidade.codigo === 'atletismo' && (
-                                      <div className="flex flex-wrap gap-1 mt-1">
+                                      <div className="flex flex-wrap gap-1 mt-1.5">
                                         {atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo')?.provas?.map(p => (
                                           <span key={p} className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
                                             {p}
@@ -613,7 +616,7 @@ export function AbaEscolasLote({
                                       <button
                                         type="button"
                                         onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
-                                        className="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors"
+                                        className="p-1.5 rounded-lg hover:bg-slate-200/60 text-slate-600 transition-colors"
                                         title="Editar atleta"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
@@ -623,7 +626,7 @@ export function AbaEscolasLote({
                                       <button
                                         type="button"
                                         onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
-                                        className="p-1 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
+                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                                         title="Excluir atleta"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
@@ -632,7 +635,7 @@ export function AbaEscolasLote({
                                     <button
                                       type="button"
                                       onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
-                                      className="p-1 rounded-md hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
+                                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
                                       title="Crachá Individual"
                                     >
                                       <QrCode className="w-3.5 h-3.5" />
@@ -640,7 +643,7 @@ export function AbaEscolasLote({
                                     <button
                                       type="button"
                                       onClick={() => toggleConferenciaAtleta(atleta)}
-                                      className={`p-1 rounded-md transition-colors ${
+                                      className={`p-1.5 rounded-lg transition-colors ${
                                         atleta.conferidoPeloCoordenador
                                           ? 'text-emerald-600 hover:bg-emerald-50'
                                           : 'text-slate-400 hover:text-slate-600'
@@ -648,9 +651,9 @@ export function AbaEscolasLote({
                                       title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
                                     >
                                       {atleta.conferidoPeloCoordenador ? (
-                                        <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                        <CheckSquare className="w-4 h-4 text-emerald-600" />
                                       ) : (
-                                        <Square className="w-3.5 h-3.5" />
+                                        <Square className="w-4 h-4" />
                                       )}
                                     </button>
                                   </div>

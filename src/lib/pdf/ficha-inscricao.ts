@@ -51,14 +51,14 @@ export class FichaInscricaoService {
     if (logoBase64) {
       try {
         doc.addImage(logoBase64, 'PNG', margin + 3, 11.5, 23, 23);
-      } catch {}
+      } catch { }
     }
 
     // Brasão Prefeitura na direita
     if (brasaoBase64) {
       try {
         doc.addImage(brasaoBase64, 'PNG', pageWidth - margin - 26, 11.5, 23, 23);
-      } catch {}
+      } catch { }
     }
 
     // Textos do Cabeçalho Central
