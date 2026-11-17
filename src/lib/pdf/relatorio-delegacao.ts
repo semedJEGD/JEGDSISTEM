@@ -52,6 +52,20 @@ export class RelatorioDelegacaoService {
       atletasFiltrados = atletasFiltrados.filter(a => a.sexo === filtroSexo);
     }
 
+    // Ordenação e agrupamento estrito por Categoria, Naipe e Ordem Alfabética
+    const ordemCat: Record<string, number> = { MIRIM: 1, INFANTIL: 2, INFANTO: 3, JUNIOR: 4 };
+    atletasFiltrados.sort((a, b) => {
+      const cA = ordemCat[a.categoriaCalculada || ''] || 99;
+      const cB = ordemCat[b.categoriaCalculada || ''] || 99;
+      if (cA !== cB) return cA - cB;
+
+      if (a.sexo !== b.sexo) {
+        return a.sexo === 'FEMININO' ? -1 : 1;
+      }
+
+      return a.nomeCompleto.localeCompare(b.nomeCompleto);
+    });
+
     const totalMasc = atletasFiltrados.filter(a => a.sexo === 'MASCULINO').length;
     const totalFem = atletasFiltrados.filter(a => a.sexo === 'FEMININO').length;
     const totalHomologados = atletasFiltrados.filter(a => a.conferidoPeloCoordenador).length;
@@ -166,7 +180,34 @@ export class RelatorioDelegacaoService {
 
     cabecalhoTabela();
 
+    let ultimoGrupoDelegacao = '';
     atletasFiltrados.forEach((atleta, index) => {
+      const grupoChave = `${atleta.categoriaCalculada || 'LIVRE'} • ${atleta.sexo || 'MISTO'}`;
+      const mudouGrupo = grupoChave !== ultimoGrupoDelegacao;
+
+      if (mudouGrupo) {
+        ultimoGrupoDelegacao = grupoChave;
+        if (currentY > pageHeight - 45) {
+          doc.addPage();
+          currentY = 15;
+          cabecalhoTabela();
+        }
+
+        // Faixa de Separação de Categoria e Naipe
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, currentY, contentWidth, 5.5, 'F');
+        doc.setDrawColor(...CORES_JEGD.bordaSuave);
+        doc.line(margin, currentY + 5.5, margin + contentWidth, currentY + 5.5);
+
+        doc.setFontSize(6.2);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...CORES_JEGD.escuro);
+        const grupoLabel = `DIVISÃO: ${(atleta.categoriaCalculada || 'LIVRE').toUpperCase()} • NAIPE: ${(atleta.sexo || 'MISTO').toUpperCase()}`;
+        doc.text(grupoLabel, margin + 4, currentY + 3.8);
+
+        currentY += 5.5;
+      }
+
       if (currentY > pageHeight - 40) {
         doc.addPage();
         currentY = 15;

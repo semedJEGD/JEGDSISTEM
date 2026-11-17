@@ -502,6 +502,9 @@ export default function AdminDashboardPage() {
           });
         }
 
+        // Ordenação alfabética estrita dos atletas na súmula
+        atletasComEscola.sort((a, b) => a.atleta.nomeCompleto.localeCompare(b.atleta.nomeCompleto));
+
         categoriasData.push({
           categoria: cat,
           sexo,

@@ -69,11 +69,11 @@ export class SumulaChamadaService {
     );
     doc.setFont('helvetica', 'bold');
 
-    let infoLinha = `MODALIDADE: ${modalidadeNome.toUpperCase()} • CATEGORIA: ${categoria} (${sexo}) • DATA: ${dataJogo}`;
+    let infoLinha = `MODALIDADE: ${modalidadeNome.toUpperCase()} • CATEGORIA: ${categoria.toUpperCase()} • NAIPE: ${sexo.toUpperCase()} • DATA: ${dataJogo}`;
     if (isManual && (!modalidadeNome || modalidadeNome.toUpperCase().includes('UNIVERSAL') || modalidadeNome.toUpperCase().includes('GERAL'))) {
-      infoLinha = `MODALIDADE: ________________________ • CATEGORIA: _______________ • DATA: ____/____/2026`;
+      infoLinha = `MODALIDADE: ________________________ • CATEGORIA: _______________ • NAIPE: [ ] MASC  [ ] FEM • DATA: ____/____/2026`;
     } else if (escolaFiltro) {
-      infoLinha = `MODALIDADE: ${modalidadeNome.toUpperCase()} • CATEGORIA: ${categoria} (${sexo}) • DATA: ${dataJogo} • ESCOLA: ${(escolaFiltro.sigla || escolaFiltro.nome).toUpperCase()}`;
+      infoLinha = `MODALIDADE: ${modalidadeNome.toUpperCase()} • CATEGORIA: ${categoria.toUpperCase()} • NAIPE: ${sexo.toUpperCase()} • ESCOLA: ${(escolaFiltro.sigla || escolaFiltro.nome).toUpperCase()}`;
     }
     doc.text(infoLinha, pageWidth / 2, 24.5, { align: 'center' });
 
@@ -213,8 +213,13 @@ export class SumulaChamadaService {
         renderRow(i, '', escolaNomePreenchido, '');
       }
     } else {
+      // Ordenação alfabética rigorosa dos atletas da equipe/súmula
+      const atletasOrdenadosSumula = [...atletasComEscola].sort((a, b) =>
+        a.atleta.nomeCompleto.localeCompare(b.atleta.nomeCompleto)
+      );
+
       // Renderiza atletas cadastrados
-      atletasComEscola.forEach((item, index) => {
+      atletasOrdenadosSumula.forEach((item, index) => {
         if (currentY > pageHeight - 52) {
           doc.addPage();
           currentY = 15;

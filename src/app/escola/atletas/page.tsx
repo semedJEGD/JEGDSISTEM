@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
@@ -374,7 +374,7 @@ export default function EscolaAtletasPage() {
     );
   }
 
-  // Filtragem
+  // Filtragem e Ordenação por Categoria, Naipe e Nome
   const atletasFiltrados = atletas.filter(atleta => {
     const termo = busca.toLowerCase();
     const bateBusca =
@@ -387,6 +387,38 @@ export default function EscolaAtletasPage() {
     const bateProfessor = filtroProfessor === 'TODOS' || atleta.cadastradoPor === filtroProfessor;
     return bateBusca && bateSexo && bateCat && bateProfessor;
   });
+
+  const gruposEscolaAtletas = useMemo(() => {
+    const ordemCat = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
+    const naipes = ['FEMININO', 'MASCULINO'];
+    const result: {
+      categoria: string;
+      sexo: string;
+      faixa: string;
+      atletas: Atleta[];
+    }[] = [];
+
+    ordemCat.forEach(cat => {
+      naipes.forEach(sexo => {
+        const doGrupo = atletasFiltrados
+          .filter(a => a.categoriaCalculada === cat && a.sexo === sexo)
+          .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto));
+        if (doGrupo.length > 0) {
+          const faixa = cat === 'MIRIM' ? '9 a 11 anos' : cat === 'INFANTIL' ? '12 a 14 anos' : cat === 'INFANTO' ? '15 a 17 anos' : '18 a 20 anos';
+          result.push({ categoria: cat, sexo, faixa, atletas: doGrupo });
+        }
+      });
+    });
+
+    const outros = atletasFiltrados
+      .filter(a => !ordemCat.includes(a.categoriaCalculada || ''))
+      .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto));
+    if (outros.length > 0) {
+      result.push({ categoria: 'DIVERSOS', sexo: 'MISTO', faixa: '', atletas: outros });
+    }
+
+    return result;
+  }, [atletasFiltrados]);
 
   // Geração de Crachás
   const handleGerarCrachaIndividual = async (atleta: Atleta) => {
@@ -608,15 +640,38 @@ export default function EscolaAtletasPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {atletasFiltrados.map((atleta) => (
-            <AtletaCard
-              key={atleta.id}
-              atleta={atleta}
-              onGerarCracha={handleGerarCrachaIndividual}
-              onEditar={handleAbrirModalEditar}
-              onExcluir={handleExcluirAtleta}
-            />
+        <div className="space-y-6">
+          {gruposEscolaAtletas.map((grupo) => (
+            <div key={`${grupo.categoria}-${grupo.sexo}`} className="space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${grupo.sexo === 'FEMININO' ? 'bg-pink-500' : 'bg-blue-600'}`} />
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wide">
+                    {grupo.categoria} • {grupo.sexo === 'FEMININO' ? 'FEMININO' : 'MASCULINO'}
+                  </h3>
+                  {grupo.faixa && (
+                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      {grupo.faixa}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-slate-600">
+                  {grupo.atletas.length} {grupo.atletas.length === 1 ? 'aluno' : 'alunos'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {grupo.atletas.map((atleta) => (
+                  <AtletaCard
+                    key={atleta.id}
+                    atleta={atleta}
+                    onGerarCracha={handleGerarCrachaIndividual}
+                    onEditar={handleAbrirModalEditar}
+                    onExcluir={handleExcluirAtleta}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

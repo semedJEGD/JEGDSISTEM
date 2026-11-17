@@ -135,6 +135,22 @@ export function AbaEscolasLote({
     });
   }, [atletasDaEscolaSelecionada, buscaAluno, filtroModalidadeLote, filtroCategoriaLote, filtroSexoLote]);
 
+  // Alunos ordenados por Categoria, Naipe/Sexo e Ordem Alfabética
+  const atletasOrdenados = useMemo(() => {
+    const ordemCat: Record<string, number> = { MIRIM: 1, INFANTIL: 2, INFANTO: 3, JUNIOR: 4 };
+    return [...atletasFiltrados].sort((a, b) => {
+      const cA = ordemCat[a.categoriaCalculada || ''] || 99;
+      const cB = ordemCat[b.categoriaCalculada || ''] || 99;
+      if (cA !== cB) return cA - cB;
+
+      if (a.sexo !== b.sexo) {
+        return a.sexo === 'FEMININO' ? -1 : 1;
+      }
+
+      return a.nomeCompleto.localeCompare(b.nomeCompleto);
+    });
+  }, [atletasFiltrados]);
+
   const progressoAtual = progressoEscolas.find(p => p.escola.id === escolaSelecionadaId);
 
   return (
@@ -493,11 +509,11 @@ export function AbaEscolasLote({
                 ) : modoVisualizacaoLote === 'CARDS' ? (
                   
                   /* VISUALIZAÇÃO EM CARDS AGRUPADOS POR MODALIDADE */
-                  <div className="space-y-3.5">
+                  <div className="space-y-4">
                     {modalidades
                       .filter(m => filtroModalidadeLote === 'TODAS' || m.codigo === filtroModalidadeLote)
                       .map((modalidade) => {
-                        const atletasNestaMod = atletasFiltrados.filter(a =>
+                        const atletasNestaMod = atletasOrdenados.filter(a =>
                           a.modalidadesInscritas?.some(
                             mod => mod.modalidadeCodigo === modalidade.codigo || mod.modalidadeNome.toLowerCase().includes(modalidade.nome.toLowerCase())
                           )
@@ -508,28 +524,54 @@ export function AbaEscolasLote({
                         const todosAprovados = atletasNestaMod.every(a => a.conferidoPeloCoordenador);
                         const totalAprovados = atletasNestaMod.filter(a => a.conferidoPeloCoordenador).length;
 
+                        const ordemCat = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
+                        const naipes = ['FEMININO', 'MASCULINO'];
+                        const gruposNestaMod: {
+                          categoria: string;
+                          sexo: string;
+                          faixa: string;
+                          atletas: Atleta[];
+                        }[] = [];
+
+                        ordemCat.forEach(cat => {
+                          naipes.forEach(sexo => {
+                            const doGrupo = atletasNestaMod.filter(a => a.categoriaCalculada === cat && a.sexo === sexo);
+                            if (doGrupo.length > 0) {
+                              const faixa = cat === 'MIRIM' ? '9 a 11 anos' : cat === 'INFANTIL' ? '12 a 14 anos' : cat === 'INFANTO' ? '15 a 17 anos' : '18 a 20 anos';
+                              gruposNestaMod.push({ categoria: cat, sexo, faixa, atletas: doGrupo });
+                            }
+                          });
+                        });
+
+                        const outros = atletasNestaMod.filter(a => !ordemCat.includes(a.categoriaCalculada || ''));
+                        if (outros.length > 0) {
+                          gruposNestaMod.push({ categoria: 'DIVERSOS', sexo: 'MISTO', faixa: '', atletas: outros });
+                        }
+
                         return (
                           <div
                             key={modalidade.id}
-                            className="bg-white border border-slate-200/90 rounded-xl p-4 space-y-3 shadow-2xs hover:border-slate-300 transition-colors"
+                            className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 space-y-4 shadow-2xs hover:border-slate-300 transition-colors"
                           >
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
                               <div className="flex items-center gap-2">
-                                <span className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/60 text-emerald-800 flex items-center justify-center font-bold text-xs">
-                                  <Trophy className="w-3.5 h-3.5" />
+                                <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                                  <Trophy className="w-4 h-4" />
                                 </span>
                                 <div>
-                                  <span className="text-sm font-bold text-slate-900">{modalidade.nome}</span>
-                                  <span className="ml-2 text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                                    {atletasNestaMod.length} {atletasNestaMod.length === 1 ? 'atleta' : 'atletas'}
-                                  </span>
-                                  <span className={`ml-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                    todosAprovados
-                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
-                                      : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                                  }`}>
-                                    {totalAprovados}/{atletasNestaMod.length} aprovados
-                                  </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-sm sm:text-base font-bold text-slate-900">{modalidade.nome}</span>
+                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                      {atletasNestaMod.length} {atletasNestaMod.length === 1 ? 'atleta' : 'atletas'}
+                                    </span>
+                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                      todosAprovados
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
+                                        : 'bg-amber-50 text-amber-800 border-amber-200/80'
+                                    }`}>
+                                      {totalAprovados}/{atletasNestaMod.length} homologados
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
 
@@ -539,7 +581,7 @@ export function AbaEscolasLote({
                                     type="button"
                                     onClick={() => onAprovarEquipeModalidade(escolaSelecionada, modalidade, atletasNestaMod)}
                                     disabled={todosAprovados}
-                                    className={`text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors ${
+                                    className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
                                       todosAprovados
                                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-default'
                                         : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs cursor-pointer'
@@ -547,76 +589,262 @@ export function AbaEscolasLote({
                                     title={todosAprovados ? 'Todos os alunos desta modalidade já estão aprovados' : 'Aprovar todos os alunos e homologar equipe nesta modalidade'}
                                   >
                                     <ShieldCheck className="w-3.5 h-3.5" />
-                                    <span>{todosAprovados ? 'Equipe Aprovada' : 'Aprovar Equipe'}</span>
+                                    <span>{todosAprovados ? 'Modalidade Aprovada' : 'Aprovar Modalidade'}</span>
                                   </button>
                                 )}
                                 <button
                                   type="button"
                                   onClick={() => JegdPdfGenerator.gerarCrachasEmLote(escolaSelecionada, atletasNestaMod, modalidade.nome)}
-                                  className="text-xs font-medium text-slate-700 hover:bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1 transition-colors"
+                                  className="text-xs font-medium text-slate-700 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1 transition-colors"
                                   title="Baixar crachás deste esporte"
                                 >
-                                  <QrCode className="w-3 h-3 text-slate-500" />
+                                  <QrCode className="w-3.5 h-3.5 text-slate-500" />
                                   <span>Crachás</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleImprimirLoteEscola(escolaSelecionada, modalidade.codigo)}
-                                  className="text-xs font-medium text-slate-700 hover:bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center gap-1 transition-colors"
+                                  className="text-xs font-medium text-slate-700 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1 transition-colors"
                                   title="Imprimir ficha deste esporte"
                                 >
-                                  <Printer className="w-3 h-3 text-slate-500" />
+                                  <Printer className="w-3.5 h-3.5 text-slate-500" />
                                   <span>Ficha</span>
                                 </button>
                               </div>
                             </div>
 
-                            {/* Grid Arejado e Legível dos Atletas */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {atletasNestaMod.map((atleta) => (
-                                <div
-                                  key={atleta.id}
-                                  className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/90 flex items-center justify-between gap-3 hover:bg-white hover:border-slate-300 transition-colors shadow-2xs"
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <p className="text-xs font-semibold text-slate-900" title={atleta.nomeCompleto}>
-                                        {atleta.nomeCompleto}
-                                      </p>
-                                      {atleta.conferidoPeloCoordenador && (
-                                        <span title="Homologado">
-                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 flex-wrap">
-                                      <span className="font-medium text-slate-700">{atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}</span>
-                                      <span>•</span>
-                                      {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                                        <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
-                                          ⚠️ Sem Documento
-                                        </span>
-                                      ) : (
-                                        <span>DOC: <strong className="text-slate-700">{atleta.documentoNumero}</strong></span>
-                                      )}
-                                    </div>
-                                    {modalidade.codigo === 'atletismo' && (
-                                      <div className="flex flex-wrap gap-1 mt-1.5">
-                                        {atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo')?.provas?.map(p => (
-                                          <span key={p} className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                                            {p}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
+                            {/* DIVISÃO E AGRUPAMENTO POR CATEGORIA E NAIPE */}
+                            <div className="space-y-4">
+                              {gruposNestaMod.map((grupo) => {
+                                const grupoTodosAprovados = grupo.atletas.every(a => a.conferidoPeloCoordenador);
+                                const grupoTotalAprovados = grupo.atletas.filter(a => a.conferidoPeloCoordenador).length;
 
-                                  <div className="flex items-center gap-1 shrink-0">
+                                return (
+                                  <div
+                                    key={`${modalidade.id}-${grupo.categoria}-${grupo.sexo}`}
+                                    className="rounded-xl border border-slate-200/80 bg-slate-50/40 p-3 sm:p-4 space-y-3"
+                                  >
+                                    {/* CABEÇALHO DO GRUPO (CATEGORIA & NAIPE) */}
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 flex-wrap gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                          grupo.sexo === 'FEMININO' ? 'bg-pink-500' : 'bg-blue-600'
+                                        }`} />
+                                        <h4 className="text-xs font-bold text-slate-900 tracking-wide uppercase">
+                                          {grupo.categoria} • {grupo.sexo === 'FEMININO' ? 'FEMININO' : 'MASCULINO'}
+                                        </h4>
+                                        {grupo.faixa && (
+                                          <span className="text-[10px] font-medium text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                            {grupo.faixa}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-semibold text-slate-700">
+                                          {grupo.atletas.length} {grupo.atletas.length === 1 ? 'atleta' : 'atletas'}
+                                        </span>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                          grupoTodosAprovados
+                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
+                                            : 'bg-amber-50 text-amber-800 border-amber-200/80'
+                                        }`}>
+                                          {grupoTotalAprovados}/{grupo.atletas.length} conferidos
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* GRID AREJADO DOS ATLETAS DESTE GRUPO */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                      {grupo.atletas.map((atleta) => (
+                                        <div
+                                          key={atleta.id}
+                                          className="p-3 rounded-xl bg-white border border-slate-200/90 flex items-center justify-between gap-3 hover:border-slate-300 transition-colors shadow-2xs"
+                                        >
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <p className="text-xs font-semibold text-slate-900" title={atleta.nomeCompleto}>
+                                                {atleta.nomeCompleto}
+                                              </p>
+                                              {atleta.conferidoPeloCoordenador && (
+                                                <span title="Homologado">
+                                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1 flex-wrap">
+                                              {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                                <span className="font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 text-[10px]">
+                                                  ⚠️ Sem Documento
+                                                </span>
+                                              ) : (
+                                                <span>DOC: <strong className="text-slate-700">{atleta.documentoNumero}</strong></span>
+                                              )}
+                                              <span>•</span>
+                                              <span>Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</span>
+                                            </div>
+                                            {modalidade.codigo === 'atletismo' && (
+                                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                                {atleta.modalidadesInscritas?.find(m => m.modalidadeCodigo === 'atletismo')?.provas?.map(p => (
+                                                  <span key={p} className="text-[9px] font-medium px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                                                    {p}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            {onEditarAtleta && (
+                                              <button
+                                                type="button"
+                                                onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+                                                title="Editar atleta"
+                                              >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                            {onExcluirAtleta && (
+                                              <button
+                                                type="button"
+                                                onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
+                                                className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
+                                                title="Excluir atleta"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                            <button
+                                              type="button"
+                                              onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
+                                              className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
+                                              title="Crachá Individual"
+                                            >
+                                              <QrCode className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleConferenciaAtleta(atleta)}
+                                              className={`p-1.5 rounded-lg transition-colors ${
+                                                atleta.conferidoPeloCoordenador
+                                                  ? 'text-emerald-600 hover:bg-emerald-50'
+                                                  : 'text-slate-400 hover:text-slate-600'
+                                              }`}
+                                              title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
+                                            >
+                                              {atleta.conferidoPeloCoordenador ? (
+                                                <CheckSquare className="w-4 h-4 text-emerald-600" />
+                                              ) : (
+                                                <Square className="w-4 h-4" />
+                                              )}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  
+                  /* VISUALIZAÇÃO EM TABELA GERAL OTIMIZADA COM DIVISORES DE GRUPO */
+                  <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-left text-xs text-slate-800">
+                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-semibold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3 w-10">OK</th>
+                          <th className="p-3">Aluno</th>
+                          <th className="p-3">Categoria / Sexo</th>
+                          <th className="p-3">Documento</th>
+                          <th className="p-3">Modalidades Inscritas</th>
+                          <th className="p-3 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {atletasOrdenados.map((atleta, index) => {
+                          const grupoChave = `${atleta.categoriaCalculada} • ${atleta.sexo}`;
+                          const anteriorChave = index > 0 ? `${atletasOrdenados[index - 1].categoriaCalculada} • ${atletasOrdenados[index - 1].sexo}` : null;
+                          const mudouGrupo = grupoChave !== anteriorChave;
+
+                          return (
+                            <React.Fragment key={atleta.id}>
+                              {mudouGrupo && (
+                                <tr className="bg-slate-100/90 text-slate-800 border-y border-slate-200">
+                                  <td colSpan={6} className="px-3 py-2 text-xs font-bold uppercase tracking-wider">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`w-2 h-2 rounded-full ${atleta.sexo === 'FEMININO' ? 'bg-pink-500' : 'bg-blue-600'}`} />
+                                      <span>{atleta.categoriaCalculada} • {atleta.sexo === 'FEMININO' ? 'FEMININO' : 'MASCULINO'}</span>
+                                      <span className="text-[10px] font-medium text-slate-500 lowercase">
+                                        ({atletasOrdenados.filter(x => x.categoriaCalculada === atleta.categoriaCalculada && x.sexo === atleta.sexo).length} atletas)
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                              <tr className="hover:bg-slate-50/70 transition-colors">
+                                <td className="p-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleConferenciaAtleta(atleta)}
+                                    className="text-slate-400 hover:text-emerald-600"
+                                    title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
+                                  >
+                                    {atleta.conferidoPeloCoordenador ? (
+                                      <CheckSquare className="w-4 h-4 text-emerald-600" />
+                                    ) : (
+                                      <Square className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </td>
+
+                                <td className="p-3">
+                                  <p className="font-semibold text-slate-900">{atleta.nomeCompleto}</p>
+                                  <p className="text-[10px] text-slate-500">Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</p>
+                                </td>
+
+                                <td className="p-3">
+                                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px] border border-slate-200">
+                                    {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}
+                                  </span>
+                                </td>
+
+                                <td className="p-3 text-slate-700">
+                                  {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
+                                    <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 text-[10px]">
+                                      ⚠️ Sem Documento
+                                    </span>
+                                  ) : (
+                                    <><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</>
+                                  )}
+                                </td>
+
+                                <td className="p-3">
+                                  {atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {atleta.modalidadesInscritas.map((m, idx) => (
+                                        <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] border border-emerald-200/60 font-medium">
+                                          {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[10px]">Nenhuma</span>
+                                  )}
+                                </td>
+
+                                <td className="p-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
                                     {onEditarAtleta && (
                                       <button
                                         type="button"
                                         onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
-                                        className="p-1.5 rounded-lg hover:bg-slate-200/60 text-slate-600 transition-colors"
+                                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
                                         title="Editar atleta"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
@@ -642,142 +870,22 @@ export function AbaEscolasLote({
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => toggleConferenciaAtleta(atleta)}
+                                      onClick={() => abrirModalObsAtleta(atleta)}
                                       className={`p-1.5 rounded-lg transition-colors ${
-                                        atleta.conferidoPeloCoordenador
-                                          ? 'text-emerald-600 hover:bg-emerald-50'
-                                          : 'text-slate-400 hover:text-slate-600'
+                                        atleta.observacaoCoordenador
+                                          ? 'text-amber-800 bg-amber-50'
+                                          : 'text-slate-500 hover:text-slate-800'
                                       }`}
-                                      title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
+                                      title="Anotação da comissão"
                                     >
-                                      {atleta.conferidoPeloCoordenador ? (
-                                        <CheckSquare className="w-4 h-4 text-emerald-600" />
-                                      ) : (
-                                        <Square className="w-4 h-4" />
-                                      )}
+                                      <MessageSquare className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                ) : (
-                  
-                  /* VISUALIZAÇÃO EM TABELA GERAL OTIMIZADA */
-                  <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                    <table className="w-full text-left text-xs text-slate-800">
-                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-semibold border-b border-slate-200">
-                        <tr>
-                          <th className="p-3 w-10">OK</th>
-                          <th className="p-3">Aluno</th>
-                          <th className="p-3">Categoria / Sexo</th>
-                          <th className="p-3">Documento</th>
-                          <th className="p-3">Modalidades Inscritas</th>
-                          <th className="p-3 text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {atletasFiltrados.map((atleta) => (
-                          <tr key={atleta.id} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="p-3">
-                              <button
-                                type="button"
-                                onClick={() => toggleConferenciaAtleta(atleta)}
-                                className="text-slate-400 hover:text-emerald-600"
-                                title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
-                              >
-                                {atleta.conferidoPeloCoordenador ? (
-                                  <CheckSquare className="w-4 h-4 text-emerald-600" />
-                                ) : (
-                                  <Square className="w-4 h-4" />
-                                )}
-                              </button>
-                            </td>
-
-                            <td className="p-3">
-                              <p className="font-semibold text-slate-900">{atleta.nomeCompleto}</p>
-                              <p className="text-[10px] text-slate-500">Nasc: {new Date(atleta.dataNascimento).toLocaleDateString('pt-BR')}</p>
-                            </td>
-
-                            <td className="p-3">
-                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[10px] border border-slate-200">
-                                {atleta.categoriaCalculada} • {atleta.sexo === 'MASCULINO' ? 'Masc' : 'Fem'}
-                              </span>
-                            </td>
-
-                            <td className="p-3 text-slate-700">
-                              {atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' ? (
-                                <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 text-[10px]">
-                                  ⚠️ Sem Documento
-                                </span>
-                              ) : (
-                                <><strong>{atleta.documentoTipo}:</strong> {atleta.documentoNumero}</>
-                              )}
-                            </td>
-
-                            <td className="p-3">
-                              {atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {atleta.modalidadesInscritas.map((m, idx) => (
-                                    <span key={idx} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] border border-emerald-200/60 font-medium">
-                                      {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic text-[10px]">Nenhuma</span>
-                              )}
-                            </td>
-
-                            <td className="p-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {onEditarAtleta && (
-                                  <button
-                                    type="button"
-                                    onClick={() => onEditarAtleta(atleta, escolaSelecionada)}
-                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
-                                    title="Editar atleta"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                                {onExcluirAtleta && (
-                                  <button
-                                    type="button"
-                                    onClick={() => onExcluirAtleta(atleta, escolaSelecionada)}
-                                    className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
-                                    title="Excluir atleta"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleGerarCrachaIndividual(atleta, escolaSelecionada)}
-                                  className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 transition-colors"
-                                  title="Crachá Individual"
-                                >
-                                  <QrCode className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => abrirModalObsAtleta(atleta)}
-                                  className={`p-1.5 rounded-lg transition-colors ${
-                                    atleta.observacaoCoordenador
-                                      ? 'text-amber-800 bg-amber-50'
-                                      : 'text-slate-500 hover:text-slate-800'
-                                  }`}
-                                  title="Anotação da comissão"
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
