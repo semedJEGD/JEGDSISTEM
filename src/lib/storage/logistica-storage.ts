@@ -73,6 +73,20 @@ export class LogisticaStorage {
     const porToken = atletas.find(a => a.crachaToken && a.crachaToken.toLowerCase() === query);
     if (porToken) return porToken;
 
+    // 2. Se for URL bipada pelo leitor de QR Code (ex: https://.../validar?token=XYZ)
+    if (query.includes('token=') || query.includes('codigo=')) {
+      const match = query.match(/[?&](?:token|codigo)=([^&#\s]+)/i);
+      if (match && match[1]) {
+        const tokenExtraido = decodeURIComponent(match[1]).toLowerCase();
+        const porTokenUrl = atletas.find(a => 
+          (a.crachaToken && a.crachaToken.toLowerCase() === tokenExtraido) ||
+          (a.id && a.id.toLowerCase() === tokenExtraido) ||
+          (a.matricula && a.matricula.toLowerCase() === tokenExtraido)
+        );
+        if (porTokenUrl) return porTokenUrl;
+      }
+    }
+
     // 2. Se for JSON colado de QR Code
     try {
       if (query.startsWith('{') && query.endsWith('}')) {

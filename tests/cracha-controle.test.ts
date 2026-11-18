@@ -72,6 +72,11 @@ const buscaPorQR = JegdStorage.getAtletaByCrachaToken(qrPayload);
 assert(buscaPorQR && buscaPorQR.id === atletaTeste.id, 'Busca por JSON do QR Code deve encontrar o atleta');
 console.log('✅ SUCESSO: Atleta localizado pelo payload do QR Code');
 
+const urlPayload = `https://jegdsistem-nu.vercel.app/validar?token=${token1}`;
+const buscaPorUrl = JegdStorage.getAtletaByCrachaToken(urlPayload);
+assert(buscaPorUrl && buscaPorUrl.id === atletaTeste.id, 'Busca por URL do QR Code deve encontrar o atleta');
+console.log('✅ SUCESSO: Atleta localizado pela URL completa do QR Code');
+
 // Teste 3: Registro de Eventos Logísticos e Elegibilidade
 console.log('\n3. Teste de Registro de Eventos Logísticos:');
 const regAgua: RegistroControle = {

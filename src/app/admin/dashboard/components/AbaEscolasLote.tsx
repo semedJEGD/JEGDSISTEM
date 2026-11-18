@@ -181,10 +181,10 @@ export function AbaEscolasLote({
     <div className="space-y-4">
       {/* LAYOUT MASTER-DETAIL: BARRA LATERAL DE ESCOLAS + ESPAÇO DE TRABALHO DA ESCOLA */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        
+
         {/* ==================== COLUNA ESQUERDA: LISTA COMPACTA DE ESCOLAS ==================== */}
         <div className="lg:col-span-4 xl:col-span-3 bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden flex flex-col">
-          
+
           {/* Topo da lista de escolas */}
           <div className="p-3.5 border-b border-slate-200 bg-slate-50/70 space-y-2.5">
             <div className="flex items-center justify-between">
@@ -214,33 +214,30 @@ export function AbaEscolasLote({
               <button
                 type="button"
                 onClick={() => setFiltroStatusEscola('TODAS')}
-                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${
-                  filtroStatusEscola === 'TODAS'
+                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${filtroStatusEscola === 'TODAS'
                     ? 'bg-white text-slate-900 shadow-2xs font-semibold border border-slate-200'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 Todas
               </button>
               <button
                 type="button"
                 onClick={() => setFiltroStatusEscola('COM_ALUNOS')}
-                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${
-                  filtroStatusEscola === 'COM_ALUNOS'
+                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${filtroStatusEscola === 'COM_ALUNOS'
                     ? 'bg-emerald-50 text-emerald-800 shadow-2xs font-semibold border border-emerald-200/60'
                     : 'text-slate-600 hover:text-emerald-700'
-                }`}
+                  }`}
               >
                 Com Alunos
               </button>
               <button
                 type="button"
                 onClick={() => setFiltroStatusEscola('SEM_ALUNOS')}
-                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${
-                  filtroStatusEscola === 'SEM_ALUNOS'
+                className={`flex-1 py-1 px-1.5 rounded-md text-center transition-colors ${filtroStatusEscola === 'SEM_ALUNOS'
                     ? 'bg-slate-100 text-slate-700 shadow-2xs font-semibold border border-slate-200'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
               >
                 Sem Inscrição
               </button>
@@ -263,31 +260,27 @@ export function AbaEscolasLote({
                     key={item.escola.id}
                     type="button"
                     onClick={() => setEscolaSelecionadaId(item.escola.id)}
-                    className={`w-full text-left p-3 transition-colors flex items-center justify-between gap-2.5 ${
-                      isSelected
+                    className={`w-full text-left p-3 transition-colors flex items-center justify-between gap-2.5 ${isSelected
                         ? 'bg-emerald-50/60 border-l-3 border-l-emerald-600'
                         : 'hover:bg-slate-50/70 border-l-3 border-l-transparent'
-                    }`}
+                      }`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${
-                          temAlunos ? 'bg-emerald-500' : 'bg-slate-300'
-                        }`} />
-                        <span className={`text-xs truncate ${
-                          isSelected ? 'text-emerald-900 font-bold' : 'text-slate-800 font-medium'
-                        }`} title={item.escola.nome}>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${temAlunos ? 'bg-emerald-500' : 'bg-slate-300'
+                          }`} />
+                        <span className={`text-xs truncate ${isSelected ? 'text-emerald-900 font-bold' : 'text-slate-800 font-medium'
+                          }`} title={item.escola.nome}>
                           {item.escola.nome}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
-                        temAlunos
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${temAlunos
                           ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
                           : 'bg-slate-100 text-slate-500'
-                      }`}>
+                        }`}>
                         {item.totalAtletas} {item.totalAtletas === 1 ? 'aluno' : 'alunos'}
                       </span>
                     </div>
@@ -302,7 +295,7 @@ export function AbaEscolasLote({
         <div className="lg:col-span-8 xl:col-span-9 space-y-4">
           {escolaSelecionada ? (
             <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
-              
+
               {/* CABEÇALHO DA ESCOLA SELECIONADA */}
               <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="min-w-0">
@@ -310,10 +303,10 @@ export function AbaEscolasLote({
                     {escolaSelecionada.sigla &&
                       escolaSelecionada.sigla.length <= 8 &&
                       escolaSelecionada.sigla.toLowerCase() !== escolaSelecionada.nome.toLowerCase() && (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200/60 shrink-0">
-                        {escolaSelecionada.sigla}
-                      </span>
-                    )}
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold text-xs border border-emerald-200/60 shrink-0">
+                          {escolaSelecionada.sigla}
+                        </span>
+                      )}
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">
                       {escolaSelecionada.nome}
                     </h2>
@@ -335,7 +328,7 @@ export function AbaEscolasLote({
 
                 {/* BOTÕES DE AÇÃO PRINCIPAL DA ESCOLA */}
                 <div className="flex items-center gap-2 flex-wrap shrink-0 w-full sm:w-auto">
-                  
+
                   {/* BOTÃO PRIMÁRIO: INSCREVER ALUNO */}
                   {onNovoAtleta && (
                     <button
@@ -437,7 +430,7 @@ export function AbaEscolasLote({
 
               {/* BARRA DE FILTROS COMPACTA DO LOTE */}
               <div className="p-3 bg-slate-50/70 border-b border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                
+
                 {/* Busca de Alunos dentro da Escola */}
                 <div className="relative flex-1">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -481,11 +474,10 @@ export function AbaEscolasLote({
                     <button
                       type="button"
                       onClick={() => setModoVisualizacaoLote('CARDS')}
-                      className={`p-1.5 rounded-md transition-colors ${
-                        modoVisualizacaoLote === 'CARDS'
+                      className={`p-1.5 rounded-md transition-colors ${modoVisualizacaoLote === 'CARDS'
                           ? 'bg-slate-900 text-white'
                           : 'text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                       title="Visualização em Cards por Modalidade"
                     >
                       <LayoutGrid className="w-3.5 h-3.5" />
@@ -493,11 +485,10 @@ export function AbaEscolasLote({
                     <button
                       type="button"
                       onClick={() => setModoVisualizacaoLote('TABELA')}
-                      className={`p-1.5 rounded-md transition-colors ${
-                        modoVisualizacaoLote === 'TABELA'
+                      className={`p-1.5 rounded-md transition-colors ${modoVisualizacaoLote === 'TABELA'
                           ? 'bg-slate-900 text-white'
                           : 'text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                       title="Visualização em Tabela Geral"
                     >
                       <List className="w-3.5 h-3.5" />
@@ -531,7 +522,7 @@ export function AbaEscolasLote({
                     Nenhum aluno corresponde aos filtros selecionados.
                   </div>
                 ) : modoVisualizacaoLote === 'CARDS' ? (
-                  
+
                   /* VISUALIZAÇÃO EM CARDS AGRUPADOS POR MODALIDADE */
                   <div className="space-y-4">
                     {modalidades
@@ -588,11 +579,10 @@ export function AbaEscolasLote({
                                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                                       {atletasNestaMod.length} {atletasNestaMod.length === 1 ? 'atleta' : 'atletas'}
                                     </span>
-                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                      todosAprovados
+                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${todosAprovados
                                         ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
                                         : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                                    }`}>
+                                      }`}>
                                       {totalAprovados}/{atletasNestaMod.length} homologados
                                     </span>
                                   </div>
@@ -605,11 +595,10 @@ export function AbaEscolasLote({
                                     type="button"
                                     onClick={() => onAprovarEquipeModalidade(escolaSelecionada, modalidade, atletasNestaMod)}
                                     disabled={todosAprovados}
-                                    className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-                                      todosAprovados
+                                    className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${todosAprovados
                                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-default'
                                         : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs cursor-pointer'
-                                    }`}
+                                      }`}
                                     title={todosAprovados ? 'Todos os alunos desta modalidade já estão aprovados' : 'Aprovar todos os alunos e homologar equipe nesta modalidade'}
                                   >
                                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -651,9 +640,8 @@ export function AbaEscolasLote({
                                     {/* CABEÇALHO DO GRUPO (CATEGORIA & NAIPE) */}
                                     <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 flex-wrap gap-2">
                                       <div className="flex items-center gap-2">
-                                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                          grupo.sexo === 'FEMININO' ? 'bg-pink-500' : 'bg-blue-600'
-                                        }`} />
+                                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${grupo.sexo === 'FEMININO' ? 'bg-pink-500' : 'bg-blue-600'
+                                          }`} />
                                         <h4 className="text-xs font-bold text-slate-900 tracking-wide uppercase">
                                           {grupo.categoria} • {grupo.sexo === 'FEMININO' ? 'FEMININO' : 'MASCULINO'}
                                         </h4>
@@ -668,11 +656,10 @@ export function AbaEscolasLote({
                                         <span className="text-[11px] font-semibold text-slate-700">
                                           {grupo.atletas.length} {grupo.atletas.length === 1 ? 'atleta' : 'atletas'}
                                         </span>
-                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                          grupoTodosAprovados
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${grupoTodosAprovados
                                             ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
                                             : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                                        }`}>
+                                          }`}>
                                           {grupoTotalAprovados}/{grupo.atletas.length} conferidos
                                         </span>
                                       </div>
@@ -750,11 +737,10 @@ export function AbaEscolasLote({
                                             <button
                                               type="button"
                                               onClick={() => toggleConferenciaAtleta(atleta)}
-                                              className={`p-1.5 rounded-lg transition-colors ${
-                                                atleta.conferidoPeloCoordenador
+                                              className={`p-1.5 rounded-lg transition-colors ${atleta.conferidoPeloCoordenador
                                                   ? 'text-emerald-600 hover:bg-emerald-50'
                                                   : 'text-slate-400 hover:text-slate-600'
-                                              }`}
+                                                }`}
                                               title={atleta.conferidoPeloCoordenador ? 'Homologado' : 'Validar'}
                                             >
                                               {atleta.conferidoPeloCoordenador ? (
@@ -776,7 +762,7 @@ export function AbaEscolasLote({
                       })}
                   </div>
                 ) : (
-                  
+
                   /* VISUALIZAÇÃO EM TABELA SEPARADA POR MODALIDADE -> E DEPOIS POR GRUPO & NAIPE */
                   <div className="space-y-6">
                     {modalidadesComAtletas.map(({ modalidade, atletas: atletasDestaMod }) => {
@@ -821,11 +807,10 @@ export function AbaEscolasLote({
                                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200">
                                     {atletasDestaMod.length} {atletasDestaMod.length === 1 ? 'atleta' : 'atletas'}
                                   </span>
-                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                    todosAprovados
+                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${todosAprovados
                                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
                                       : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                                  }`}>
+                                    }`}>
                                     {totalAprovados}/{atletasDestaMod.length} homologados
                                   </span>
                                 </div>
@@ -838,11 +823,10 @@ export function AbaEscolasLote({
                                   type="button"
                                   onClick={() => onAprovarEquipeModalidade(escolaSelecionada, modalidade, atletasDestaMod)}
                                   disabled={todosAprovados}
-                                  className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-                                    todosAprovados
+                                  className={`text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${todosAprovados
                                       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 cursor-default'
                                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs cursor-pointer'
-                                  }`}
+                                    }`}
                                   title="Aprovar e homologar todos os alunos desta modalidade"
                                 >
                                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -994,11 +978,10 @@ export function AbaEscolasLote({
                                             <button
                                               type="button"
                                               onClick={() => abrirModalObsAtleta(atleta)}
-                                              className={`p-1.5 rounded-lg transition-colors ${
-                                                atleta.observacaoCoordenador
+                                              className={`p-1.5 rounded-lg transition-colors ${atleta.observacaoCoordenador
                                                   ? 'text-amber-800 bg-amber-50'
                                                   : 'text-slate-500 hover:text-slate-800'
-                                              }`}
+                                                }`}
                                               title="Anotação da comissão"
                                             >
                                               <MessageSquare className="w-3.5 h-3.5" />

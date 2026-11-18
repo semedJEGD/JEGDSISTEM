@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   QrCode,
   ShieldCheck,
@@ -10,18 +11,280 @@ import {
   Trophy,
   Users,
   CheckCircle2,
-  FileText,
+  AlertCircle,
   Lock,
   ArrowRight,
   Printer,
-  Droplets,
-  Utensils,
+  Search,
+  X,
+  Calendar,
+  Award,
   Clock,
-  Layers,
   Check,
-  HelpCircle,
-  Eye
+  Utensils
 } from 'lucide-react';
+import { JegdStorage } from '@/lib/storage';
+import { Atleta, Escola, InscricaoEquipe } from '@/types/jegd';
+import { CrachaDobravelService } from '@/lib/pdf/cracha-dobravel';
+
+function ValidadorPublicoForm() {
+  const searchParams = useSearchParams();
+  const [termoBusca, setTermoBusca] = useState('');
+  const [atletaEncontrado, setAtletaEncontrado] = useState<Atleta | null>(null);
+  const [escolaAtleta, setEscolaAtleta] = useState<Escola | null>(null);
+  const [inscricoes, setInscricoes] = useState<InscricaoEquipe[]>([]);
+  const [consultou, setConsultou] = useState(false);
+  const [dataConsulta, setDataConsulta] = useState<string>('');
+
+  const realizarBusca = (codigo: string) => {
+    if (!codigo.trim()) return;
+    setConsultou(true);
+    setDataConsulta(new Date().toLocaleString('pt-BR'));
+
+    const atleta = JegdStorage.getAtletaByCrachaToken(codigo.trim());
+    if (atleta) {
+      setAtletaEncontrado(atleta);
+      const escola = JegdStorage.getEscolaById(atleta.escolaId) || null;
+      setEscolaAtleta(escola);
+      const inscs = JegdStorage.getInscricoes().filter(i => i.atletaIds && i.atletaIds.includes(atleta.id));
+      setInscricoes(inscs);
+    } else {
+      setAtletaEncontrado(null);
+      setEscolaAtleta(null);
+      setInscricoes([]);
+    }
+  };
+
+  useEffect(() => {
+    const tokenParam = searchParams.get('token') || searchParams.get('codigo') || searchParams.get('id');
+    if (tokenParam) {
+      setTermoBusca(tokenParam);
+      realizarBusca(tokenParam);
+    }
+  }, [searchParams]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    realizarBusca(termoBusca);
+  };
+
+  const limparBusca = () => {
+    setTermoBusca('');
+    setAtletaEncontrado(null);
+    setEscolaAtleta(null);
+    setInscricoes([]);
+    setConsultou(false);
+  };
+
+  const handleImprimir = async () => {
+    if (!atletaEncontrado) return;
+    const escolaPadrao: Escola = escolaAtleta || {
+      id: 'geral',
+      nome: 'Escola Municipal',
+      sigla: 'SEMED',
+      inep: '',
+      rede: 'MUNICIPAL',
+      bairro: '',
+      endereco: '',
+      responsavelNome: '',
+      responsavelTelefone: '',
+      loginEmail: '',
+      createdAt: ''
+    };
+    await CrachaDobravelService.gerarCrachaIndividual(atletaEncontrado, escolaPadrao);
+  };
+
+  return (
+    <div className="bg-white border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-black tracking-wide uppercase">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Validação Pública em Tempo Real</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-2">
+            Consultar Autenticidade do Crachá
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Escaneie o QR Code com a câmera do celular ou digite o Token/Matrícula do estudante-atleta.
+          </p>
+        </div>
+
+        {consultou && (
+          <button
+            onClick={limparBusca}
+            className="self-start sm:self-auto text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Nova Consulta</span>
+          </button>
+        )}
+      </div>
+
+      {/* Formulário de Busca */}
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2.5">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={termoBusca}
+            onChange={(e) => setTermoBusca(e.target.value)}
+            placeholder="Digite o Token (ex: CR-...), Matrícula ou Nome do Atleta..."
+            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+          />
+        </div>
+        <button
+          type="submit"
+          className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0 flex items-center justify-center gap-2"
+        >
+          <QrCode className="w-4 h-4" />
+          <span>Verificar Credencial</span>
+        </button>
+      </form>
+
+      {/* RESULTADO DA CONSULTA */}
+      {consultou && (
+        <div className="pt-2 animate-in fade-in duration-300">
+          {atletaEncontrado ? (
+            <div className="bg-gradient-to-br from-emerald-50/50 via-white to-slate-50 border-2 border-emerald-500 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+              
+              {/* Cabeçalho do Certificado de Validade */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-black text-emerald-900 tracking-wide uppercase">
+                        CREDENCIAL OFICIAL AUTÊNTICA
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-200">
+                        HOMOLOGADO SEMED
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      <span>Consulta realizada em {dataConsulta}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleImprimir}
+                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Baixar Crachá (PDF)</span>
+                </button>
+              </div>
+
+              {/* Informações Centrais do Atleta */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                {/* Foto ou Avatar */}
+                <div className="w-28 h-36 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                  {atletaEncontrado.documentos?.foto3x4 ? (
+                    <img
+                      src={atletaEncontrado.documentos.foto3x4}
+                      alt={atletaEncontrado.nomeCompleto}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center p-2">
+                      <Users className="w-10 h-10 text-slate-300 mx-auto mb-1" />
+                      <span className="text-[9px] text-slate-400 font-black uppercase">Foto Oficial 3x4</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dados Cadastrais */}
+                <div className="space-y-3 flex-1 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <span className="text-xs font-black text-slate-800 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                      ID: {atletaEncontrado.id.toUpperCase().slice(0, 10)}
+                    </span>
+                    <span className="text-xs font-black text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                      TOKEN: {atletaEncontrado.crachaToken || 'GERADO NA IMPRESSÃO'}
+                    </span>
+                    <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                      {atletaEncontrado.categoriaCalculada || 'LIVRE'} • {atletaEncontrado.sexo}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">
+                    {atletaEncontrado.nomeCompleto}
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
+                    <div className="bg-white/80 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Escola Representada</span>
+                      <p className="font-black text-slate-800 text-sm mt-0.5 truncate">
+                        {escolaAtleta ? `${escolaAtleta.nome} (${escolaAtleta.sigla})` : 'Delegação Escolar SEMED'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/80 p-3 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Documento Oficial</span>
+                      {atletaEncontrado.semDocumento || atletaEncontrado.documentoTipo === 'SEM_DOCUMENTO' || atletaEncontrado.documentoNumero === 'SEM DOCUMENTO' ? (
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 mt-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-black">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>EM REGULARIZAÇÃO COM A SEMED</span>
+                        </div>
+                      ) : (
+                        <p className="font-black text-slate-800 text-sm mt-0.5">
+                          {atletaEncontrado.documentoTipo}: {atletaEncontrado.documentoNumero}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Modalidades Inscritas */}
+                  <div className="bg-white/80 p-3 rounded-xl border border-slate-100 space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Modalidades Autorizadas para Competição</span>
+                    <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+                      {atletaEncontrado.modalidadesInscritas && atletaEncontrado.modalidadesInscritas.length > 0 ? (
+                        atletaEncontrado.modalidadesInscritas.map((m, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black"
+                          >
+                            ⚽ {m.modalidadeNome} {m.provas && m.provas.length > 0 ? `(${m.provas.join(', ')})` : ''}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">
+                          Delegação Escolar Geral
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Rodapé Institucional do Certificado */}
+              <div className="border-t border-emerald-100 pt-3 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <span>Comitê Organizador dos Jogos Escolares de Gonçalves Dias • JEGDS 2026</span>
+                <span className="font-bold text-emerald-800">Secretaria Municipal de Educação (SEMED)</span>
+              </div>
+
+            </div>
+          ) : (
+            <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-center space-y-2">
+              <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
+              <h4 className="text-sm font-black text-rose-900">
+                Nenhum Atleta Encontrado com o Código Informado
+              </h4>
+              <p className="text-xs text-rose-700 max-w-md mx-auto">
+                Verifique se o token foi digitado corretamente ou certifique-se de que o crachá pertence à edição oficial dos Jogos Escolares JEGDS 2026.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CrachaGuiaPage() {
   const [ladoCracha, setLadoCracha] = useState<'FRENTE' | 'VERSO' | 'AMBOS'>('AMBOS');
@@ -39,9 +302,14 @@ export default function CrachaGuiaPage() {
           Crachá Oficial do Atleta • JEGD 2026
         </h1>
         <p className="text-xs sm:text-base text-[#374151] leading-relaxed font-normal">
-          Conheça o modelo oficial dobrável, entenda como emitir pela sua escola e veja por que ele é obrigatório para entrada em quadra e refeições.
+          Consulte a autenticidade de qualquer credencial pela câmera ou conheça o modelo oficial dobrável emitido pela SEMED.
         </p>
       </div>
+
+      {/* VALIDADOR PÚBLICO EM TEMPO REAL */}
+      <Suspense fallback={<div className="p-8 text-center text-sm font-bold text-slate-400 bg-white rounded-3xl border border-slate-200">Carregando sistema validador...</div>}>
+        <ValidadorPublicoForm />
+      </Suspense>
 
       {/* BANNER CTA PARA ÁRBITROS & COORDENAÇÃO DA SEMED */}
       <div className="bg-gradient-to-r from-[#17221D] via-[#0F172A] to-[#1E293B] rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -153,8 +421,8 @@ export default function CrachaGuiaPage() {
                       <span className="font-black text-slate-800">INFANTIL (MASC)</span>
                     </div>
                     <div>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase block">Documento / RG</span>
-                      <span className="font-black text-slate-800">058.***.***-01</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase block">Documento Oficial</span>
+                      <span className="font-black text-slate-800">EM REGULARIZAÇÃO</span>
                     </div>
                   </div>
                 </div>

@@ -183,10 +183,10 @@ export class CrachaDobravelService {
     doc.text(dataNasc, x + 3.5, y + 64.5);
 
     const docStr = (atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO')
-      ? 'S/ DOCUMENTO'
+      ? 'EM REGULARIZAÇÃO'
       : `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
-    doc.setFontSize(4.0);
-    doc.text(docStr.slice(0, 16), x + 25, y + 64.5);
+    doc.setFontSize(3.8);
+    doc.text(docStr.slice(0, 18), x + 25, y + 64.5);
 
     // Rodapé da Frente
     doc.setFillColor(...CORES_JEGD.fundoCinza);
@@ -263,15 +263,20 @@ export class CrachaDobravelService {
     doc.setFont('helvetica', 'bold');
     doc.text('Lanche & Alimentação da Delegação', vX + 11.2, y + 29.8);
 
-    // QR Code Oficial de Validação
+    // QR Code Oficial de Validação (URL Pública para Smartphones e Validador Oficial)
     const qrSize = 14.5;
     const qrX = vX + (wHalf - qrSize) / 2;
     const qrY = y + 32.5;
 
+    const originUrl = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://jegdsistem-nu.vercel.app';
+    const payloadValidacao = `${originUrl}/validar?token=${encodeURIComponent(tokenCracha)}`;
+
     try {
-      const qrDataUrl = await QRCode.toDataURL(tokenCracha, {
+      const qrDataUrl = await QRCode.toDataURL(payloadValidacao, {
         margin: 0,
-        width: 100,
+        width: 120,
         errorCorrectionLevel: 'M'
       });
       doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
