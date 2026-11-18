@@ -46,6 +46,14 @@ import {
   PROVAS_ATLETISMO_POR_CATEGORIA,
   MODALIDADES_JEGDS
 } from '@/services/jegds-rules';
+import { ModalCadastroAtleta } from '../atletas/components/ModalCadastroAtleta';
+
+const FAIXA_ETARIA_INFO: Record<CategoriaIdade, { faixaAnos: string; anosNascimento: string }> = {
+  MIRIM: { faixaAnos: '9 a 11 anos', anosNascimento: 'Nascidos em 2015 a 2017' },
+  INFANTIL: { faixaAnos: '12 a 14 anos', anosNascimento: 'Nascidos em 2012 a 2014' },
+  INFANTO: { faixaAnos: '15 a 17 anos', anosNascimento: 'Nascidos em 2009 a 2011' },
+  JUNIOR: { faixaAnos: '18 a 20 anos', anosNascimento: 'Nascidos em 2006 a 2008' }
+};
 
 const LOGOS_PREDEFINIDOS = [
   { id: 'shield', label: 'Escudo Clássico', iconName: 'shield', Icon: Shield, color: 'text-emerald-600' },
@@ -107,16 +115,22 @@ export default function EscolaInscricoesPage() {
   const [gerandoPdfId, setGerandoPdfId] = useState<string | null>(null);
   const [equipeEmEdicaoId, setEquipeEmEdicaoId] = useState<string | null>(null);
   const [filtroEtapaForm, setFiltroEtapaForm] = useState<number | 'TODAS'>('TODAS');
-  const [filtroEtapaLista, setFiltroEtapaLista] = useState<number | 'TODAS'>('TODAS');
+  const [filtroEtapaLista, setFiltroEtapaLista] = useState<CategoriaIdade | 'TODAS'>('TODAS');
 
-  // Estado do Cadastro Rápido de Aluno direto no Painel da Modalidade
-  const [modalRapidoAberto, setModalRapidoAberto] = useState(false);
-  const [rapidoNome, setRapidoNome] = useState('');
-  const [rapidoDataNasc, setRapidoDataNasc] = useState('2013-05-10');
-  const [rapidoDocTipo, setRapidoDocTipo] = useState<TipoDocumento>('RG');
-  const [rapidoDocNum, setRapidoDocNum] = useState('');
-  const [rapidoSemDoc, setRapidoSemDoc] = useState(false);
-  const [rapidoSerie, setRapidoSerie] = useState('7º Ano A');
+  // Estados do Modal Oficial de Cadastro de Atleta (Padrão SEMED Unificado)
+  const [modalCadastroAtletaAberto, setModalCadastroAtletaAberto] = useState(false);
+  const [nomeCompleto, setNomeCompleto] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('2013-05-10');
+  const [sexo, setSexo] = useState<Genero>('MASCULINO');
+  const [semDocumento, setSemDocumento] = useState(false);
+  const [documentoTipo, setDocumentoTipo] = useState<TipoDocumento>('RG');
+  const [documentoNumero, setDocumentoNumero] = useState('');
+  const [matricula, setMatricula] = useState('');
+  const [serieTurma, setSerieTurma] = useState('7º Ano A');
+  const [fotoBase64, setFotoBase64] = useState<string>('');
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [modalidadesEscolhidas, setModalidadesEscolhidas] = useState<ModalidadeCodigo[]>([]);
+  const [provasAtletismo, setProvasAtletismo] = useState<string[]>([]);
 
   // Helper oficial das Etapas
   const getEtapaInfo = (modCodigo: string) => {
@@ -194,7 +208,11 @@ export default function EscolaInscricoesPage() {
     if (etapaParam && ['1', '2', '3'].includes(etapaParam)) {
       const numEtapa = Number(etapaParam);
       setFiltroEtapaForm(numEtapa);
-      setFiltroEtapaLista(numEtapa);
+    }
+    const catParam = urlParams.get('categoria') || (etapaParam && ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'].includes(etapaParam) ? etapaParam : null);
+    if (catParam && ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'].includes(catParam)) {
+      setFiltroEtapaLista(catParam as CategoriaIdade);
+      setCategoriaSel(catParam as CategoriaIdade);
     }
 
     if (modParam && mods.some(m => m.codigo === modParam)) {
@@ -283,13 +301,43 @@ export default function EscolaInscricoesPage() {
     );
   }, [modalidadeAtual, categoriaSel, sexoSel, inscricoes, equipeEmEdicaoId]);
 
-  // Equipes submetidas filtradas por Etapa
-  const inscricoesFiltradas = React.useMemo(() => {
-    if (filtroEtapaLista === 'TODAS') return inscricoes;
-    return inscricoes.filter(insc => {
-      const info = getEtapaInfo(insc.modalidadeCodigo);
-      return info.etapa === filtroEtapaLista;
+  // Agrupamento Hierárquico das Equipes: Etapa (Categoria) -> Modalidade -> Naipe/Grupo
+  const equipesAgrupadasPorEtapa = React.useMemo(() => {
+    const etapasOrder: CategoriaIdade[] = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
+
+    const inscricoesFiltradas = filtroEtapaLista === 'TODAS'
+      ? inscricoes
+      : inscricoes.filter(i => i.categoria === filtroEtapaLista);
+
+    const porEtapa: Record<string, InscricaoEquipe[]> = {};
+    inscricoesFiltradas.forEach(i => {
+      const cat = i.categoria || 'INFANTIL';
+      if (!porEtapa[cat]) porEtapa[cat] = [];
+      porEtapa[cat].push(i);
     });
+
+    return etapasOrder
+      .filter(etapa => porEtapa[etapa] && porEtapa[etapa].length > 0)
+      .map(etapa => {
+        const equipesDaEtapa = porEtapa[etapa];
+
+        const porModalidade: Record<string, InscricaoEquipe[]> = {};
+        equipesDaEtapa.forEach(eq => {
+          const mod = eq.modalidadeNome || eq.modalidadeCodigo;
+          if (!porModalidade[mod]) porModalidade[mod] = [];
+          porModalidade[mod].push(eq);
+        });
+
+        const modalidadesLista = Object.entries(porModalidade)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([modalidadeNome, equipes]) => ({ modalidadeNome, equipes }));
+
+        return {
+          etapa,
+          totalEquipes: equipesDaEtapa.length,
+          modalidades: modalidadesLista
+        };
+      });
   }, [inscricoes, filtroEtapaLista]);
 
   // Validação da Matriz
@@ -298,13 +346,101 @@ export default function EscolaInscricoesPage() {
   // Prazo e status
   const prazoExpirado = modalidadeAtual ? JegdsRulesService.isPrazoExpirado(modalidadeAtual.prazoInscricao) : false;
 
-  // Atletas elegíveis para a categoria e sexo selecionados
-  const atletasElegiveis = todosAtletas.filter(atleta => {
-    const infoCat = JegdsRulesService.calcularCategoria(atleta.dataNascimento);
-    const bateCat = infoCat.categoria === categoriaSel;
-    const bateGen = atleta.sexo === sexoSel;
-    return bateCat && bateGen;
-  });
+  // Atletas elegíveis estritamente para a Categoria (Etapa) e Sexo selecionados (Blindagem Atômica)
+  const atletasElegiveis = React.useMemo(() => {
+    return todosAtletas.filter(atleta => {
+      const infoCat = JegdsRulesService.calcularCategoria(atleta.dataNascimento);
+      const bateCat = infoCat.categoria === categoriaSel;
+      const bateGen = atleta.sexo === sexoSel;
+      return bateCat && bateGen;
+    });
+  }, [todosAtletas, categoriaSel, sexoSel]);
+
+  // Detector de Atletas Irregulares convocados no elenco (ex: fora da idade ou outro sexo)
+  const atletasIrregularesNoElenco = React.useMemo(() => {
+    return (atletasSelecionadosIds || [])
+      .map(id => todosAtletas.find(a => a.id === id))
+      .filter((a): a is Atleta => {
+        if (!a) return false;
+        const info = JegdsRulesService.calcularCategoria(a.dataNascimento);
+        return info.categoria !== categoriaSel || a.sexo !== sexoSel;
+      });
+  }, [atletasSelecionadosIds, todosAtletas, categoriaSel, sexoSel]);
+
+  // Helper para sanitizar elenco removendo atletas irregulares com 1 clique
+  const handleRemoverIrregulares = () => {
+    const idsIrregulares = new Set(atletasIrregularesNoElenco.map(a => a.id));
+    setAtletasSelecionadosIds(prev => prev.filter(id => !idsIrregulares.has(id)));
+    const novasProvas = { ...provasPorAtleta };
+    idsIrregulares.forEach(id => delete novasProvas[id]);
+    setProvasPorAtleta(novasProvas);
+  };
+
+  // Funções de apoio ao Modal Oficial de Cadastro de Atleta
+  const catCalc = JegdsRulesService.calcularCategoria(dataNascimento);
+
+  const modalidadesDisponiveis = React.useMemo(() => {
+    return modalidades.filter(mod => {
+      if (!catCalc.categoria) return false;
+      const res = JegdsRulesService.validarMatriz(mod.codigo, catCalc.categoria as CategoriaIdade, sexo);
+      return res.valido;
+    });
+  }, [modalidades, catCalc.categoria, sexo]);
+
+  const diagnosticoDuplicidade = React.useMemo(() => {
+    if (!escola) return { duplicado: false };
+    if (!nomeCompleto.trim() && !documentoNumero.trim()) return { duplicado: false };
+    return JegdStorage.verificarDuplicidadeAtleta({
+      nomeCompleto,
+      dataNascimento,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero,
+      matricula,
+      semDocumento,
+      escolaIdAtual: escola.id
+    });
+  }, [nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento, escola]);
+
+  const toggleModalidadeCadastro = (modCodigo: ModalidadeCodigo) => {
+    if (modalidadesEscolhidas.includes(modCodigo)) {
+      setModalidadesEscolhidas(modalidadesEscolhidas.filter(c => c !== modCodigo));
+      if (modCodigo === 'atletismo') setProvasAtletismo([]);
+    } else {
+      const proximas = [...modalidadesEscolhidas, modCodigo];
+      const validacaoArt13 = JegdsRulesService.validarLimiteModalidadesAtleta(proximas as any);
+      if (!validacaoArt13.valido) {
+        alert(validacaoArt13.erro);
+        return;
+      }
+      setModalidadesEscolhidas(proximas);
+    }
+  };
+
+  const toggleProvaModalidade = (prova: string) => {
+    if (provasAtletismo.includes(prova)) {
+      setProvasAtletismo(provasAtletismo.filter(p => p !== prova));
+    } else {
+      if (provasAtletismo.length >= 2) {
+        alert('No Atletismo cada atleta pode disputar no máximo 2 provas.');
+        return;
+      }
+      setProvasAtletismo([...provasAtletismo, prova]);
+    }
+  };
+
+  const handleFotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('A foto deve ter no máximo 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFotoBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const toggleAtleta = (id: string) => {
     if (!modalidadeAtual) return;
@@ -371,6 +507,16 @@ export default function EscolaInscricoesPage() {
 
     if (atletasSelecionadosIds.length > modalidadeAtual.maxAtletas) {
       alert(`⚠️ Limite Máximo Excedido!\n\nA modalidade ${modalidadeAtual.nome} permite no máximo ${modalidadeAtual.maxAtletas} atletas.\nVocê selecionou ${atletasSelecionadosIds.length} atletas.\n\nPor favor, desmarque ${atletasSelecionadosIds.length - modalidadeAtual.maxAtletas} atleta(s) antes de confirmar.`);
+      return;
+    }
+
+    // Regra de Blindagem de Etapa: Bloquear atletas fora da etapa no elenco
+    if (atletasIrregularesNoElenco.length > 0) {
+      alert(
+        `⚠️ Atenção: Incompatibilidade de Etapa detectada!\n\n` +
+        `Existem ${atletasIrregularesNoElenco.length} atleta(s) convocados no elenco cuja data de nascimento ou sexo não pertencem à Etapa ${categoriaSel} (${sexoSel}).\n\n` +
+        `Por favor, desmarque-os ou clique no botão de sanitização antes de confirmar.`
+      );
       return;
     }
 
@@ -565,101 +711,105 @@ export default function EscolaInscricoesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAbrirModalRapido = () => {
-    setRapidoNome('');
-    if (categoriaSel === 'MIRIM') setRapidoDataNasc('2015-05-10');
-    else if (categoriaSel === 'INFANTIL') setRapidoDataNasc('2013-05-10');
-    else if (categoriaSel === 'INFANTO') setRapidoDataNasc('2010-05-10');
-    else setRapidoDataNasc('2007-05-10');
+  const handleAbrirModalNovoAtleta = () => {
+    setNomeCompleto('');
+    if (categoriaSel === 'MIRIM') setDataNascimento('2015-05-10');
+    else if (categoriaSel === 'INFANTIL') setDataNascimento('2013-05-10');
+    else if (categoriaSel === 'INFANTO') setDataNascimento('2010-05-10');
+    else setDataNascimento('2007-05-10');
 
-    setRapidoDocTipo('RG');
-    setRapidoDocNum('');
-    setRapidoSemDoc(false);
-    setRapidoSerie('7º Ano A');
-    setModalRapidoAberto(true);
+    setSexo(sexoSel);
+    setDocumentoTipo('RG');
+    setDocumentoNumero('');
+    setSemDocumento(false);
+    setMatricula(JegdStorage.gerarProximoCodigoInscricao(escola?.municipioId || 'M99'));
+    setSerieTurma('7º Ano A');
+    setFotoBase64('');
+    if (modalidadeAtual) {
+      setModalidadesEscolhidas([modalidadeAtual.codigo as ModalidadeCodigo]);
+    } else {
+      setModalidadesEscolhidas([]);
+    }
+    setProvasAtletismo([]);
+    setModalCadastroAtletaAberto(true);
   };
 
-  const handleSalvarAlunoRapido = (adicionarMais: boolean = false) => {
-    if (!escola || !modalidadeAtual) return;
-    if (!rapidoNome.trim() || !rapidoDataNasc || (!rapidoSemDoc && !rapidoDocNum.trim())) {
-      alert('Preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque "Aluno sem documentos").');
+  const handleSalvarAtletaModal = () => {
+    if (!escola) return;
+    if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
+      alert('Preencha os campos obrigatórios (Nome Completo, Data de Nascimento e Documento ou marque Sem Documento).');
       return;
     }
 
-    const infoCat = JegdsRulesService.calcularCategoria(rapidoDataNasc);
-    if (!infoCat.categoria) {
+    if (!catCalc.categoria) {
       alert('Data de nascimento fora da faixa etária oficial do JEGDS 2026.');
       return;
     }
 
-    // Valida matriz da modalidade
-    const valMatriz = JegdsRulesService.validarMatriz(modalidadeAtual.codigo, infoCat.categoria, sexoSel);
-    if (!valMatriz.valido) {
-      alert(`Não é possível cadastrar: ${valMatriz.erro}`);
-      return;
-    }
-
-    // Verifica limite de elenco da equipe
-    if (atletasSelecionadosIds.length >= modalidadeAtual.maxAtletas) {
-      alert(`Limite máximo de ${modalidadeAtual.maxAtletas} atletas para ${modalidadeAtual.nome} atingido.`);
+    if (diagnosticoDuplicidade.duplicado && diagnosticoDuplicidade.tipoConflito === 'OUTRA_ESCOLA') {
+      alert(diagnosticoDuplicidade.mensagemUsuario || 'Estudante bloqueado por duplicidade em outra escola.');
       return;
     }
 
     const atletaId = `atl-${Date.now()}`;
-    const codigoFinal = JegdStorage.gerarProximoCodigoInscricao(escola.municipioId);
+    const codMatricula = matricula || JegdStorage.gerarProximoCodigoInscricao(escola.municipioId);
 
     const novoAtleta: Atleta = {
       id: atletaId,
       escolaId: escola.id,
       municipioId: escola.municipioId,
-      nomeCompleto: rapidoNome.trim().toUpperCase(),
-      dataNascimento: rapidoDataNasc,
-      sexo: sexoSel,
-      semDocumento: rapidoSemDoc,
-      documentoTipo: rapidoSemDoc ? 'SEM_DOCUMENTO' : rapidoDocTipo,
-      documentoNumero: rapidoSemDoc ? 'SEM DOCUMENTO' : rapidoDocNum.trim(),
-      matricula: codigoFinal,
-      crachaToken: codigoFinal,
-      serieTurma: rapidoSerie,
+      nomeCompleto: nomeCompleto.trim().toUpperCase(),
+      dataNascimento,
+      sexo,
+      semDocumento,
+      documentoTipo: semDocumento ? 'SEM_DOCUMENTO' : documentoTipo,
+      documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero.trim(),
+      matricula: codMatricula,
+      crachaToken: codMatricula,
+      serieTurma,
       telefoneContato: escola.responsavelTelefone || '(99) 98801-0000',
       tipoSanguineo: 'O+',
       consentimentoResponsavel: true,
       cadastradoPor: nomeOperador || escola.responsavelNome || 'Professor da Escola',
-      categoriaCalculada: infoCat.categoria,
-      modalidadesInscritas: [
-        {
-          modalidadeCodigo: modalidadeAtual.codigo,
-          modalidadeNome: modalidadeAtual.nome,
-          provas: modalidadeSelCodigo === 'atletismo' ? ['75m'] : undefined
-        }
-      ],
+      categoriaCalculada: catCalc.categoria,
+      modalidadesInscritas: modalidadesEscolhidas.map(codigo => {
+        const mod = modalidades.find(m => m.codigo === codigo);
+        return {
+          modalidadeCodigo: codigo,
+          modalidadeNome: mod?.nome || codigo,
+          provas: codigo === 'atletismo' ? provasAtletismo : undefined
+        };
+      }),
       conferidoPeloCoordenador: false,
-      documentos: {},
+      documentos: {
+        foto3x4: fotoBase64 || undefined
+      },
       ativo: true,
       createdAt: new Date().toISOString()
     };
 
     JegdStorage.saveAtleta(novoAtleta);
 
-    // Atualiza a lista geral e já seleciona o novo atleta para a equipe!
     const listaAtualizada = JegdStorage.getAtletas(escola.id);
     setTodosAtletas(listaAtualizada);
-    setAtletasSelecionadosIds(prev => [...prev, atletaId]);
-    if (modalidadeSelCodigo === 'atletismo') {
-      setProvasPorAtleta(prev => ({ ...prev, [atletaId]: ['75m'] }));
+
+    // Se o atleta cadastrado pertencer exatamente à categoria e sexo atuais e a modalidade atual estiver entre as escolhidas, adiciona no elenco
+    if (novoAtleta.categoriaCalculada === categoriaSel && novoAtleta.sexo === sexoSel) {
+      if (modalidadeAtual && modalidadesEscolhidas.includes(modalidadeAtual.codigo as ModalidadeCodigo)) {
+        if (atletasSelecionadosIds.length < modalidadeAtual.maxAtletas) {
+          setAtletasSelecionadosIds(prev => [...prev, atletaId]);
+          if (modalidadeSelCodigo === 'atletismo' && provasAtletismo.length > 0) {
+            setProvasPorAtleta(prev => ({ ...prev, [atletaId]: provasAtletismo }));
+          }
+        }
+      }
     }
 
     try {
-      confetti({ particleCount: 40, spread: 50, origin: { y: 0.6 } });
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
     } catch {}
 
-    if (adicionarMais) {
-      setRapidoNome('');
-      setRapidoDocNum('');
-      setRapidoSemDoc(false);
-    } else {
-      setModalRapidoAberto(false);
-    }
+    setModalCadastroAtletaAberto(false);
   };
 
   if (!escola) return null;
@@ -1069,46 +1219,92 @@ export default function EscolaInscricoesPage() {
                 </div>
               )}
 
-              {/* Seleção de Categoria e Sexo */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    2. Categoria Etária (Ref: 31/12/2026)
-                  </label>
-                  <select
-                    value={categoriaSel}
-                    onChange={(e) => {
-                      setCategoriaSel(e.target.value as CategoriaIdade);
-                      setAtletasSelecionadosIds([]);
-                      setProvasPorAtleta({});
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
-                  >
-                    <option value="MIRIM">Mirim (9 a 11 anos: 2015-2017)</option>
-                    <option value="INFANTIL">Infantil (12 a 14 anos: 2012-2014)</option>
-                    <option value="INFANTO">Infanto (15 a 17 anos: 2009-2011)</option>
-                    <option value="JUNIOR">Junior (18 a 20 anos: 2006-2008)</option>
-                  </select>
+              {/* Seleção de Categoria e Sexo com Faixa Etária Oficial */}
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      2. Categoria Etária (Ref: 31/12/2026)
+                    </label>
+                    <select
+                      value={categoriaSel}
+                      onChange={(e) => {
+                        setCategoriaSel(e.target.value as CategoriaIdade);
+                        setAtletasSelecionadosIds([]);
+                        setProvasPorAtleta({});
+                      }}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
+                    >
+                      <option value="MIRIM">Mirim (9 a 11 anos: 2015-2017)</option>
+                      <option value="INFANTIL">Infantil (12 a 14 anos: 2012-2014)</option>
+                      <option value="INFANTO">Infanto (15 a 17 anos: 2009-2011)</option>
+                      <option value="JUNIOR">Junior (18 a 20 anos: 2006-2008)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                      3. Gênero / Naipe
+                    </label>
+                    <select
+                      value={sexoSel}
+                      onChange={(e) => {
+                        setSexoSel(e.target.value as Genero);
+                        setAtletasSelecionadosIds([]);
+                        setProvasPorAtleta({});
+                      }}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
+                    >
+                      <option value="MASCULINO">Masculino</option>
+                      <option value="FEMININO">Feminino</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    3. Gênero / Naipe
-                  </label>
-                  <select
-                    value={sexoSel}
-                    onChange={(e) => {
-                      setSexoSel(e.target.value as Genero);
-                      setAtletasSelecionadosIds([]);
-                      setProvasPorAtleta({});
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors cursor-pointer"
-                  >
-                    <option value="MASCULINO">Masculino</option>
-                    <option value="FEMININO">Feminino</option>
-                  </select>
+                {/* Banner de Identificação da Etapa e Limite Estrito */}
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-50/70 border border-emerald-200/70 text-xs text-emerald-950">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                    <span className="font-bold">Etapa Oficial: {categoriaSel} ({sexoSel})</span>
+                    <span className="text-emerald-700 font-medium hidden sm:inline">• {FAIXA_ETARIA_INFO[categoriaSel].faixaAnos} ({FAIXA_ETARIA_INFO[categoriaSel].anosNascimento})</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                    {atletasElegiveis.length} elegíveis
+                  </span>
                 </div>
               </div>
+
+              {/* Alerta de Atletas Irregulares no Elenco (Blindagem de Etapa) */}
+              {atletasIrregularesNoElenco.length > 0 && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-950 text-xs rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      <p className="font-bold text-rose-950">
+                        {atletasIrregularesNoElenco.length} atleta(s) incompatíveis no elenco desta equipe!
+                      </p>
+                      <p className="text-rose-800 leading-relaxed text-[11px]">
+                        Atletas de outras idades ou sexo não podem ser misturados em equipes de outra categoria.
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {atletasIrregularesNoElenco.map(a => (
+                          <span key={a.id} className="bg-rose-100 text-rose-900 border border-rose-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                            {a.nomeCompleto} ({a.categoriaCalculada || 'Fora Faixa'} • {a.sexo === 'FEMININO' ? 'Fem' : 'Masc'})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoverIrregulares}
+                    className="w-full py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remover Atletas Incompatíveis Automaticamente</span>
+                  </button>
+                </div>
+              )}
 
               {/* Alerta de Validação da Matriz */}
               {!validacaoMatriz.valido && (
@@ -1143,11 +1339,11 @@ export default function EscolaInscricoesPage() {
 
                     <button
                       type="button"
-                      onClick={handleAbrirModalRapido}
+                      onClick={handleAbrirModalNovoAtleta}
                       className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>Cadastrar Aluno Rápido</span>
+                      <span>+ Cadastrar Aluno</span>
                     </button>
                   </div>
 
@@ -1159,16 +1355,16 @@ export default function EscolaInscricoesPage() {
                           Nenhum aluno cadastrado na escola para a categoria {categoriaSel} ({sexoSel}).
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          Cadastre os alunos agora mesmo sem burocracia para convocar para a equipe!
+                          Cadastre os alunos agora no formulário oficial da SEMED para convocar para a equipe!
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={handleAbrirModalRapido}
+                        onClick={handleAbrirModalNovoAtleta}
                         className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                       >
                         <UserPlus className="w-3.5 h-3.5" />
-                        <span>Cadastrar Aluno Rápido Agora</span>
+                        <span>Cadastrar Aluno Agora</span>
                       </button>
                     </div>
                   ) : (
@@ -1310,39 +1506,23 @@ export default function EscolaInscricoesPage() {
                 >
                   Todas ({inscricoes.length})
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFiltroEtapaLista(1)}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
-                    filtroEtapaLista === 1
-                      ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  1ª Etapa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFiltroEtapaLista(2)}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
-                    filtroEtapaLista === 2
-                      ? 'bg-cyan-600 text-white shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  2ª Etapa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFiltroEtapaLista(3)}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
-                    filtroEtapaLista === 3
-                      ? 'bg-amber-600 text-white shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  3ª Etapa
-                </button>
+                {(['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'] as CategoriaIdade[]).map((cat) => {
+                  const total = inscricoes.filter(i => (i.categoria || 'INFANTIL') === cat).length;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFiltroEtapaLista(cat)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
+                        filtroEtapaLista === cat
+                          ? 'bg-emerald-600 text-white shadow-2xs font-semibold'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {cat} ({total})
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1366,180 +1546,240 @@ export default function EscolaInscricoesPage() {
               </div>
             )}
 
-            {inscricoesFiltradas.length === 0 ? (
+            {equipesAgrupadasPorEtapa.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-6">
                 {filtroEtapaLista === 'TODAS'
                   ? 'Nenhuma equipe submetida ainda.'
-                  : `Nenhuma equipe submetida para a ${filtroEtapaLista}ª Etapa.`}
+                  : `Nenhuma equipe submetida para a categoria ${filtroEtapaLista}.`}
               </p>
             ) : (
-              <div className="space-y-2.5">
-                {inscricoesFiltradas.map((insc) => {
-                  const numEq = insc.numeroEquipe || 1;
-                  const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
-                  const limiteMax = modConfig?.maxAtletas || 10;
-                  const limiteMin = modConfig?.minAtletas || 1;
-                  const excedeLimite = insc.atletaIds.length > limiteMax;
-                  const abaixoMinimo = insc.atletaIds.length < limiteMin;
-                  const nomeLimpo = (insc.nomeEquipe || insc.modalidadeNome || '').trim().toLowerCase();
-                  const nomeDuplicado = (contagemNomesEquipes[nomeLimpo] || 0) > 1;
-
-                  // Se o nome da equipe for apenas o nome da modalidade, gera um identificador claro
-                  const nomeExibicao = (insc.nomeEquipe && insc.nomeEquipe.trim().toLowerCase() !== insc.modalidadeNome.toLowerCase())
-                    ? insc.nomeEquipe
-                    : `${insc.modalidadeNome} • ${insc.categoria} (${insc.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) ${numEq > 1 ? `- Time ${numEq}` : ''}`;
-
-                  return (
-                    <div
-                      key={insc.id}
-                      className={`border rounded-xl p-3.5 space-y-2.5 transition-colors shadow-2xs ${
-                        excedeLimite
-                          ? 'bg-rose-50/40 border-rose-200'
-                          : 'bg-white border-slate-200/90 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
-                            {renderEmblemaEquipe(insc.logoUrl)}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
-                                {nomeExibicao}
-                              </h4>
-                              <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${
-                                numEq === 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-blue-50 text-blue-800 border-blue-200'
-                              }`}>
-                                {numEq === 1 ? 'Equipe 1' : `Equipe ${numEq}`}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                              {insc.modalidadeNome} • {insc.categoria} • {insc.sexo}
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
-                          insc.status === 'VALIDADA'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
-                            : insc.status === 'REJEITADA'
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200/80'
-                        }`}>
-                          {insc.status}
+              <div className="space-y-6">
+                {equipesAgrupadasPorEtapa.map(({ etapa, modalidades: modsDaEtapa, totalEquipes }) => (
+                  <div key={etapa} className="space-y-3.5">
+                    {/* CABEÇALHO DA ETAPA / CATEGORIA */}
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-100/80 rounded-xl border border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                        <span className="text-xs font-bold text-slate-900 tracking-wide uppercase">
+                          ETAPA {etapa}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          ({FAIXA_ETARIA_INFO[etapa].faixaAnos} • {FAIXA_ETARIA_INFO[etapa].anosNascimento})
                         </span>
                       </div>
-
-                      <div className="text-xs text-[#4B5563] space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span>
-                            <strong className={excedeLimite ? 'text-rose-600 font-black' : 'text-[#17221D] font-bold'}>
-                              {insc.atletaIds.length}/{limiteMax}
-                            </strong> Atletas convocados
-                          </span>
-                          {excedeLimite && (
-                            <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
-                              ⚠️ Excede teto de {limiteMax}
-                            </span>
-                          )}
-                          {abaixoMinimo && (
-                            <span className="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
-                              Mínimo: {limiteMin}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Avisos Visuais no Card da Equipe */}
-                        {excedeLimite && (
-                          <div className="p-2.5 rounded-xl bg-rose-100/70 border border-rose-300 text-rose-900 text-xs space-y-1 mt-1">
-                            <div className="flex items-center gap-1.5 font-black text-rose-950">
-                              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                              <span>Elenco Excedendo Limite ({insc.atletaIds.length}/{limiteMax} atletas)</span>
-                            </div>
-                            <p className="text-[11px] text-rose-800 leading-snug">
-                              Esta equipe possui <strong>{insc.atletaIds.length - limiteMax} aluno(s) a mais</strong> que o regulamento oficial permite. Clique no botão <strong>Ajustar Elenco</strong> abaixo e desmarque os excedentes para poder validar a equipe.
-                            </p>
-                          </div>
-                        )}
-
-                        {nomeDuplicado && (
-                          <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5 mt-1">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                            <span>Nome repetido nesta escola. Recomendamos clicar em <strong>Ajustar Elenco</strong> para renomear e diferenciar as equipes.</span>
-                          </div>
-                        )}
-
-                        {insc.motivoRejeicao && (
-                          <p className="text-red-600 text-xs font-medium">
-                            Motivo Rejeição: {insc.motivoRejeicao}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleValidarEquipe(insc)}
-                          className={`py-1 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
-                            insc.status === 'VALIDADA'
-                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
-                              : (excedeLimite || abaixoMinimo)
-                              ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
-                          }`}
-                          title={
-                            insc.status === 'VALIDADA'
-                              ? 'Equipe já validada pela escola. Clique para reabrir.'
-                              : excedeLimite
-                              ? 'Equipe irregular (excede limite). Clique para instruções.'
-                              : 'Validar e homologar esta equipe'
-                          }
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>{insc.status === 'VALIDADA' ? 'Validada' : (excedeLimite || abaixoMinimo) ? 'Regularizar' : 'Validar'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleCarregarEquipeParaEdicao(insc)}
-                          className="py-1 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-2xs"
-                          title="Carregar esta equipe no formulário à esquerda para ajustar elenco"
-                        >
-                          <span>Ajustar Elenco</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleGerarPdf(insc)}
-                          disabled={gerandoPdfId === insc.id}
-                          className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Ficha</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleGerarCrachasPdf(insc)}
-                          disabled={gerandoPdfId === insc.id}
-                          className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
-                        >
-                          <Download className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Crachás</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleExcluirInscricao(insc.id, insc.nomeEquipe || `${insc.modalidadeNome} - Equipe ${numEq}`)}
-                          className="p-1 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs"
-                          title="Remover equipe"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <span className="text-[10px] font-semibold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                        {totalEquipes} {totalEquipes === 1 ? 'equipe' : 'equipes'}
+                      </span>
                     </div>
-                  );
-                })}
+
+                    {/* MODALIDADES DESTA ETAPA */}
+                    <div className="space-y-3 pl-1 sm:pl-2">
+                      {modsDaEtapa.map(({ modalidadeNome, equipes }) => (
+                        <div key={modalidadeNome} className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 pl-1">
+                            <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{modalidadeNome}</span>
+                            <span className="text-[10px] font-normal text-slate-400">
+                              ({equipes.length} {equipes.length === 1 ? 'time' : 'times'})
+                            </span>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {equipes.map((insc) => {
+                              const numEq = insc.numeroEquipe || 1;
+                              const modConfig = modalidades.find(m => m.codigo === insc.modalidadeCodigo);
+                              const limiteMax = modConfig?.maxAtletas || 10;
+                              const limiteMin = modConfig?.minAtletas || 1;
+                              const excedeLimite = insc.atletaIds.length > limiteMax;
+                              const abaixoMinimo = insc.atletaIds.length < limiteMin;
+                              const nomeLimpo = (insc.nomeEquipe || insc.modalidadeNome || '').trim().toLowerCase();
+                              const nomeDuplicado = (contagemNomesEquipes[nomeLimpo] || 0) > 1;
+
+                              // Detecção de atletas com idade ou sexo incompatível com a equipe
+                              const atletasIrregularesEquipe = (insc.atletaIds || [])
+                                .map(id => todosAtletas.find(a => a.id === id))
+                                .filter(a => {
+                                  if (!a) return false;
+                                  const info = JegdsRulesService.calcularCategoria(a.dataNascimento);
+                                  return info.categoria !== insc.categoria || a.sexo !== insc.sexo;
+                                });
+
+                              const temIrregulares = atletasIrregularesEquipe.length > 0;
+
+                              const nomeExibicao = (insc.nomeEquipe && insc.nomeEquipe.trim().toLowerCase() !== insc.modalidadeNome.toLowerCase())
+                                ? insc.nomeEquipe
+                                : `${insc.modalidadeNome} • ${insc.categoria} (${insc.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) ${numEq > 1 ? `- Time ${numEq}` : ''}`;
+
+                              return (
+                                <div
+                                  key={insc.id}
+                                  className={`border rounded-xl p-3.5 space-y-2.5 transition-colors shadow-2xs ${
+                                    temIrregulares || excedeLimite
+                                      ? 'bg-rose-50/40 border-rose-200'
+                                      : 'bg-white border-slate-200/90 hover:border-slate-300'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
+                                        {renderEmblemaEquipe(insc.logoUrl)}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
+                                            {nomeExibicao}
+                                          </h4>
+                                          <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${
+                                            numEq === 1 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-blue-50 text-blue-800 border-blue-200'
+                                          }`}>
+                                            {numEq === 1 ? 'Equipe 1' : `Equipe ${numEq}`}
+                                          </span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                          {insc.modalidadeNome} • {insc.categoria} • {insc.sexo}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${
+                                      insc.status === 'VALIDADA'
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
+                                        : insc.status === 'REJEITADA'
+                                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                        : 'bg-amber-50 text-amber-800 border-amber-200/80'
+                                    }`}>
+                                      {insc.status}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-xs text-[#4B5563] space-y-1">
+                                    <div className="flex items-center justify-between flex-wrap gap-1">
+                                      <span>
+                                        <strong className={excedeLimite ? 'text-rose-600 font-black' : 'text-[#17221D] font-bold'}>
+                                          {insc.atletaIds.length}/{limiteMax}
+                                        </strong> Atletas convocados
+                                      </span>
+                                      {temIrregulares && (
+                                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
+                                          ⚠️ {atletasIrregularesEquipe.length} atleta(s) fora da etapa
+                                        </span>
+                                      )}
+                                      {excedeLimite && (
+                                        <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
+                                          ⚠️ Excede teto de {limiteMax}
+                                        </span>
+                                      )}
+                                      {abaixoMinimo && (
+                                        <span className="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                                          Mínimo: {limiteMin}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {temIrregulares && (
+                                      <div className="p-2 rounded-lg bg-rose-100/70 border border-rose-300 text-rose-900 text-[11px] space-y-0.5 mt-1">
+                                        <p className="font-bold">Incompatibilidade de Idade/Naipe detectada:</p>
+                                        <p className="text-[10px]">
+                                          Atletas de outras idades estão convocados. Clique em <strong>Ajustar Elenco</strong> para regularizar.
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {excedeLimite && (
+                                      <div className="p-2.5 rounded-xl bg-rose-100/70 border border-rose-300 text-rose-900 text-xs space-y-1 mt-1">
+                                        <div className="flex items-center gap-1.5 font-black text-rose-950">
+                                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                                          <span>Elenco Excedendo Limite ({insc.atletaIds.length}/{limiteMax} atletas)</span>
+                                        </div>
+                                        <p className="text-[11px] text-rose-800 leading-snug">
+                                          Esta equipe possui <strong>{insc.atletaIds.length - limiteMax} aluno(s) a mais</strong> que o regulamento permite.
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {nomeDuplicado && (
+                                      <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5 mt-1">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>Nome repetido nesta escola. Recomendamos clicar em <strong>Ajustar Elenco</strong> para diferenciar.</span>
+                                      </div>
+                                    )}
+
+                                    {insc.motivoRejeicao && (
+                                      <p className="text-red-600 text-xs font-medium">
+                                        Motivo Rejeição: {insc.motivoRejeicao}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleValidarEquipe(insc)}
+                                      className={`py-1 px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors shadow-2xs ${
+                                        insc.status === 'VALIDADA'
+                                          ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                                          : (excedeLimite || abaixoMinimo || temIrregulares)
+                                          ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500'
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                                      }`}
+                                      title={
+                                        insc.status === 'VALIDADA'
+                                          ? 'Equipe já validada pela escola. Clique para reabrir.'
+                                          : (excedeLimite || temIrregulares)
+                                          ? 'Equipe irregular. Clique para instruções.'
+                                          : 'Validar e homologar esta equipe'
+                                      }
+                                    >
+                                      <ShieldCheck className="w-3.5 h-3.5" />
+                                      <span>{insc.status === 'VALIDADA' ? 'Validada' : (excedeLimite || abaixoMinimo || temIrregulares) ? 'Regularizar' : 'Validar'}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCarregarEquipeParaEdicao(insc)}
+                                      className="py-1 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-2xs"
+                                      title="Carregar esta equipe no formulário à esquerda para ajustar elenco"
+                                    >
+                                      <span>Ajustar Elenco</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGerarPdf(insc)}
+                                      disabled={gerandoPdfId === insc.id}
+                                      className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
+                                    >
+                                      <Printer className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>Ficha</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGerarCrachasPdf(insc)}
+                                      disabled={gerandoPdfId === insc.id}
+                                      className="py-1 px-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-2xs"
+                                    >
+                                      <Download className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>Crachás</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleExcluirInscricao(insc.id, insc.nomeEquipe || `${insc.modalidadeNome} - Equipe ${numEq}`)}
+                                      className="p-1 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs"
+                                      title="Remover equipe"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1547,158 +1787,42 @@ export default function EscolaInscricoesPage() {
 
       </div>
 
-      {/* Modal de Cadastro Rápido de Aluno */}
-      {modalRapidoAberto && modalidadeAtual && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200/90 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl relative my-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  Novo Aluno na Equipe
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {modalidadeAtual.nome} • {categoriaSel} ({sexoSel})
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalRapidoAberto(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Nome Completo do Aluno *
-                </label>
-                <input
-                  type="text"
-                  value={rapidoNome}
-                  onChange={(e) => setRapidoNome(e.target.value)}
-                  placeholder="Ex: LUCAS HENRIQUE SILVA"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white uppercase"
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Data de Nascimento *
-                  </label>
-                  <input
-                    type="date"
-                    value={rapidoDataNasc}
-                    onChange={(e) => setRapidoDataNasc(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
-                  />
-                  <span className="text-[10px] text-emerald-700 font-medium mt-0.5 block">
-                    {JegdsRulesService.calcularCategoria(rapidoDataNasc).mensagem}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Série / Turma
-                  </label>
-                  <input
-                    type="text"
-                    value={rapidoSerie}
-                    onChange={(e) => setRapidoSerie(e.target.value)}
-                    placeholder="Ex: 7º Ano B"
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Caixinha: Aluno sem Documento */}
-              <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-2.5">
-                <div>
-                  <label htmlFor="chk-rapido-semdoc" className="text-xs font-semibold text-amber-950 cursor-pointer block">
-                    Aluno sem documentos
-                  </label>
-                  <p className="text-[10px] text-amber-800 leading-tight">
-                    Marque caso o estudante ainda não possua RG/Certidão
-                  </p>
-                </div>
-                <input
-                  id="chk-rapido-semdoc"
-                  type="checkbox"
-                  checked={rapidoSemDoc}
-                  onChange={(e) => {
-                    const chk = e.target.checked;
-                    setRapidoSemDoc(chk);
-                    if (chk) {
-                      setRapidoDocTipo('SEM_DOCUMENTO');
-                      setRapidoDocNum('SEM DOCUMENTO');
-                    } else {
-                      setRapidoDocTipo('RG');
-                      setRapidoDocNum('');
-                    }
-                  }}
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer accent-emerald-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Documento {!rapidoSemDoc && '*'}
-                  </label>
-                  <select
-                    value={rapidoSemDoc ? 'SEM_DOCUMENTO' : rapidoDocTipo}
-                    disabled={rapidoSemDoc}
-                    onChange={(e) => setRapidoDocTipo(e.target.value as TipoDocumento)}
-                    className={`w-full px-2 py-1.5 rounded-lg border text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-600 cursor-pointer ${
-                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 opacity-80 cursor-not-allowed' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <option value="RG">RG</option>
-                    <option value="CERTIDAO">Certidão</option>
-                    <option value="SEM_DOCUMENTO">Sem Doc</option>
-                  </select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Número do Documento {!rapidoSemDoc && '*'}
-                  </label>
-                  <input
-                    type="text"
-                    disabled={rapidoSemDoc}
-                    value={rapidoSemDoc ? 'SEM DOCUMENTO' : rapidoDocNum}
-                    onChange={(e) => setRapidoDocNum(e.target.value)}
-                    placeholder={rapidoSemDoc ? 'Aluno sem documentação' : 'Ex: 05489721202'}
-                    className={`w-full px-3 py-1.5 rounded-lg border text-xs font-normal text-slate-900 focus:outline-none focus:border-emerald-600 ${
-                      rapidoSemDoc ? 'bg-amber-50 border-amber-200 text-amber-900 font-semibold cursor-not-allowed uppercase' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2.5 border-t border-slate-200 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSalvarAlunoRapido(true)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
-                >
-                  Salvar e + Outro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSalvarAlunoRapido(false)}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Cadastrar e Conectar</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Modal Oficial Unificado de Cadastro de Atleta (Padrão SEMED) */}
+      {modalCadastroAtletaAberto && (
+        <ModalCadastroAtleta
+          isOpen={modalCadastroAtletaAberto}
+          onClose={() => setModalCadastroAtletaAberto(false)}
+          atletaEditando={null}
+          nomeCompleto={nomeCompleto}
+          setNomeCompleto={setNomeCompleto}
+          dataNascimento={dataNascimento}
+          setDataNascimento={setDataNascimento}
+          sexo={sexo}
+          setSexo={setSexo}
+          semDocumento={semDocumento}
+          setSemDocumento={setSemDocumento}
+          documentoTipo={documentoTipo}
+          setDocumentoTipo={setDocumentoTipo}
+          documentoNumero={documentoNumero}
+          setDocumentoNumero={setDocumentoNumero}
+          matricula={matricula}
+          setMatricula={setMatricula}
+          serieTurma={serieTurma}
+          setSerieTurma={setSerieTurma}
+          fotoBase64={fotoBase64}
+          handleFotoUpload={handleFotoUpload}
+          fileInputRef={fileInputRef}
+          catCalc={catCalc}
+          modalidadesDisponiveis={modalidadesDisponiveis}
+          modalidadesEscolhidas={modalidadesEscolhidas}
+          toggleModalidade={toggleModalidadeCadastro}
+          provasPermitidas={provasPermitidasAtletismo}
+          provasAtletismo={provasAtletismo}
+          toggleProva={toggleProvaModalidade}
+          handleSalvarAtleta={handleSalvarAtletaModal}
+          escolaId={escola.id}
+          diagnosticoDuplicidade={diagnosticoDuplicidade}
+        />
       )}
 
     </div>
