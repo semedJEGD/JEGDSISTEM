@@ -306,4 +306,205 @@ export class RelatorioDelegacaoService {
     const nomeArquivo = `Relatorio_Delegacao_JEGDS_${escola.sigla.replace(/\s+/g, '_')}${filtroModalidade && filtroModalidade !== 'TODAS' ? `_${filtroModalidade}` : ''}${filtroCategoria && filtroCategoria !== 'TODAS' ? `_${filtroCategoria}` : ''}.pdf`;
     doc.save(nomeArquivo);
   }
+
+  /**
+   * Gera Relatório Geral Consolidado de Todos os Alunos Inscritos no Município
+   * Agrupado por Etapa / Categoria, Modalidade e Naipe com Métricas Executivas
+   */
+  public static async gerarRelatorioGeralAtletas(
+    escolas: Escola[],
+    atletas: Atleta[],
+    filtros?: {
+      busca?: string;
+      modalidade?: string;
+      categoria?: string;
+      sexo?: string;
+      escolaId?: string;
+    }
+  ): Promise<void> {
+    const doc = criarDocumentoA4('portrait');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    const contentWidth = pageWidth - margin * 2;
+
+    const logoBase64 = await this.getLogoBase64();
+    const brasaoBase64 = await this.getBrasaoBase64();
+
+    // Filtros
+    let lista = [...atletas];
+    if (filtros?.busca) {
+      const q = filtros.busca.toLowerCase();
+      lista = lista.filter(a => {
+        const esc = escolas.find(e => e.id === a.escolaId);
+        return a.nomeCompleto.toLowerCase().includes(q) ||
+          (a.documentoNumero && a.documentoNumero.toLowerCase().includes(q)) ||
+          (esc && esc.nome.toLowerCase().includes(q)) ||
+          (esc && esc.sigla.toLowerCase().includes(q));
+      });
+    }
+    if (filtros?.categoria && filtros.categoria !== 'TODAS') {
+      lista = lista.filter(a => a.categoriaCalculada === filtros.categoria);
+    }
+    if (filtros?.sexo && filtros.sexo !== 'TODOS') {
+      lista = lista.filter(a => a.sexo === filtros.sexo);
+    }
+    if (filtros?.escolaId && filtros.escolaId !== 'TODAS') {
+      lista = lista.filter(a => a.escolaId === filtros.escolaId);
+    }
+    if (filtros?.modalidade && filtros.modalidade !== 'TODAS') {
+      lista = lista.filter(a =>
+        a.modalidadesInscritas?.some(m =>
+          m.modalidadeNome.toLowerCase().includes(filtros.modalidade!.toLowerCase()) ||
+          m.modalidadeCodigo === filtros.modalidade
+        )
+      );
+    }
+
+    // Ordenação: Categoria -> Modalidade -> Naipe -> Nome
+    const ordemCat: Record<string, number> = { MIRIM: 1, INFANTIL: 2, INFANTO: 3, JUNIOR: 4 };
+    lista.sort((a, b) => {
+      const cA = ordemCat[a.categoriaCalculada || ''] || 99;
+      const cB = ordemCat[b.categoriaCalculada || ''] || 99;
+      if (cA !== cB) return cA - cB;
+      if (a.sexo !== b.sexo) return a.sexo === 'FEMININO' ? -1 : 1;
+      return a.nomeCompleto.localeCompare(b.nomeCompleto);
+    });
+
+    const totalAlunos = lista.length;
+    const totalMasc = lista.filter(a => a.sexo === 'MASCULINO').length;
+    const totalFem = lista.filter(a => a.sexo === 'FEMININO').length;
+    const totalSemDoc = lista.filter(a => a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO').length;
+    const totalHomologados = lista.filter(a => a.conferidoPeloCoordenador).length;
+
+    // Cabeçalho
+    doc.setFillColor(...CORES_JEGD.primaria);
+    doc.rect(margin, 10, contentWidth, 24, 'F');
+    doc.setFillColor(...CORES_JEGD.destaqueOuro);
+    doc.rect(margin, 33.3, contentWidth, 0.7, 'F');
+
+    if (logoBase64) {
+      try { doc.addImage(logoBase64, 'PNG', margin + 3, 11, 21, 21); } catch {}
+    }
+    if (brasaoBase64) {
+      try { doc.addImage(brasaoBase64, 'PNG', pageWidth - margin - 24, 11, 21, 21); } catch {}
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('PREFEITURA DE GONÇALVES DIAS • SECRETARIA MUNICIPAL DE EDUCAÇÃO', pageWidth / 2, 16, { align: 'center' });
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('COMITÊ ORGANIZADOR OFICIAL • JOGOS ESCOLARES DE GONÇALVES DIAS - JEGDS 2026', pageWidth / 2, 21.5, { align: 'center' });
+
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RELAÇÃO GERAL CONSOLIDADA DE ESTUDANTES-ATLETAS INSCRITOS', pageWidth / 2, 28, { align: 'center' });
+
+    let currentY = 36.5;
+
+    // Métricas Resumidas
+    doc.setFillColor(...CORES_JEGD.fundoCinza);
+    doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'FD');
+    doc.setDrawColor(...CORES_JEGD.borda);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'S');
+
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`TOTAL DE ALUNOS: ${totalAlunos}`, margin + 5, currentY + 6.5);
+    doc.setFontSize(6.8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...CORES_JEGD.grafite);
+    doc.text(`Masculino: ${totalMasc} | Feminino: ${totalFem} | Em Regularização: ${totalSemDoc} | Homologados: ${totalHomologados}`, margin + 5, currentY + 11.5);
+    doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')} • Sistema Oficial JEGDS`, margin + 5, currentY + 15.5);
+
+    currentY += 21;
+
+    const cabecalhoTabela = () => {
+      doc.setFillColor(...CORES_JEGD.escuro);
+      doc.rect(margin, currentY, contentWidth, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'bold');
+
+      doc.text('Nº', margin + 2, currentY + 4.2);
+      doc.text('NOME COMPLETO DO ATLETA', margin + 8, currentY + 4.2);
+      doc.text('ESCOLA', margin + 68, currentY + 4.2);
+      doc.text('ETAPA / NAIPE', margin + 110, currentY + 4.2);
+      doc.text('DOCUMENTO', margin + 138, currentY + 4.2);
+      doc.text('MODALIDADE(S)', margin + 163, currentY + 4.2);
+
+      currentY += 6;
+    };
+
+    cabecalhoTabela();
+
+    let etapaAtual = '';
+
+    for (let i = 0; i < lista.length; i++) {
+      const a = lista[i];
+      const esc = escolas.find(e => e.id === a.escolaId);
+      const etapa = a.categoriaCalculada || 'LIVRE';
+
+      // Quebra de página
+      if (currentY + 8 > pageHeight - 20) {
+        doc.addPage();
+        currentY = 15;
+        cabecalhoTabela();
+      }
+
+      // Separador de Etapa
+      if (etapa !== etapaAtual) {
+        etapaAtual = etapa;
+        doc.setFillColor(...CORES_JEGD.fundoZebra);
+        doc.rect(margin, currentY, contentWidth, 5.5, 'F');
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...CORES_JEGD.primaria);
+        doc.text(`ETAPA ${etapa} • ${lista.filter(x => (x.categoriaCalculada || 'LIVRE') === etapa).length} ATLETAS`, margin + 4, currentY + 3.8);
+        currentY += 5.5;
+      }
+
+      // Linha do atleta
+      if (i % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, currentY, contentWidth, 5.2, 'F');
+      }
+
+      doc.setFontSize(5.8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...CORES_JEGD.escuro);
+
+      doc.text((i + 1).toString().padStart(3, '0'), margin + 2, currentY + 3.6);
+      doc.setFont('helvetica', 'bold');
+      doc.text(a.nomeCompleto.toUpperCase().slice(0, 36), margin + 8, currentY + 3.6);
+      doc.setFont('helvetica', 'normal');
+      doc.text((esc?.sigla || esc?.nome || 'N/A').toUpperCase().slice(0, 22), margin + 68, currentY + 3.6);
+      doc.text(`${a.categoriaCalculada || 'LIVRE'} (${a.sexo === 'FEMININO' ? 'FEM' : 'MASC'})`, margin + 110, currentY + 3.6);
+
+      const isSemDoc = a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO';
+      if (isSemDoc) {
+        doc.setTextColor(180, 83, 9); // amber-700
+        doc.setFont('helvetica', 'bold');
+        doc.text('REGULARIZAÇÃO', margin + 138, currentY + 3.6);
+      } else {
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(`${a.documentoTipo || 'DOC'}: ${a.documentoNumero || 'N/A'}`.slice(0, 16), margin + 138, currentY + 3.6);
+      }
+
+      doc.setTextColor(...CORES_JEGD.grafite);
+      const mods = a.modalidadesInscritas && a.modalidadesInscritas.length > 0
+        ? a.modalidadesInscritas.map(m => m.modalidadeNome).join(', ')
+        : 'Geral';
+      doc.text(mods.slice(0, 22), margin + 163, currentY + 3.6);
+
+      currentY += 5.2;
+    }
+
+    doc.save(`Relatorio_Geral_Alunos_JEGDS_2026.pdf`);
+  }
 }

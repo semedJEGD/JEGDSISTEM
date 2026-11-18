@@ -57,6 +57,7 @@ import { ModalAnaliseInscricao } from './components/ModalAnaliseInscricao';
 import { ModalNovoAviso } from './components/ModalNovoAviso';
 import { ModalObsAtleta } from './components/ModalObsAtleta';
 import { AbaEscolasLote } from './components/AbaEscolasLote';
+import { AbaPainelAlunos } from './components/AbaPainelAlunos';
 import { AbaHomologacao } from './components/AbaHomologacao';
 import { AbaAlertas } from './components/AbaAlertas';
 import { AbaSumulas } from './components/AbaSumulas';
@@ -75,7 +76,7 @@ export default function AdminDashboardPage() {
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
+  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'PAINEL_ALUNOS' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState<string>('');
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
   const [subAbaHomologacao, setSubAbaHomologacao] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
@@ -920,66 +921,67 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ================= FAIXA SLIM DE MÉTRICAS INTERATIVAS (ATALHOS RÁPIDOS) ================= */}
-      <div className="flex items-center justify-between gap-2 sm:gap-3 px-3.5 py-2 bg-white border border-slate-200/90 rounded-xl shadow-2xs text-xs flex-wrap">
-        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-3 px-3.5 py-2.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs text-xs flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* BOTÃO 1: ESCOLAS */}
           <button
             type="button"
             onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
               abaAtiva === 'ESCOLAS_LOTE'
-                ? 'bg-slate-100 text-slate-900 font-semibold ring-1 ring-slate-300/80 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/20'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
             }`}
-            title="Ir para o menu de Escolas & Alunos"
+            title="Acessar gerenciamento e lotes por Escola"
           >
-            <School className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`} />
+            <School className={`w-3.5 h-3.5 ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-white' : 'text-slate-500'}`} />
             <span>Escolas:</span>
-            <strong className="text-slate-900 font-bold">{escolas.length}</strong>
+            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
+              abaAtiva === 'ESCOLAS_LOTE' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-900'
+            }`}>
+              {escolas.length}
+            </span>
           </button>
 
-          <span className="text-slate-300 hidden sm:inline select-none">•</span>
-
-          {/* BOTÃO 2: ALUNOS */}
+          {/* BOTÃO 2: ALUNOS (PAINEL GERAL DE ALUNOS COM MINI DASHBOARD) */}
           <button
             type="button"
-            onClick={() => {
-              setFiltroModalidadeLote('TODAS');
-              setFiltroCategoriaLote('TODAS');
-              setFiltroSexoLote('TODOS');
-              setAbaAtiva('ESCOLAS_LOTE');
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
-              abaAtiva === 'ESCOLAS_LOTE'
-                ? 'bg-slate-100 text-slate-900 font-semibold ring-1 ring-slate-300/80 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            onClick={() => setAbaAtiva('PAINEL_ALUNOS')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
+              abaAtiva === 'PAINEL_ALUNOS'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-900'
             }`}
-            title="Ir para visualização e gerenciamento de Alunos"
+            title="Acessar Painel Geral de Alunos, busca unificada e mini dashboard"
           >
-            <Users className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`} />
+            <Users className={`w-3.5 h-3.5 ${abaAtiva === 'PAINEL_ALUNOS' ? 'text-white' : 'text-emerald-600'}`} />
             <span>Alunos:</span>
-            <strong className="text-slate-900 font-bold">{atletas.length}</strong>
+            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
+              abaAtiva === 'PAINEL_ALUNOS' ? 'bg-white/20 text-white' : 'bg-emerald-100/70 text-emerald-900'
+            }`}>
+              {atletas.length}
+            </span>
           </button>
-
-          <span className="text-slate-300 hidden sm:inline select-none">•</span>
 
           {/* BOTÃO 3: INSCRIÇÕES */}
           <button
             type="button"
             onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
               abaAtiva === 'LISTAS_CHAMADA'
-                ? 'bg-amber-50 text-amber-950 font-semibold ring-1 ring-amber-300/80 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/20'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50/60 hover:border-amber-300 hover:text-amber-900'
             }`}
-            title="Ir para o menu de Súmulas & Inscrições por Modalidade"
+            title="Acessar súmulas e inscrições por modalidade"
           >
-            <Trophy className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'LISTAS_CHAMADA' ? 'text-amber-600' : 'text-slate-400 group-hover:text-amber-600'}`} />
+            <Trophy className={`w-3.5 h-3.5 ${abaAtiva === 'LISTAS_CHAMADA' ? 'text-white' : 'text-amber-500'}`} />
             <span>Inscrições:</span>
-            <strong className="text-slate-900 font-bold">{inscricoes.length}</strong>
+            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
+              abaAtiva === 'LISTAS_CHAMADA' ? 'bg-white/20 text-white' : 'bg-amber-100/70 text-amber-900'
+            }`}>
+              {inscricoes.length}
+            </span>
           </button>
-
-          <span className="text-slate-300 hidden sm:inline select-none">•</span>
 
           {/* BOTÃO 4: HOMOLOGADOS */}
           <button
@@ -989,18 +991,20 @@ export default function AdminDashboardPage() {
               setFiltroStatus('APROVADA');
               setAbaAtiva('HOMOLOGACAO');
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
               abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA'
-                ? 'bg-emerald-100 text-emerald-950 font-semibold ring-1 ring-emerald-300 shadow-2xs'
-                : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-50/70'
+                ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
+                : 'bg-white text-emerald-800 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300'
             }`}
-            title="Ir para o menu de Homologação (filtrar aprovados)"
+            title="Ver inscrições e atletas homologados"
           >
-            <CheckCheck className="w-3.5 h-3.5 text-emerald-600 group-hover:text-emerald-700" />
+            <CheckCheck className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA' ? 'text-white' : 'text-teal-600'}`} />
             <span>Homologados:</span>
-            <strong className="text-emerald-800 font-bold">
+            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
+              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA' ? 'bg-white/20 text-white' : 'bg-teal-100/70 text-teal-900'
+            }`}>
               {atletas.filter(a => a.conferidoPeloCoordenador).length}
-            </strong>
+            </span>
           </button>
         </div>
 
@@ -1012,46 +1016,61 @@ export default function AdminDashboardPage() {
               setSubAbaHomologacao('ALERTAS');
               setAbaAtiva('HOMOLOGACAO');
             }}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
               abaAtiva === 'HOMOLOGACAO' && subAbaHomologacao === 'ALERTAS'
-                ? 'bg-rose-100 text-rose-950 ring-1 ring-rose-300 shadow-2xs font-bold'
+                ? 'bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-600/20'
                 : alertasInconsistencia.length > 0
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300'
+                  : 'bg-white text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-50'
             }`}
-            title="Ir para o menu de Auditoria de Documentos e Alertas"
+            title="Ver auditoria de documentos e pendências"
           >
-            <AlertTriangle className={`w-3.5 h-3.5 ${alertasInconsistencia.length > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
+            <AlertTriangle className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && subAbaHomologacao === 'ALERTAS' ? 'text-white' : alertasInconsistencia.length > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
             <span>{alertasInconsistencia.length} Pendências</span>
           </button>
         </div>
       </div>
 
-      {/* ================= NAVEGAÇÃO REORGANIZADA POR 4 ABAS FOCADAS ================= */}
-      <div className="flex items-center gap-1 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
+      {/* ================= NAVEGAÇÃO REORGANIZADA POR 6 ABAS FOCADAS ================= */}
+      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'ESCOLAS_LOTE'
-            ? 'bg-slate-900 text-white shadow-2xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'ESCOLAS_LOTE'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Escolas & Alunos ({escolas.length})</span>
+          <span>Escolas ({escolas.length})</span>
+        </button>
+
+        <button
+          onClick={() => setAbaAtiva('PAINEL_ALUNOS')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'PAINEL_ALUNOS'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Users className="w-4 h-4 text-emerald-500" />
+          <span>Painel de Alunos ({atletas.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'HOMOLOGACAO'
-            ? 'bg-slate-900 text-white shadow-2xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'HOMOLOGACAO'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
         >
           <CheckCheck className="w-4 h-4" />
           <span>Homologação & Pendências</span>
           {alertasInconsistencia.length > 0 && (
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${abaAtiva === 'HOMOLOGACAO' ? 'bg-white text-rose-700' : 'bg-rose-500 text-white'
-              }`}>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+              abaAtiva === 'HOMOLOGACAO' ? 'bg-white text-rose-700' : 'bg-rose-500 text-white'
+            }`}>
               {alertasInconsistencia.length}
             </span>
           )}
@@ -1059,10 +1078,11 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'LISTAS_CHAMADA'
-            ? 'bg-slate-900 text-white shadow-2xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'LISTAS_CHAMADA'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
         >
           <ClipboardList className="w-4 h-4" />
           <span>Súmulas & Competição</span>
@@ -1070,10 +1090,11 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'CRACHA_LOGISTICA'
-            ? 'bg-slate-900 text-white shadow-2xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'CRACHA_LOGISTICA'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
         >
           <IdCard className="w-4 h-4" />
           <span>Logística & Crachás QR</span>
@@ -1081,17 +1102,18 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 ${abaAtiva === 'AVISOS'
-            ? 'bg-slate-900 text-white shadow-2xs'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'AVISOS'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
         >
           <Megaphone className="w-4 h-4" />
           <span>Comunicados ({comunicados.length})</span>
         </button>
       </div>
 
-      {/* ABA 1: HUB ESCOLAS & ALUNOS */}
+      {/* ABA 1: HUB ESCOLAS */}
       {abaAtiva === 'ESCOLAS_LOTE' && (
         <AbaEscolasLote
           progressoEscolas={progressoEscolas}
@@ -1120,6 +1142,18 @@ export default function AdminDashboardPage() {
           onExcluirAtleta={handleExcluirAtletaCoord}
           onAcessarInscricoesEscola={handleAcessarInscricoesEscola}
           onAprovarEquipeModalidade={handleAprovarEquipeModalidade}
+        />
+      )}
+
+      {/* ABA: PAINEL GERAL DE ALUNOS & MATRÍCULAS (MINI DASHBOARD GLASS LIQUID) */}
+      {abaAtiva === 'PAINEL_ALUNOS' && (
+        <AbaPainelAlunos
+          atletas={atletas}
+          escolas={escolas}
+          modalidades={modalidades}
+          inscricoes={inscricoes}
+          onGerarCrachaIndividual={handleGerarCrachaIndividual}
+          toggleConferenciaAtleta={toggleConferenciaAtleta}
         />
       )}
 
