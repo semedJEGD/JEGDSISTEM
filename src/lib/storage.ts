@@ -58,12 +58,16 @@ const STORAGE_KEYS = {
 };
 
 export class JegdStorage {
+  private static isInitializing = false;
+
   private static isClient(): boolean {
     return typeof window !== 'undefined';
   }
 
   public static init(): void {
-    if (!this.isClient()) return;
+    if (!this.isClient() || this.isInitializing) return;
+    this.isInitializing = true;
+    try {
 
     // Inicialização e atualização de municípios com suporte a domínios
     const rawMunicipios = localStorage.getItem(STORAGE_KEYS.MUNICIPIOS);
@@ -205,8 +209,16 @@ export class JegdStorage {
       localStorage.setItem(STORAGE_KEYS.REGISTROS_CONTROLE, JSON.stringify([]));
     }
 
+    // Sanitização de segurança das travas do regulamento JEGDS 2026 (limpeza de excessos)
+    try {
+      this.sanitizarExcessoEquipes();
+    } catch {}
+
     // Sincronização em tempo real com o banco de dados central
     this.sincronizarComNuvem().catch(() => {});
+    } finally {
+      this.isInitializing = false;
+    }
   }
 
   /**
@@ -350,6 +362,11 @@ export class JegdStorage {
         localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(mergedUsuarios));
         changed = true;
       }
+
+      // Sanitiza qualquer excesso vindo de sincronização na nuvem
+      try {
+        this.sanitizarExcessoEquipes();
+      } catch {}
 
       if (changed && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('jegd-data-synced', { detail: data }));
@@ -991,6 +1008,238 @@ export class JegdStorage {
     JegdCloudSync.syncInscricao(inscToSave).catch(() => {});
   }
 
+  /**
+   * Consulta a contagem de vagas ocupadas e limite máximo oficial por modalidade, categoria e sexo.
+   * Usado para travar a interface e impedir que qualquer escola exceda o limite de atletas ou equipes.
+   */
+  public static getVagasModalidadeInfo(
+    escolaId: string,
+    modCodigo: string,
+    categoria?: string | null,
+    sexo?: string,
+    atletaIdIgnorar?: string
+  ): {
+    vagasOcupadas: number;
+    limiteMaximo: number;
+    esgotado: boolean;
+    vagasRestantes: number;
+    maxEquipes: number;
+    maxAtletasPorEquipe: number;
+  } {
+    const modalidadesConfig = this.getModalidades();
+    const modObj = modalidadesConfig.find(m => m.codigo === modCodigo);
+    const maxEquipes = JegdsRulesService.getMaxEquipesPorModalidade(modCodigo as any);
+    const maxAtletasPorEquipe = modObj?.maxAtletas || 10;
+    const limiteMaximo = maxEquipes * maxAtletasPorEquipe;
+
+    const atletasEscola = this.getAtletas(escolaId);
+    const atletasDaModalidade = atletasEscola.filter(a => {
+      if (atletaIdIgnorar && (a.id === atletaIdIgnorar || a.matricula === atletaIdIgnorar)) return false;
+      if (categoria && a.categoriaCalculada !== categoria) return false;
+      if (sexo && a.sexo !== sexo) return false;
+      return a.modalidadesInscritas?.some(m =>
+        m.modalidadeCodigo === modCodigo ||
+        (modObj && m.modalidadeNome.toLowerCase().includes(modObj.nome.toLowerCase()))
+      );
+    });
+
+    const vagasOcupadas = atletasDaModalidade.length;
+    const esgotado = vagasOcupadas >= limiteMaximo;
+    const vagasRestantes = Math.max(0, limiteMaximo - vagasOcupadas);
+
+    return {
+      vagasOcupadas,
+      limiteMaximo,
+      esgotado,
+      vagasRestantes,
+      maxEquipes,
+      maxAtletasPorEquipe
+    };
+  }
+
+  /**
+   * Sanitização rigorosa das travas do Regulamento Oficial JEGDS 2026.
+   * Se alguma escola excedeu o número máximo de equipes ou de atletas por equipe (ex: Queimada com 34 atletas),
+   * preserva ESTRITAMENTE os primeiros atletas cadastrados até o limite máximo oficial e expurga os excedentes,
+   * excluindo equipes excedentes do banco e atualizando a nuvem.
+   */
+  public static sanitizarExcessoEquipes(): {
+    atletasAjustados: number;
+    inscricoesRemovidas: number;
+    inscricoesAjustadas: number;
+  } {
+    if (!this.isClient()) {
+      return { atletasAjustados: 0, inscricoesRemovidas: 0, inscricoesAjustadas: 0 };
+    }
+
+    const rawAtl = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+    let atletas: Atleta[] = rawAtl ? JSON.parse(rawAtl) : [];
+    const rawInsc = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
+    let inscricoes: InscricaoEquipe[] = rawInsc ? JSON.parse(rawInsc) : [];
+    const rawMods = localStorage.getItem(STORAGE_KEYS.MODALIDADES);
+    const modalidades: ModalidadeConfig[] = rawMods ? JSON.parse(rawMods) : MODALIDADES_OFICIAIS_JEGDS;
+    const rawEsc = localStorage.getItem(STORAGE_KEYS.ESCOLAS);
+    const escolas: Escola[] = rawEsc ? JSON.parse(rawEsc) : ESCOLAS_GONCALVES_DIAS;
+
+    const categorias: CategoriaIdade[] = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
+    const sexos: Genero[] = ['FEMININO', 'MASCULINO'];
+
+    let atletasAjustados = 0;
+    let inscricoesRemovidas = 0;
+    let inscricoesAjustadas = 0;
+    const atletasAlteradosIds = new Set<string>();
+    const inscricoesExcluidasIds: string[] = [];
+
+    // Helper para ordenação cronológica consistente (menor número de matrícula / token ou createdAt mais antigo)
+    const extrairSequencia = (val?: string) => {
+      if (!val) return 999999;
+      const match = val.match(/(\d+)/);
+      return match ? parseInt(match[1], 10) : 999999;
+    };
+
+    for (const esc of escolas) {
+      for (const mod of modalidades) {
+        const maxEquipes = JegdsRulesService.getMaxEquipesPorModalidade(mod.codigo as any);
+        const maxAtletas = mod.maxAtletas || 10;
+        const tetoMaximo = maxEquipes * maxAtletas;
+
+        for (const cat of categorias) {
+          for (const sx of sexos) {
+            // 1. Identificar atletas cadastrados nesta escola, categoria e sexo para este esporte
+            const atletasInscritos = atletas.filter(a => {
+              if (a.escolaId !== esc.id) return false;
+              if (a.categoriaCalculada !== cat) return false;
+              if (a.sexo !== sx) return false;
+              return a.modalidadesInscritas?.some(m =>
+                m.modalidadeCodigo === mod.codigo ||
+                m.modalidadeNome.toLowerCase().includes(mod.nome.toLowerCase())
+              );
+            });
+
+            if (atletasInscritos.length > tetoMaximo) {
+              // Ordena cronologicamente: os primeiros que ocuparam as vagas permanecem
+              atletasInscritos.sort((a, b) => {
+                const seqA = extrairSequencia(a.matricula || a.crachaToken);
+                const seqB = extrairSequencia(b.matricula || b.crachaToken);
+                if (seqA !== seqB) return seqA - seqB;
+                const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return timeA - timeB;
+              });
+
+              // Excedentes perdem a modalidade que extrapolou a vaga
+              const excedentes = atletasInscritos.slice(tetoMaximo);
+              for (const exc of excedentes) {
+                const idxMod = exc.modalidadesInscritas?.findIndex(m =>
+                  m.modalidadeCodigo === mod.codigo ||
+                  m.modalidadeNome.toLowerCase().includes(mod.nome.toLowerCase())
+                );
+                if (idxMod !== undefined && idxMod >= 0 && exc.modalidadesInscritas) {
+                  exc.modalidadesInscritas.splice(idxMod, 1);
+                  atletasAlteradosIds.add(exc.id);
+                  atletasAjustados++;
+                }
+              }
+            }
+
+            // 2. Sanitizar as equipes cadastradas em `inscricoes`
+            const equipesDestaMod = inscricoes.filter(i =>
+              i.escolaId === esc.id &&
+              (i.modalidadeCodigo === mod.codigo || i.modalidadeNome.toLowerCase().includes(mod.nome.toLowerCase())) &&
+              i.categoria === cat &&
+              i.sexo === sx
+            );
+
+            if (equipesDestaMod.length > 0) {
+              equipesDestaMod.sort((a, b) => (a.numeroEquipe || 1) - (b.numeroEquipe || 1));
+
+              // Se há mais equipes que o permitido pelo regulamento (ex: Queimada só permite 1)
+              if (equipesDestaMod.length > maxEquipes) {
+                const excedentesEq = equipesDestaMod.slice(maxEquipes);
+                for (const eq of excedentesEq) {
+                  inscricoesExcluidasIds.push(eq.id);
+                  inscricoesRemovidas++;
+                }
+              }
+
+              // Para as equipes mantidas (até maxEquipes):
+              const mantidasEq = equipesDestaMod.slice(0, maxEquipes);
+              const atletasValidos = atletas
+                .filter(a =>
+                  a.escolaId === esc.id &&
+                  a.categoriaCalculada === cat &&
+                  a.sexo === sx &&
+                  a.modalidadesInscritas?.some(m =>
+                    m.modalidadeCodigo === mod.codigo ||
+                    m.modalidadeNome.toLowerCase().includes(mod.nome.toLowerCase())
+                  )
+                )
+                .sort((a, b) => {
+                  const seqA = extrairSequencia(a.matricula || a.crachaToken);
+                  const seqB = extrairSequencia(b.matricula || b.crachaToken);
+                  return seqA - seqB;
+                });
+
+              mantidasEq.forEach((eq, eqIdx) => {
+                const start = eqIdx * maxAtletas;
+                const end = start + maxAtletas;
+                const atletasDoTime = atletasValidos.slice(start, end);
+                const novosIds = atletasDoTime.map(a => a.id);
+                const idsAtuais = eq.atletaIds || [];
+
+                const precisaAjustar = idsAtuais.length !== novosIds.length ||
+                  !idsAtuais.every((id, i) => id === novosIds[i]);
+
+                if (precisaAjustar) {
+                  eq.atletaIds = novosIds;
+                  if (eq.provasPorAtleta) {
+                    const novasProvas: Record<string, string[]> = {};
+                    novosIds.forEach(id => {
+                      if (eq.provasPorAtleta?.[id]) novasProvas[id] = eq.provasPorAtleta[id];
+                    });
+                    eq.provasPorAtleta = novasProvas;
+                  }
+                  eq.updatedAt = new Date().toISOString();
+                  inscricoesAjustadas++;
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (atletasAjustados > 0) {
+      localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(atletas));
+      for (const id of atletasAlteradosIds) {
+        const atl = atletas.find(a => a.id === id);
+        if (atl) {
+          JegdCloudSync.syncAtleta(atl).catch(() => {});
+        }
+      }
+    }
+
+    if (inscricoesRemovidas > 0 || inscricoesAjustadas > 0) {
+      inscricoes = inscricoes.filter(i => !inscricoesExcluidasIds.includes(i.id));
+      localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoes));
+
+      for (const idExcluido of inscricoesExcluidasIds) {
+        JegdCloudSync.deleteInscricao(idExcluido).catch(() => {});
+      }
+      for (const insc of inscricoes) {
+        JegdCloudSync.syncInscricao(insc).catch(() => {});
+      }
+    }
+
+    if (atletasAjustados > 0 || inscricoesRemovidas > 0 || inscricoesAjustadas > 0) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('jegd-data-synced'));
+      }
+    }
+
+    return { atletasAjustados, inscricoesRemovidas, inscricoesAjustadas };
+  }
+
   public static syncAtletaComEquipes(escolaId: string, atleta: Atleta): void {
     if (!this.isClient()) return;
     const cat = atleta.categoriaCalculada || JegdsRulesService.calcularCategoria(atleta.dataNascimento).categoria;
@@ -1022,12 +1271,14 @@ export class JegdStorage {
       return insc;
     });
 
-    // 2. Adiciona/atualiza nas equipes vinculadas respeitando o número da equipe e limites de elenco
+    // 2. Adiciona/atualiza nas equipes vinculadas com BLINDAGEM TOTAL contra excesso de elenco e equipes
     atleta.modalidadesInscritas?.forEach(modInsc => {
       const modObj = modalidadesConfig.find(m => m.codigo === modInsc.modalidadeCodigo);
       if (!modObj) return;
 
-      const maxAtletasModalidade = modObj.maxAtletas || 99;
+      const maxEquipesPermitidas = JegdsRulesService.getMaxEquipesPorModalidade(modInsc.modalidadeCodigo as any);
+      const maxAtletasModalidade = modObj.maxAtletas || 10;
+      const tetoTotalVagas = maxEquipesPermitidas * maxAtletasModalidade;
 
       // 2.1 Verifica se o atleta já está em alguma equipe desta modalidade/categoria/sexo
       let idx = todasInscricoes.findIndex(
@@ -1075,34 +1326,37 @@ export class JegdStorage {
           };
         }
       } else {
-        // Conta quantas equipes dessa modalidade/categoria/sexo a escola já possui para numerar certo (Equipe 1, Equipe 2...)
+        // Bloqueio rigoroso: se já atingiu o máximo de equipes permitidas pelo regulamento, NÃO cria equipe excedente!
         const totalEquipesDestaMod = todasInscricoes.filter(
           i => i.escolaId === escolaId &&
                i.modalidadeCodigo === modInsc.modalidadeCodigo &&
                i.categoria === cat &&
                i.sexo === atleta.sexo
         ).length;
-        const proxNumero = totalEquipesDestaMod + 1;
 
-        const novaInsc: InscricaoEquipe = {
-          id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}-eq${proxNumero}`,
-          municipioId: curMun.id,
-          escolaId,
-          modalidadeCodigo: modInsc.modalidadeCodigo,
-          modalidadeNome: modObj.nome,
-          categoria: cat,
-          sexo: atleta.sexo,
-          numeroEquipe: proxNumero,
-          nomeEquipe: proxNumero > 1 ? `${modObj.nome} - Equipe ${proxNumero}` : modObj.nome,
-          atletaIds: [atleta.id],
-          provasPorAtleta: modInsc.provas ? { [atleta.id]: modInsc.provas } : undefined,
-          comissaoIds: [],
-          status: 'PENDENTE',
-          dataInscricao: new Date().toLocaleString('pt-BR'),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        todasInscricoes.unshift(novaInsc);
+        if (totalEquipesDestaMod < maxEquipesPermitidas) {
+          const proxNumero = totalEquipesDestaMod + 1;
+
+          const novaInsc: InscricaoEquipe = {
+            id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}-eq${proxNumero}`,
+            municipioId: curMun.id,
+            escolaId,
+            modalidadeCodigo: modInsc.modalidadeCodigo,
+            modalidadeNome: modObj.nome,
+            categoria: cat,
+            sexo: atleta.sexo,
+            numeroEquipe: proxNumero,
+            nomeEquipe: proxNumero > 1 ? `${modObj.nome} - Equipe ${proxNumero}` : modObj.nome,
+            atletaIds: [atleta.id],
+            provasPorAtleta: modInsc.provas ? { [atleta.id]: modInsc.provas } : undefined,
+            comissaoIds: [],
+            status: 'PENDENTE',
+            dataInscricao: new Date().toLocaleString('pt-BR'),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          todasInscricoes.unshift(novaInsc);
+        }
       }
     });
 

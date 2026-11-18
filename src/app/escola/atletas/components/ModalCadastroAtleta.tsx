@@ -447,27 +447,46 @@ export function ModalCadastroAtleta({
                   <div className="space-y-1.5 max-h-[310px] overflow-y-auto pr-1">
                     {modalidadesDisponiveis.map((mod) => {
                       const sel = modalidadesEscolhidas.includes(mod.codigo);
-                      const equipeAtual = JegdStorage.getInscricoes(escolaId).find(
-                        i => i.modalidadeCodigo === mod.codigo && i.categoria === catCalc.categoria && i.sexo === sexo
-                      );
-                      const contagemAtual = equipeAtual ? equipeAtual.atletaIds.length : 0;
+                      const vagasInfo = escolaId ? JegdStorage.getVagasModalidadeInfo(
+                        escolaId,
+                        mod.codigo,
+                        catCalc.categoria,
+                        sexo,
+                        atletaEditando?.id
+                      ) : null;
+                      const esgotado = Boolean(vagasInfo && vagasInfo.esgotado && !sel);
 
                       return (
                         <div
                           key={mod.id}
-                          onClick={() => toggleModalidade(mod.codigo)}
-                          className={`p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
-                            sel
-                              ? 'bg-emerald-50/90 border-emerald-500 text-emerald-950 font-medium'
-                              : 'bg-slate-50/50 border-slate-200 text-slate-800 hover:bg-white hover:border-slate-300'
+                          onClick={() => {
+                            if (esgotado) {
+                              alert(`⚠️ Vagas Esgotadas: A escola já preencheu todas as ${vagasInfo?.limiteMaximo} vagas permitidas pelo Regulamento Oficial do JEGDS 2026 para ${mod.nome} (${catCalc.categoria || 'Categoria'} - ${sexo}).\n\nNão é permitido inscrever alunos além do limite.`);
+                              return;
+                            }
+                            toggleModalidade(mod.codigo);
+                          }}
+                          className={`p-2.5 rounded-xl border transition-all select-none ${
+                            esgotado
+                              ? 'bg-rose-50/30 border-rose-200/80 text-slate-400 opacity-70 cursor-not-allowed'
+                              : sel
+                              ? 'bg-emerald-50/90 border-emerald-500 text-emerald-950 font-medium cursor-pointer'
+                              : 'bg-slate-50/50 border-slate-200 text-slate-800 hover:bg-white hover:border-slate-300 cursor-pointer'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs sm:text-sm font-semibold">{mod.nome}</span>
-                            <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                              sel ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
-                            }`}>
-                              {sel && <Check className="w-3 h-3 stroke-[3]" />}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs sm:text-sm font-semibold truncate">{mod.nome}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {esgotado && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                                  🔒 Esgotado ({vagasInfo?.vagasOcupadas}/{vagasInfo?.limiteMaximo})
+                                </span>
+                              )}
+                              <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
+                                sel ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                              }`}>
+                                {sel && <Check className="w-3 h-3 stroke-[3]" />}
+                              </div>
                             </div>
                           </div>
                           
@@ -475,8 +494,10 @@ export function ModalCadastroAtleta({
                             <span className="text-[10px] uppercase font-medium">
                               {mod.tipo === 'COLETIVA' ? 'Coletiva' : 'Individual'}
                             </span>
-                            <span className="text-emerald-700 font-medium">
-                              Elenco: {contagemAtual}/{mod.maxAtletas}
+                            <span className={esgotado ? 'text-rose-700 font-semibold text-[10px]' : 'text-emerald-700 font-medium'}>
+                              {vagasInfo
+                                ? `Vagas: ${vagasInfo.vagasOcupadas}/${vagasInfo.limiteMaximo} (${vagasInfo.vagasRestantes} restantes)`
+                                : `Máx: ${mod.maxAtletas} atletas`}
                             </span>
                           </div>
                         </div>

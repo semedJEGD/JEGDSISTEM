@@ -614,6 +614,22 @@ export default function AdminDashboardPage() {
       setModalidadesEscolhidas(modalidadesEscolhidas.filter(c => c !== modCodigo));
       if (modCodigo === 'atletismo') setProvasAtletismo([]);
     } else {
+      // 1. Verificação de travas de vagas da escola para a modalidade/categoria/sexo
+      if (escolaSelecionada?.id && catCalc.categoria) {
+        const vagasInfo = JegdStorage.getVagasModalidadeInfo(
+          escolaSelecionada.id,
+          modCodigo,
+          catCalc.categoria,
+          sexo,
+          atletaEditando?.id
+        );
+        if (vagasInfo.esgotado) {
+          alert(`⚠️ Vagas Esgotadas: A escola já preencheu todas as ${vagasInfo.limiteMaximo} vagas permitidas pelo regulamento oficial do JEGDS 2026 para esta modalidade (${catCalc.categoria} - ${sexo}).`);
+          return;
+        }
+      }
+
+      // 2. Validação individual do estudante (Art. 13 - máx 1 coletiva e 2 individuais)
       const proximas = [...modalidadesEscolhidas, modCodigo];
       const validacaoArt13 = JegdsRulesService.validarLimiteModalidadesAtleta(proximas as any);
       if (!validacaoArt13.valido) {

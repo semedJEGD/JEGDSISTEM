@@ -120,9 +120,22 @@ export function AbaSumulas({
         });
       }
 
+      // 3. Trava de Segurança Máxima do Regulamento Oficial JEGDS 2026:
+      // Se filtrado por escola/categoria/sexo, nunca excede o teto (maxEquipes * maxAtletas)
+      if (escolaId && categoria && sexo) {
+        const maxEq = JegdsRulesService.getMaxEquipesPorModalidade(modCodigo as any);
+        const modConf = modalidades.find(m => m.codigo === modCodigo);
+        const maxAtl = modConf?.maxAtletas || 10;
+        const teto = maxEq * maxAtl;
+        if (idsSet.size > teto) {
+          const mantidos = Array.from(idsSet).slice(0, teto);
+          return new Set(mantidos);
+        }
+      }
+
       return idsSet;
     };
-  }, [atletas, inscricoes]);
+  }, [atletas, inscricoes, modalidades]);
 
   // Contagem geral de atletas por escola
   const contagemAtletasPorEscola = useMemo(() => {
@@ -444,7 +457,11 @@ export function AbaSumulas({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {modalidades.map((mod) => {
                 const etapaInfo = getEtapaCalendario(mod.codigo);
-                const totalAlunosModEscola = obterAtletasSet(mod.codigo, undefined, undefined, escolaAtiva.id).size;
+                const totalAlunosModEscola = mod.categoriasPermitidas.reduce((acc, cat) => {
+                  const m = mod.sexosPermitidos?.includes('MASCULINO') ? obterAtletasSet(mod.codigo, cat, 'MASCULINO', escolaAtiva.id).size : 0;
+                  const f = mod.sexosPermitidos?.includes('FEMININO') ? obterAtletasSet(mod.codigo, cat, 'FEMININO', escolaAtiva.id).size : 0;
+                  return acc + m + f;
+                }, 0);
 
                 return (
                   <div
