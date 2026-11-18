@@ -78,6 +78,7 @@ export default function AdminDashboardPage() {
   const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState<string>('');
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
+  const [subAbaHomologacao, setSubAbaHomologacao] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
   const [busca, setBusca] = useState('');
   const [gerandoPdf, setGerandoPdf] = useState(false);
 
@@ -918,46 +919,107 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ================= FAIXA SLIM DE MÉTRICAS (1 LINHA COMPACTA) ================= */}
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-white border border-slate-200/90 rounded-xl shadow-2xs text-xs flex-wrap">
-        <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <School className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500">Escolas:</span>
+      {/* ================= FAIXA SLIM DE MÉTRICAS INTERATIVAS (ATALHOS RÁPIDOS) ================= */}
+      <div className="flex items-center justify-between gap-2 sm:gap-3 px-3.5 py-2 bg-white border border-slate-200/90 rounded-xl shadow-2xs text-xs flex-wrap">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+          {/* BOTÃO 1: ESCOLAS */}
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+              abaAtiva === 'ESCOLAS_LOTE'
+                ? 'bg-slate-100 text-slate-900 font-semibold ring-1 ring-slate-300/80 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+            title="Ir para o menu de Escolas & Alunos"
+          >
+            <School className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`} />
+            <span>Escolas:</span>
             <strong className="text-slate-900 font-bold">{escolas.length}</strong>
-          </div>
-          <span className="text-slate-300 hidden sm:inline">•</span>
-          <div className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500">Alunos:</span>
+          </button>
+
+          <span className="text-slate-300 hidden sm:inline select-none">•</span>
+
+          {/* BOTÃO 2: ALUNOS */}
+          <button
+            type="button"
+            onClick={() => {
+              setFiltroModalidadeLote('TODAS');
+              setFiltroCategoriaLote('TODAS');
+              setFiltroSexoLote('TODOS');
+              setAbaAtiva('ESCOLAS_LOTE');
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+              abaAtiva === 'ESCOLAS_LOTE'
+                ? 'bg-slate-100 text-slate-900 font-semibold ring-1 ring-slate-300/80 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+            title="Ir para visualização e gerenciamento de Alunos"
+          >
+            <Users className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-700'}`} />
+            <span>Alunos:</span>
             <strong className="text-slate-900 font-bold">{atletas.length}</strong>
-          </div>
-          <span className="text-slate-300 hidden sm:inline">•</span>
-          <div className="flex items-center gap-1.5">
-            <Trophy className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500">Inscrições:</span>
+          </button>
+
+          <span className="text-slate-300 hidden sm:inline select-none">•</span>
+
+          {/* BOTÃO 3: INSCRIÇÕES */}
+          <button
+            type="button"
+            onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+              abaAtiva === 'LISTAS_CHAMADA'
+                ? 'bg-amber-50 text-amber-950 font-semibold ring-1 ring-amber-300/80 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+            title="Ir para o menu de Súmulas & Inscrições por Modalidade"
+          >
+            <Trophy className={`w-3.5 h-3.5 transition-colors ${abaAtiva === 'LISTAS_CHAMADA' ? 'text-amber-600' : 'text-slate-400 group-hover:text-amber-600'}`} />
+            <span>Inscrições:</span>
             <strong className="text-slate-900 font-bold">{inscricoes.length}</strong>
-          </div>
-          <span className="text-slate-300 hidden sm:inline">•</span>
-          <div className="flex items-center gap-1.5">
-            <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-emerald-800">Homologados:</span>
+          </button>
+
+          <span className="text-slate-300 hidden sm:inline select-none">•</span>
+
+          {/* BOTÃO 4: HOMOLOGADOS */}
+          <button
+            type="button"
+            onClick={() => {
+              setSubAbaHomologacao('EQUIPES');
+              setFiltroStatus('APROVADA');
+              setAbaAtiva('HOMOLOGACAO');
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all group cursor-pointer ${
+              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA'
+                ? 'bg-emerald-100 text-emerald-950 font-semibold ring-1 ring-emerald-300 shadow-2xs'
+                : 'text-emerald-800 hover:text-emerald-950 hover:bg-emerald-50/70'
+            }`}
+            title="Ir para o menu de Homologação (filtrar aprovados)"
+          >
+            <CheckCheck className="w-3.5 h-3.5 text-emerald-600 group-hover:text-emerald-700" />
+            <span>Homologados:</span>
             <strong className="text-emerald-800 font-bold">
               {atletas.filter(a => a.conferidoPeloCoordenador).length}
             </strong>
-          </div>
+          </button>
         </div>
 
+        {/* BOTÃO 5: PENDÊNCIAS */}
         <div>
           <button
             type="button"
-            onClick={() => setAbaAtiva('HOMOLOGACAO')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              alertasInconsistencia.length > 0
-                ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                : 'text-slate-500 hover:text-slate-800'
+            onClick={() => {
+              setSubAbaHomologacao('ALERTAS');
+              setAbaAtiva('HOMOLOGACAO');
+            }}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              abaAtiva === 'HOMOLOGACAO' && subAbaHomologacao === 'ALERTAS'
+                ? 'bg-rose-100 text-rose-950 ring-1 ring-rose-300 shadow-2xs font-bold'
+                : alertasInconsistencia.length > 0
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
             }`}
-            title="Ver pendências e auditoria de documentos"
+            title="Ir para o menu de Auditoria de Documentos e Alertas"
           >
             <AlertTriangle className={`w-3.5 h-3.5 ${alertasInconsistencia.length > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
             <span>{alertasInconsistencia.length} Pendências</span>
@@ -1072,6 +1134,8 @@ export default function AdminDashboardPage() {
           escolas={escolas}
           atletas={atletas}
           alertas={alertasInconsistencia}
+          subAbaHomologacao={subAbaHomologacao}
+          setSubAbaHomologacao={setSubAbaHomologacao}
           abrirModalAnalise={abrirModalAnalise}
           onAprovarEquipeDireto={handleAprovarEquipeDireto}
         />

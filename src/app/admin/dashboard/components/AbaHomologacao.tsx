@@ -21,6 +21,8 @@ interface AbaHomologacaoProps {
   escolas: Escola[];
   atletas: Atleta[];
   alertas?: AlertaInconsistencia[];
+  subAbaHomologacao?: 'EQUIPES' | 'ALERTAS';
+  setSubAbaHomologacao?: (val: 'EQUIPES' | 'ALERTAS') => void;
   abrirModalAnalise: (insc: InscricaoEquipe) => void;
   onAprovarEquipeDireto?: (insc: InscricaoEquipe) => void;
 }
@@ -34,10 +36,14 @@ export function AbaHomologacao({
   escolas,
   atletas,
   alertas = [],
+  subAbaHomologacao,
+  setSubAbaHomologacao,
   abrirModalAnalise,
   onAprovarEquipeDireto
 }: AbaHomologacaoProps) {
-  const [subAba, setSubAba] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
+  const [internalSubAba, setInternalSubAba] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
+  const subAba = subAbaHomologacao !== undefined ? subAbaHomologacao : internalSubAba;
+  const setSubAba = setSubAbaHomologacao || setInternalSubAba;
 
   const inscricoesFiltradas = inscricoes.filter((insc) => {
     const esc = escolas.find(e => e.id === insc.escolaId);
