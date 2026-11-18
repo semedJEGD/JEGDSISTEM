@@ -807,11 +807,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleAcessarInscricoesEscola = (esc: Escola) => {
-    JegdStorage.setCurrentEscola(esc);
-    router.push('/escola/inscricoes');
-  };
-
   // Alertas de inconsistência
   const alertasInconsistencia: { tipo: string; mensagem: string; escolaNome: string; atletaNome?: string }[] = [];
   atletas.forEach(a => {
@@ -1140,7 +1135,6 @@ export default function AdminDashboardPage() {
           onNovoAtleta={handleAbrirModalNovoAtleta}
           onEditarAtleta={handleAbrirModalEditarAtleta}
           onExcluirAtleta={handleExcluirAtletaCoord}
-          onAcessarInscricoesEscola={handleAcessarInscricoesEscola}
           onAprovarEquipeModalidade={handleAprovarEquipeModalidade}
         />
       )}

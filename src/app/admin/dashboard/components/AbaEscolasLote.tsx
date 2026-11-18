@@ -59,7 +59,6 @@ interface AbaEscolasLoteProps {
   onNovoAtleta?: (esc: Escola) => void;
   onEditarAtleta?: (atleta: Atleta, esc: Escola) => void;
   onExcluirAtleta?: (atleta: Atleta, esc: Escola) => void;
-  onAcessarInscricoesEscola?: (esc: Escola) => void;
   onAprovarEquipeModalidade?: (escola: Escola, modalidade: ModalidadeConfig, atletasDaEquipe: Atleta[]) => void;
 }
 
@@ -88,7 +87,6 @@ export function AbaEscolasLote({
   onNovoAtleta,
   onEditarAtleta,
   onExcluirAtleta,
-  onAcessarInscricoesEscola,
   onAprovarEquipeModalidade
 }: AbaEscolasLoteProps) {
   const [buscaEscola, setBuscaEscola] = useState('');
@@ -339,20 +337,6 @@ export function AbaEscolasLote({
                     >
                       <UserPlus className="w-3.5 h-3.5" />
                       <span>+ Inscrever Aluno</span>
-                    </button>
-                  )}
-
-                  {/* BOTÃO SECUNDÁRIO: MONTAR EQUIPES */}
-                  {onAcessarInscricoesEscola && (
-                    <button
-                      type="button"
-                      onClick={() => onAcessarInscricoesEscola(escolaSelecionada)}
-                      className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs shadow-2xs flex items-center gap-1.5 transition-colors"
-                      title="Montar inscrições de equipes por modalidade e emitir fichas"
-                    >
-                      <Users className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="hidden sm:inline">Montar Equipes</span>
-                      <span className="sm:hidden">Equipes</span>
                     </button>
                   )}
 

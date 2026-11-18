@@ -173,82 +173,20 @@ export default function EscolaInscricoesPage() {
 
   useEffect(() => {
     JegdStorage.init();
-    let atual = JegdStorage.getCurrentEscola();
     const coordLogado = JegdStorage.isAdminAuth();
-    setIsCoordenador(coordLogado);
-
-    const curMun = JegdStorage.getCurrentMunicipio();
-    const escList = JegdStorage.getEscolas(curMun.id);
-    setTodasEscolas(escList);
-
-    const currentUser = JegdStorage.getCurrentUser();
-    if (currentUser) {
-      setNomeOperador(currentUser.nome);
+    if (coordLogado) {
+      router.replace('/admin/dashboard');
+      return;
     }
 
-    if (!atual) {
-      if (coordLogado && escList.length > 0) {
-        atual = escList[0];
-        JegdStorage.setCurrentEscola(atual);
-      } else {
-        router.push('/escola/login');
-        return;
-      }
-    }
-    setEscola(atual);
-    setTodosAtletas(JegdStorage.getAtletas(atual.id));
-    setInscricoes(JegdStorage.getInscricoes(atual.id));
-    const mods = JegdStorage.getModalidades();
-    setModalidades(mods);
-
-    // Leitura inteligente de parâmetros da URL (quando acessado via menu Modalidades)
-    const urlParams = new URLSearchParams(window.location.search);
-    const modParam = urlParams.get('modalidade') as ModalidadeCodigo | null;
-    const etapaParam = urlParams.get('etapa');
-    if (etapaParam && ['1', '2', '3'].includes(etapaParam)) {
-      const numEtapa = Number(etapaParam);
-      setFiltroEtapaForm(numEtapa);
-    }
-    const catParam = urlParams.get('categoria') || (etapaParam && ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'].includes(etapaParam) ? etapaParam : null);
-    if (catParam && ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'].includes(catParam)) {
-      setFiltroEtapaLista(catParam as CategoriaIdade);
-      setCategoriaSel(catParam as CategoriaIdade);
+    const escolaLogada = JegdStorage.getCurrentEscola();
+    if (escolaLogada) {
+      router.replace('/escola/dashboard');
+      return;
     }
 
-    if (modParam && mods.some(m => m.codigo === modParam)) {
-      setModalidadeSelCodigo(modParam);
-      const modObj = mods.find(m => m.codigo === modParam);
-      if (modObj) {
-        if (modObj.categoriasPermitidas && !modObj.categoriasPermitidas.includes(categoriaSel)) {
-          setCategoriaSel(modObj.categoriasPermitidas[0] as CategoriaIdade);
-        }
-        if (modObj.sexosPermitidos && !modObj.sexosPermitidos.includes(sexoSel)) {
-          setSexoSel(modObj.sexosPermitidos[0] as Genero);
-        }
-      }
-    } else if (mods.length > 0) {
-      setModalidadeSelCodigo(mods[0].codigo);
-    }
-
-    const handleSync = () => {
-      const targetEsc = JegdStorage.getCurrentEscola();
-      if (targetEsc) {
-        setTodosAtletas(JegdStorage.getAtletas(targetEsc.id));
-        setInscricoes(JegdStorage.getInscricoes(targetEsc.id));
-      }
-      setModalidades(JegdStorage.getModalidades());
-    };
-    window.addEventListener('jegd-data-synced', handleSync);
-
-    const interval = setInterval(() => {
-      JegdStorage.sincronizarComNuvem().catch(() => {});
-    }, 60000);
-
-    return () => {
-      window.removeEventListener('jegd-data-synced', handleSync);
-      clearInterval(interval);
-    };
-  }, []);
+    router.replace('/escola/login');
+  }, [router]);
 
   const modalidadeAtual = modalidades.find(m => m.codigo === modalidadeSelCodigo);
   const maxEquipesPermitidas = modalidadeAtual
@@ -812,7 +750,14 @@ export default function EscolaInscricoesPage() {
     setModalCadastroAtletaAberto(false);
   };
 
-  if (!escola) return null;
+  if (!escola) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-semibold text-slate-700">Redirecionando para o painel oficial...</p>
+      </div>
+    );
+  }
 
   const provasPermitidasAtletismo = PROVAS_ATLETISMO_POR_CATEGORIA[categoriaSel] || [];
 

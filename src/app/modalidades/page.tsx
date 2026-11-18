@@ -311,15 +311,6 @@ export default function ModalidadesPage() {
                     {generoTexto}
                   </span>
                 </div>
-
-                {/* Botão Oficial: Inscrever Equipe com Modalidade e Etapa Pré-selecionadas */}
-                <Link
-                  href={`/escola/inscricoes?modalidade=${mod.codigo}&etapa=${etapaInfo.etapa}`}
-                  className="w-full py-2.5 rounded-xl bg-[#F0FDF4] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs sm:text-sm font-black border border-[#00A878]/25 hover:border-[#00A878] flex items-center justify-center gap-2 transition-all shadow-2xs group/btn mt-1"
-                >
-                  <span>Inscrever equipe na {etapaInfo.rotulo}</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
-                </Link>
               </div>
 
             </div>
