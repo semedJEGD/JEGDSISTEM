@@ -75,3 +75,33 @@ export function ajustarFonte(
   }
   return tamanho;
 }
+
+/**
+ * Abre o PDF gerado diretamente em uma nova guia do navegador para visualização e impressão,
+ * sem forçar download imediato. Caso o navegador bloqueie pop-ups, faz fallback automático para download.
+ */
+export function abrirPdfNovaGuia(doc: jsPDF, nomeArquivo: string): void {
+  const tituloLimpo = nomeArquivo.replace(/\.pdf$/i, '');
+  doc.setProperties({ title: tituloLimpo });
+
+  if (typeof window === 'undefined') {
+    doc.save(nomeArquivo);
+    return;
+  }
+
+  try {
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+    const novaAba = window.open(blobUrl, '_blank');
+
+    if (novaAba) {
+      novaAba.focus();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10 * 60 * 1000);
+    } else {
+      URL.revokeObjectURL(blobUrl);
+      doc.save(nomeArquivo);
+    }
+  } catch {
+    doc.save(nomeArquivo);
+  }
+}

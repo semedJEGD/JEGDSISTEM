@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { Escola, Atleta, InscricaoEquipe } from '@/types/jegd';
-import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64 } from './pdf-types';
+import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64, abrirPdfNovaGuia } from './pdf-types';
 
 export class RelatorioDelegacaoService {
   private static logoCache: string | null = null;
@@ -304,7 +304,7 @@ export class RelatorioDelegacaoService {
     doc.text('Visto de Homologação da Delegação', xSemed + colAssW / 2, currentY + 18.5, { align: 'center' });
 
     const nomeArquivo = `Relatorio_Delegacao_JEGDS_${escola.sigla.replace(/\s+/g, '_')}${filtroModalidade && filtroModalidade !== 'TODAS' ? `_${filtroModalidade}` : ''}${filtroCategoria && filtroCategoria !== 'TODAS' ? `_${filtroCategoria}` : ''}.pdf`;
-    doc.save(nomeArquivo);
+    abrirPdfNovaGuia(doc, nomeArquivo);
   }
 
   /**
@@ -505,6 +505,6 @@ export class RelatorioDelegacaoService {
       currentY += 5.2;
     }
 
-    doc.save(`Relatorio_Geral_Alunos_JEGDS_2026.pdf`);
+    abrirPdfNovaGuia(doc, `Relatorio_Geral_Alunos_JEGDS_2026.pdf`);
   }
 }

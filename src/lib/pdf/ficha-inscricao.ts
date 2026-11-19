@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { Escola, Atleta, InscricaoEquipe, MembroComissao } from '@/types/jegd';
 import { JegdStorage } from '@/lib/storage';
-import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64, ajustarFonte } from './pdf-types';
+import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64, ajustarFonte, abrirPdfNovaGuia } from './pdf-types';
 
 export class FichaInscricaoService {
   private static logoCache: string | null = null;
@@ -348,6 +348,6 @@ export class FichaInscricaoService {
     );
 
     const nomeArquivo = `Ficha_Oficial_JEGDS_${escola.sigla.replace(/\s+/g, '_')}_${inscricao.modalidadeNome}_${inscricao.categoria}.pdf`;
-    doc.save(nomeArquivo);
+    abrirPdfNovaGuia(doc, nomeArquivo);
   }
 }

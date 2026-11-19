@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { Escola, Atleta } from '@/types/jegd';
-import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64, ajustarFonte } from './pdf-types';
+import { criarDocumentoA4, CORES_JEGD, carregarImagemBase64, ajustarFonte, abrirPdfNovaGuia } from './pdf-types';
 
 export class CrachaDobravelService {
   private static logoCache: string | null = null;
@@ -441,7 +441,7 @@ export class CrachaDobravelService {
     doc.text('3. Equipes de apoio utilizam o crachá para registro e entrega de água e lanches nos ginásios.', centerX - 5, boxY + 26);
     doc.text('4. Em caso de perda, solicite a reemissão imediata no painel da escola ou coordenação SEMED.', centerX - 5, boxY + 32);
 
-    doc.save(`Cracha_JEGDS_${escola.sigla}_${atleta.nomeCompleto.replace(/\s+/g, '_')}.pdf`);
+    abrirPdfNovaGuia(doc, `Cracha_JEGDS_${escola.sigla}_${atleta.nomeCompleto.replace(/\s+/g, '_')}.pdf`);
   }
 
   /**
@@ -516,7 +516,7 @@ export class CrachaDobravelService {
     }
 
     const nomeArquivo = `Crachas_Lote_${escola.sigla.replace(/\s+/g, '_')}${modalidadeNome ? `_${modalidadeNome}` : ''}${categoria ? `_${categoria}` : ''}.pdf`;
-    doc.save(nomeArquivo);
+    abrirPdfNovaGuia(doc, nomeArquivo);
   }
 
   /**
@@ -600,6 +600,6 @@ export class CrachaDobravelService {
       }
     }
 
-    doc.save('Crachas_GERAL_TODOS_ATLETAS_JEGDS_2026.pdf');
+    abrirPdfNovaGuia(doc, 'Crachas_GERAL_TODOS_ATLETAS_JEGDS_2026.pdf');
   }
 }

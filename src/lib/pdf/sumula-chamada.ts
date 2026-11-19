@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { Escola, Atleta, ModalidadeConfig } from '@/types/jegd';
-import { criarDocumentoA4, CORES_JEGD } from './pdf-types';
+import { criarDocumentoA4, CORES_JEGD, abrirPdfNovaGuia } from './pdf-types';
 
 export interface CategoriaSumulaData {
   categoria: string;
@@ -584,7 +584,7 @@ export class SumulaChamadaService {
     if (atletasComEscola.length === 0) {
       this.desenharPaginaSumula(doc, modalidadeNome, categoria, sexo, dataJogo, [], { isModeloManual: true });
       aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Oficial • ${modalidadeNome}`);
-      doc.save(`Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
+      abrirPdfNovaGuia(doc, `Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
       return;
     }
 
@@ -631,7 +631,7 @@ export class SumulaChamadaService {
     });
 
     aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Oficial • ${modalidadeNome}`, contextosPorPagina);
-    doc.save(`Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
+    abrirPdfNovaGuia(doc, `Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
   }
 
   /**
@@ -698,7 +698,7 @@ export class SumulaChamadaService {
 
       aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`, contextosPorPagina);
       const prefixo = `SUMULA_${(options.escolaFiltro.sigla || options.escolaFiltro.nome).replace(/\s+/g, '_')}`;
-      doc.save(`${prefixo}_${nomeFormatado}_JEGDS2026.pdf`);
+      abrirPdfNovaGuia(doc, `${prefixo}_${nomeFormatado}_JEGDS2026.pdf`);
       return;
     }
 
@@ -760,7 +760,7 @@ export class SumulaChamadaService {
         { isModeloManual: true }
       );
       aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`);
-      doc.save(`CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
+      abrirPdfNovaGuia(doc, `CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
       return;
     }
 
@@ -995,7 +995,7 @@ export class SumulaChamadaService {
     }
 
     aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`, contextosPorPagina);
-    doc.save(`CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
+    abrirPdfNovaGuia(doc, `CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
   }
 
   /**
@@ -1085,7 +1085,7 @@ export class SumulaChamadaService {
     if (escolasOrdenadas.length === 0) {
       this.desenharPaginaSumula(doc, 'UNIVERSAL', 'LIVRE', 'MASC / FEM', '2026', [], { isModeloManual: true });
       aplicarRodapePaginado(doc, 'JEGDS 2026 • Livro Geral de Arbitragem');
-      doc.save('LIVRO_GERAL_ARBITRAGEM_JEGDS2026.pdf');
+      abrirPdfNovaGuia(doc, 'LIVRO_GERAL_ARBITRAGEM_JEGDS2026.pdf');
       return;
     }
 
@@ -1349,7 +1349,7 @@ export class SumulaChamadaService {
     // 4. Aplicar rodapé numerado em todas as páginas
     aplicarRodapePaginado(doc, 'JEGDS 2026 • Livro Geral de Arbitragem', contextosPorPagina);
 
-    doc.save('LIVRO_GERAL_ARBITRAGEM_JEGDS2026.pdf');
+    abrirPdfNovaGuia(doc, 'LIVRO_GERAL_ARBITRAGEM_JEGDS2026.pdf');
   }
 
   // ==============================================================
@@ -1379,7 +1379,7 @@ export class SumulaChamadaService {
     );
     aplicarRodapePaginado(doc, `JEGDS 2026 • ${escola.sigla || escola.nome} • ${modalidadeNome}`);
     const siglaSafe = (escola.sigla || escola.nome).replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`Sumula_JEGDS_${siglaSafe}_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
+    abrirPdfNovaGuia(doc, `Sumula_JEGDS_${siglaSafe}_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
   }
 
   /**
@@ -1437,7 +1437,7 @@ export class SumulaChamadaService {
       );
       aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas (${escola.sigla || escola.nome})`);
       const siglaSafe = (escola.sigla || escola.nome).replace(/[^a-zA-Z0-9]/g, '_');
-      doc.save(`CADERNO_SUMULAS_ESCOLA_${siglaSafe}_JEGDS2026.pdf`);
+      abrirPdfNovaGuia(doc, `CADERNO_SUMULAS_ESCOLA_${siglaSafe}_JEGDS2026.pdf`);
       return;
     }
 
@@ -1655,7 +1655,7 @@ export class SumulaChamadaService {
     aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas (${escola.sigla || escola.nome})`, contextosPorPagina);
 
     const siglaSafe = (escola.sigla || escola.nome).replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`CADERNO_SUMULAS_ESCOLA_${siglaSafe}_JEGDS2026.pdf`);
+    abrirPdfNovaGuia(doc, `CADERNO_SUMULAS_ESCOLA_${siglaSafe}_JEGDS2026.pdf`);
   }
 
   // ==============================================================
@@ -1677,7 +1677,7 @@ export class SumulaChamadaService {
       { isModeloManual: true }
     );
     aplicarRodapePaginado(doc, 'JEGDS 2026 • Modelo Oficial de Súmula Manual');
-    doc.save('MODELO_OFICIAL_SUMULA_MANUAL_JEGDS2026_UNIVERSAL.pdf');
+    abrirPdfNovaGuia(doc, 'MODELO_OFICIAL_SUMULA_MANUAL_JEGDS2026_UNIVERSAL.pdf');
   }
 
   /**
@@ -1701,6 +1701,6 @@ export class SumulaChamadaService {
     );
     aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Manual • ${modalidadeNome}`);
     const modSafe = modalidadeNome.replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`MODELO_MANUAL_SUMULA_${modSafe}_JEGDS2026.pdf`);
+    abrirPdfNovaGuia(doc, `MODELO_MANUAL_SUMULA_${modSafe}_JEGDS2026.pdf`);
   }
 }
