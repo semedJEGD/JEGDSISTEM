@@ -784,26 +784,26 @@ export default function EscolaInscricoesPage() {
 
       {/* Banner de Operação Especial para a Coordenação SEMED */}
       {isCoordenador && (
-        <div className="bg-slate-900 border border-slate-800 text-white p-4 rounded-xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-white border border-[#E2EAE5] border-l-4 border-l-[#00A878] text-[#17221D] p-4 rounded-xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[#E8F7F1] border border-[#00A878]/20 text-[#087A5B] flex items-center justify-center font-bold text-sm shrink-0">
               👑
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-semibold uppercase tracking-wider mb-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#E8F7F1] text-[#087A5B] text-[10px] font-bold uppercase tracking-wider mb-0.5">
                 <span>Modo Coordenação SEMED Ativo</span>
               </div>
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-bold text-[#17221D]">
                 Operador: {nomeOperador || 'Elias Veloso / Herbert (SEMED)'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#68756E]">
                 Você tem permissão para inscrever atletas e homologar equipes para qualquer escola do município.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <span className="text-xs font-medium text-slate-300 shrink-0">Alternar Escola:</span>
+            <span className="text-xs font-semibold text-[#4B5563] shrink-0">Alternar Escola:</span>
             <select
               value={escola.id}
               onChange={(e) => {
@@ -817,7 +817,7 @@ export default function EscolaInscricoesPage() {
                   setProvasPorAtleta({});
                 }
               }}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-emerald-500 cursor-pointer w-full md:w-auto"
+              className="px-3 py-1.5 rounded-lg bg-[#F7F9F8] border border-[#E2EAE5] text-[#17221D] text-xs font-medium focus:outline-none focus:border-[#00A878] cursor-pointer w-full md:w-auto"
             >
               {todasEscolas.map(e => (
                 <option key={e.id} value={e.id}>

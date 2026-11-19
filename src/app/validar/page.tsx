@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import {
   QrCode,
   ShieldCheck,
-  Sparkles,
   School,
   Trophy,
   Users,
@@ -21,7 +20,9 @@ import {
   Award,
   Clock,
   Check,
-  Utensils
+  Utensils,
+  User,
+  Scissors
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Atleta, Escola, InscricaoEquipe } from '@/types/jegd';
@@ -293,11 +294,7 @@ export default function CrachaGuiaPage() {
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10 w-full">
       
       {/* Header Principal */}
-      <div className="text-center max-w-3xl mx-auto space-y-3.5">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs font-black tracking-wide shadow-2xs">
-          <Sparkles className="w-4 h-4 text-[#00A878]" />
-          <span>SISTEMA OFICIAL DE IDENTIFICAÇÃO & CREDENCIAMENTO</span>
-        </div>
+      <div className="text-center max-w-3xl mx-auto space-y-3">
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight break-words">
           Crachá Oficial do Atleta • JEGD 2026
         </h1>
@@ -312,23 +309,28 @@ export default function CrachaGuiaPage() {
       </Suspense>
 
       {/* BANNER CTA PARA ÁRBITROS & COORDENAÇÃO DA SEMED */}
-      <div className="bg-gradient-to-r from-[#17221D] via-[#0F172A] to-[#1E293B] rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
-          <div className="flex items-center gap-2 text-[#00A878] text-xs font-black tracking-wider uppercase">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Área Restrita da Arbitragem & SEMED</span>
+      <div className="bg-white rounded-2xl p-6 sm:p-7 border border-[#E2EAE5] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4 max-w-2xl">
+          <div className="hidden sm:flex w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#087A5B] items-center justify-center shrink-0 mt-0.5">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white">
-            Você é Árbitro, Mesário ou Fiscal da SEMED?
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            A ferramenta de leitura em tempo real por QR Code, validação de check-in e registro logístico de lanche/água fica dentro do <strong>Painel da Coordenação SEMED</strong>.
-          </p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[#087A5B] text-xs font-bold tracking-wider uppercase">
+              <ShieldCheck className="w-4 h-4 sm:hidden" />
+              <span>Área Restrita da Arbitragem & SEMED</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">
+              Você é Árbitro, Mesário ou Fiscal da SEMED?
+            </h2>
+            <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
+              A ferramenta de leitura em tempo real por QR Code, validação de check-in e registro logístico de lanche/água fica dentro do <strong className="text-[#17221D]">Painel da Coordenação SEMED</strong>.
+            </p>
+          </div>
         </div>
 
         <Link
           href="/admin/dashboard"
-          className="px-6 py-4 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm shadow-md shadow-[#00A878]/30 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shrink-0"
+          className="w-full md:w-auto px-5 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2.5 transition-colors shrink-0"
         >
           <Lock className="w-4 h-4" />
           <span>Acessar Validador na SEMED</span>
@@ -378,105 +380,145 @@ export default function CrachaGuiaPage() {
           </div>
         </div>
 
-        {/* CONTAINER DO MOCKUP VISUAL */}
-        <div className="bg-[#0F172A]/5 border border-dashed border-[#00A878]/30 rounded-3xl p-6 sm:p-10 flex items-center justify-center overflow-x-auto">
-          <div className="flex flex-col md:flex-row items-center gap-6 min-w-[320px] max-w-full">
-            
-            {/* LADO DA FRENTE */}
+        {/* CONTAINER DO MOCKUP VISUAL (MODELO OFICIAL REGISTRADO NO SISTEMA) */}
+        <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl p-6 sm:p-10 flex items-center justify-center overflow-x-auto">
+          <div className="flex flex-col md:flex-row items-center gap-6 min-w-[290px] max-w-full select-none">
+
+            {/* LADO DA FRENTE — IDÊNTICO AO PDF OFICIAL (CARMIM #8B1D2C + OURO #D97706) */}
             {(ladoCracha === 'AMBOS' || ladoCracha === 'FRENTE') && (
-              <div className="w-[300px] h-[390px] bg-white rounded-2xl border-2 border-slate-900 shadow-md p-4 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-xl">
-                {/* Cabeçalho do Crachá */}
-                <div className="bg-slate-900 text-white -mx-4 -mt-4 p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src="/logo-jegd.png" alt="Logo" className="w-7 h-7 object-contain bg-white rounded-full p-0.5" />
-                    <div>
-                      <h4 className="text-[11px] font-black tracking-tight leading-tight">JEGD 2026</h4>
-                      <p className="text-[8px] text-emerald-300 font-bold uppercase">Jogos Escolares</p>
-                    </div>
+              <div className="w-[280px] h-[392px] bg-white rounded-2xl border border-slate-300 shadow-md flex flex-col justify-between relative overflow-hidden">
+                {/* Cabeçalho Carmim Simétrico */}
+                <div className="h-[62px] bg-[#8B1D2C] text-white px-4 flex items-center justify-between border-b-[3px] border-[#D97706] shrink-0">
+                  <div className="text-left">
+                    <h4 className="text-[15px] font-black leading-tight tracking-tight">JEGDS 2026</h4>
+                    <p className="text-[8.5px] font-bold tracking-wider text-amber-200 uppercase">GONÇALVES DIAS • MA • SEMED</p>
                   </div>
-                  <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30">
-                    ATLETA
-                  </span>
+                  <div className="w-10 h-10 rounded-full bg-white p-1 shrink-0 overflow-hidden shadow-xs">
+                    <img src="/logo-jegd.png" alt="Logo JEGD" className="w-full h-full object-contain" />
+                  </div>
                 </div>
 
-                {/* Corpo do Crachá com Foto e Dados */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex gap-3 items-center">
-                    {/* Foto Modelo */}
-                    <div className="w-16 h-20 bg-slate-100 border border-slate-300 rounded-xl flex items-center justify-center text-slate-400 font-black text-xs shrink-0 shadow-inner">
-                      FOTO 3x4
-                    </div>
-                    {/* Identificação */}
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Nome do Atleta</span>
-                      <p className="text-xs font-black text-slate-900 truncate">GABRIEL SILVA SANTOS</p>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block pt-0.5">Escola</span>
-                      <p className="text-[11px] font-bold text-emerald-700 truncate">U.E. ALDENORA DE ARAÚJO</p>
-                    </div>
+                {/* Corpo da Frente */}
+                <div className="px-4 py-3 flex flex-col items-center flex-1 justify-center space-y-2 text-center">
+                  {/* Foto 3x4 */}
+                  <div className="w-[68px] h-[84px] rounded-lg border-2 border-[#00A878] bg-slate-50 overflow-hidden flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                    <User className="w-7 h-7 text-[#00A878]/60" />
+                    <span className="text-[8px] font-bold text-slate-400 mt-0.5">FOTO 3x4</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-[10px]">
+                  {/* Nome e Escola */}
+                  <div className="w-full">
+                    <p className="text-[12px] font-black text-slate-900 leading-tight truncate uppercase">
+                      GABRIEL SILVA SANTOS
+                    </p>
+                    <p className="text-[9.5px] font-bold text-slate-500 truncate uppercase mt-0.5">
+                      U.E. ALDENORA DE ARAÚJO CRUZ
+                    </p>
+                  </div>
+
+                  {/* Badge Categoria & Sexo */}
+                  <div className="inline-block bg-[#065F46] text-white text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                    INFANTIL • MASC
+                  </div>
+
+                  {/* Modalidade / Provas */}
+                  <div className="w-full leading-tight">
+                    <span className="text-[7.5px] font-black text-[#065F46] uppercase block tracking-wider">MODALIDADE</span>
+                    <p className="text-[10px] font-black text-slate-800 truncate uppercase">
+                      FUTSAL / ATLETISMO
+                    </p>
+                    <p className="text-[8.5px] font-bold text-amber-600 truncate">
+                      100m Rasos • Revezamento 4x100m
+                    </p>
+                  </div>
+
+                  {/* Grid Inferior: Nascimento e Documento */}
+                  <div className="w-full grid grid-cols-2 gap-2 text-left pt-2 border-t border-slate-200">
                     <div>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase block">Categoria</span>
-                      <span className="font-black text-slate-800">INFANTIL (MASC)</span>
+                      <span className="text-[7px] font-bold text-slate-400 uppercase block">NASCIMENTO</span>
+                      <span className="text-[9.5px] font-black text-slate-800">14/05/2013</span>
                     </div>
                     <div>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase block">Documento Oficial</span>
-                      <span className="font-black text-slate-800">EM REGULARIZAÇÃO</span>
+                      <span className="text-[7px] font-bold text-slate-400 uppercase block">DOCUMENTO</span>
+                      <span className="text-[9.5px] font-black text-slate-800 truncate block">CPF: 000.000.000-00</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Rodapé da Frente */}
-                <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-[9px] text-slate-500">
-                  <span>Gonçalves Dias - MA</span>
-                  <span className="font-bold text-emerald-700">SEMED 2026</span>
+                <div className="w-full px-3.5 py-2 border-t border-slate-200 flex items-center justify-between text-[8.5px] text-slate-700 font-bold bg-slate-50 shrink-0">
+                  <span>ID: CR-ATL-0482</span>
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500">USO OBRIGATÓRIO</span>
                 </div>
               </div>
             )}
 
             {/* DIVISOR DE DOBRA */}
             {ladoCracha === 'AMBOS' && (
-              <div className="hidden md:flex flex-col items-center justify-center text-slate-400 text-[10px] font-mono gap-1">
-                <div className="h-16 border-l-2 border-dashed border-slate-300" />
-                <span className="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[9px] font-bold">LINHA DE DOBRA</span>
-                <div className="h-16 border-l-2 border-dashed border-slate-300" />
+              <div className="hidden md:flex flex-col items-center justify-center text-slate-400 text-[10px] font-mono gap-1.5">
+                <div className="h-24 border-l-2 border-dashed border-slate-300" />
+                <div className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-full text-[9px] font-bold shadow-2xs">
+                  <Scissors className="w-3 h-3 text-slate-400" />
+                  <span>DOBRA</span>
+                </div>
+                <div className="h-24 border-l-2 border-dashed border-slate-300" />
               </div>
             )}
 
-            {/* LADO DO VERSO */}
+            {/* LADO DO VERSO — IDÊNTICO AO PDF OFICIAL */}
             {(ladoCracha === 'AMBOS' || ladoCracha === 'VERSO') && (
-              <div className="w-[300px] h-[390px] bg-white rounded-2xl border-2 border-slate-900 shadow-md p-4 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-xl">
-                {/* Cabeçalho do Verso */}
-                <div className="bg-slate-800 text-white -mx-4 -mt-4 p-2.5 text-center">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
-                    CONTROLE OFICIAL & QR CODE
-                  </span>
+              <div className="w-[280px] h-[392px] bg-white rounded-2xl border border-slate-300 shadow-md flex flex-col justify-between relative overflow-hidden">
+                {/* Cabeçalho Carmim Simétrico */}
+                <div className="h-[62px] bg-[#8B1D2C] text-white px-4 flex flex-col items-center justify-center border-b-[3px] border-[#D97706] shrink-0 text-center">
+                  <h4 className="text-[14px] font-black leading-tight tracking-tight">JEGDS 2026</h4>
+                  <p className="text-[8px] font-bold tracking-wider text-amber-200 uppercase">JOGOS ESCOLARES DE GONÇALVES DIAS</p>
                 </div>
 
-                {/* QR Code Central e Modalidades */}
-                <div className="space-y-2.5 text-center pt-2">
-                  <div className="w-24 h-24 bg-white border-2 border-slate-900 rounded-xl mx-auto p-1.5 flex items-center justify-center shadow-xs">
+                {/* Corpo do Verso: Controle Logístico & QR Code */}
+                <div className="px-4 py-3 flex flex-col items-center flex-1 justify-center space-y-2.5 text-center">
+                  <span className="text-[9.5px] font-black text-[#065F46] uppercase tracking-wider">
+                    CONTROLE LOGÍSTICO & ACESSO
+                  </span>
+
+                  {/* Box 1: Água */}
+                  <div className="w-full bg-slate-50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-slate-200">
+                    <div className="w-3.5 h-3.5 border border-emerald-600 rounded-xs bg-white shrink-0" />
+                    <span className="text-[10px] font-bold text-slate-700">Água durante os jogos</span>
+                  </div>
+
+                  {/* Box 2: Lanches */}
+                  <div className="w-full bg-slate-50 rounded-lg px-3 py-1.5 flex items-center gap-2 border border-slate-200">
+                    <div className="w-3.5 h-3.5 border border-emerald-600 rounded-xs bg-white shrink-0" />
+                    <span className="text-[10px] font-bold text-slate-700">Lanches e refeições</span>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-2xs w-[84px] h-[84px] flex items-center justify-center">
                     <QrCode className="w-full h-full text-slate-900" />
                   </div>
-                  <span className="font-mono text-[9px] font-black text-slate-600 block">
-                    CR-ATL-ALDENORA-0482
-                  </span>
 
-                  <div className="bg-[#F7F9F8] border border-[#E2EAE5] rounded-xl p-2 text-left space-y-1">
-                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block">
-                      Modalidades Inscritas:
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">FUTSAL</span>
-                      <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">ATLETISMO (100m)</span>
-                    </div>
-                  </div>
+                  <p className="text-[7.5px] text-slate-500 leading-snug">
+                    Crachá pessoal e intransferível.<br />
+                    Apresentação obrigatória na entrada de quadra.
+                  </p>
                 </div>
 
-                {/* Termo e LGPD */}
-                <div className="text-[7.5px] text-slate-400 leading-tight text-justify border-t border-slate-100 pt-1.5">
-                  Uso pessoal e intransferível. Obrigatória apresentação para entrada em quadra, almoço e hidratação conforme Lei 14.532/2023.
+                {/* Rodapé Institucional do Verso */}
+                <div className="shrink-0">
+                  <div className="bg-[#8B1D2C] text-white py-1 text-[8px] font-black uppercase tracking-wider text-center">
+                    SEMED • PREFEITURA DE GONÇALVES DIAS
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 items-center px-3 py-2 bg-white border-t border-slate-200">
+                    <div className="text-left leading-tight">
+                      <span className="text-[7.5px] font-black text-red-600 uppercase block">PREFEITURA</span>
+                      <span className="text-[9px] font-black text-slate-900">GONÇALVES <span className="text-emerald-600">DIAS</span></span>
+                      <span className="text-[6.5px] text-slate-400 block font-semibold">Cuidando da nossa gente</span>
+                    </div>
+                    <div className="text-right leading-tight pl-2 border-l border-slate-200">
+                      <span className="text-[9px] font-black text-slate-900 block">SEMED</span>
+                      <span className="text-[7px] text-slate-500 block font-medium">Secretaria de Educação</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

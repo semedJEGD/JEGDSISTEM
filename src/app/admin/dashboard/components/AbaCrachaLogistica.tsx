@@ -12,7 +12,8 @@ import {
   Droplets,
   Utensils,
   Bus,
-  UserCheck
+  UserCheck,
+  Printer
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import {
@@ -28,7 +29,12 @@ import { PainelOperador } from '@/app/validar/components/PainelOperador';
 import { CardAtletaValidacao } from '@/app/validar/components/CardAtletaValidacao';
 import { RelatorioLogisticoAgregado } from '@/app/validar/components/RelatorioLogisticoAgregado';
 
-export function AbaCrachaLogistica() {
+interface AbaCrachaLogisticaProps {
+  onGerarTodosCrachas?: () => void;
+  gerandoPdf?: boolean;
+}
+
+export function AbaCrachaLogistica({ onGerarTodosCrachas, gerandoPdf }: AbaCrachaLogisticaProps) {
   const [activeTab, setActiveTab] = useState<'VALIDACAO' | 'RELATORIO'>('VALIDACAO');
   const [codigoBusca, setCodigoBusca] = useState('');
   const [atletaEncontrado, setAtletaEncontrado] = useState<Atleta | null>(null);
@@ -200,7 +206,21 @@ export function AbaCrachaLogistica() {
           </p>
         </div>
 
-        <div className="flex items-center p-1 bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {onGerarTodosCrachas && (
+            <button
+              type="button"
+              onClick={onGerarTodosCrachas}
+              disabled={gerandoPdf}
+              className="px-4 py-2 rounded-xl bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              title="Gerar PDF com os crachás de todas as escolas em lote"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>{gerandoPdf ? 'Gerando Lote...' : 'Imprimir Crachás em Lote (PDF)'}</span>
+            </button>
+          )}
+
+          <div className="flex items-center p-1 bg-[#F7F9F8] border border-[#E2EAE5] rounded-2xl shrink-0">
           <button
             onClick={() => setActiveTab('VALIDACAO')}
             className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
@@ -224,6 +244,7 @@ export function AbaCrachaLogistica() {
             <BarChart3 className="w-3.5 h-3.5" />
             <span>Relatório Agregado</span>
           </button>
+          </div>
         </div>
       </div>
 

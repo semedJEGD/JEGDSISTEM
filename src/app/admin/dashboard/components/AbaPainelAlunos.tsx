@@ -47,6 +47,7 @@ export function AbaPainelAlunos({
   const [filtroEscolaId, setFiltroEscolaId] = useState<string>('TODAS');
   const [filtroSituacao, setFiltroSituacao] = useState<string>('TODOS'); // TODOS | HOMOLOGADO | REGULARIZACAO
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [gerandoCrachasLote, setGerandoCrachasLote] = useState(false);
 
   // ============================================================
   // CÁLCULOS DO MINI DASHBOARD EM GLASS LIQUID
@@ -231,6 +232,22 @@ export function AbaPainelAlunos({
     await CrachaDobravelService.gerarCrachaIndividual(atleta, esc);
   };
 
+  const handleImprimirCrachasLote = async () => {
+    if (atletasFiltrados.length === 0) {
+      alert('Nenhum atleta encontrado para imprimir crachás em lote.');
+      return;
+    }
+    try {
+      setGerandoCrachasLote(true);
+      await CrachaDobravelService.gerarTodosCrachasGeral(escolas, atletasFiltrados);
+    } catch (err) {
+      console.error('Erro ao gerar crachás em lote:', err);
+      alert('Ocorreu um erro ao gerar o PDF de crachás em lote.');
+    } finally {
+      setGerandoCrachasLote(false);
+    }
+  };
+
   const limparFiltros = () => {
     setBusca('');
     setFiltroEtapa('TODAS');
@@ -267,15 +284,28 @@ export function AbaPainelAlunos({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportarRelatorio}
-            disabled={gerandoPdf}
-            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 shrink-0 self-start sm:self-auto"
-          >
-            <FileText className="w-4 h-4 text-emerald-400" />
-            <span>{gerandoPdf ? 'Gerando Documento...' : 'Exportar Relatório Geral (PDF)'}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={handleImprimirCrachasLote}
+              disabled={gerandoCrachasLote || atletasFiltrados.length === 0}
+              className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Imprimir crachás em lote (PDF) dos atletas exibidos no filtro atual"
+            >
+              <Printer className="w-4 h-4" />
+              <span>{gerandoCrachasLote ? 'Gerando Crachás...' : `Crachás em Lote (${atletasFiltrados.length})`}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportarRelatorio}
+              disabled={gerandoPdf}
+              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4 text-[#00A878]" />
+              <span>{gerandoPdf ? 'Gerando Documento...' : 'Exportar Relatório Geral (PDF)'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Grid de 4 Cards em Glassmorphism Líquido */}
@@ -502,13 +532,13 @@ export function AbaPainelAlunos({
             <div key={etapa} className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
               
               {/* Header da Etapa */}
-              <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+              <div className="px-5 py-3.5 bg-[#F7F9F8] border-b border-[#E2EAE5] text-[#17221D] flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                  <h3 className="text-sm font-black tracking-wide uppercase">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#00A878]" />
+                  <h3 className="text-sm font-black tracking-wide uppercase text-[#17221D]">
                     ETAPA {etapa}
                   </h3>
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-[#68756E] font-medium">
                     (
                     {etapa === 'MIRIM' ? '9 a 11 anos' :
                      etapa === 'INFANTIL' ? '12 a 14 anos' :
@@ -518,7 +548,7 @@ export function AbaPainelAlunos({
                   </span>
                 </div>
 
-                <span className="px-2.5 py-0.5 rounded-md bg-white/10 text-emerald-300 text-xs font-bold border border-white/15">
+                <span className="px-2.5 py-0.5 rounded-md bg-[#E8F7F1] text-[#087A5B] text-xs font-bold border border-[#00A878]/20">
                   {total} {total === 1 ? 'atleta' : 'atletas'}
                 </span>
               </div>

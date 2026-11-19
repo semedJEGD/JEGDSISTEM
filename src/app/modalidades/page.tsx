@@ -15,7 +15,6 @@ import {
   Grid,
   CircleDot,
   ArrowRight,
-  Sparkles,
   ShieldCheck,
   Clock
 } from 'lucide-react';
@@ -119,10 +118,6 @@ export default function ModalidadesPage() {
       
       {/* Cabeçalho da Página */}
       <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#4B5563] text-xs font-black tracking-wide">
-          <Sparkles className="w-3.5 h-3.5 text-[#6B7280]" />
-          <span>{siglaEvento} • GUIA OFICIAL DE MODALIDADES</span>
-        </div>
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight">
           Modalidades Esportivas
         </h1>

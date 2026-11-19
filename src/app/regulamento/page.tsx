@@ -12,7 +12,6 @@ import {
   Award,
   Users,
   Bell,
-  Sparkles,
   BookOpen,
   Scale,
   Clock,
@@ -152,11 +151,7 @@ export default function RegulamentoPage() {
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 w-full">
       
       {/* Header Principal */}
-      <div className="text-center max-w-3xl mx-auto space-y-3.5">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E8F7F1] border border-[#00A878]/30 text-[#087A5B] text-xs font-black tracking-wide shadow-2xs">
-          <Sparkles className="w-4 h-4 text-[#00A878]" />
-          <span>REGULAMENTO GERAL OFICIAL • SETEMBRO 2026 (REVISADO)</span>
-        </div>
+      <div className="text-center max-w-3xl mx-auto space-y-3">
         <h1 className="text-3xl sm:text-5xl font-black text-[#17221D] tracking-tight break-words">
           Regulamento Geral dos JEGDs 2026
         </h1>
@@ -166,26 +161,31 @@ export default function RegulamentoPage() {
       </div>
 
       {/* Card de Destaque com Download Oficial do PDF de 35 Páginas */}
-      <div className="bg-gradient-to-br from-[#17221D] via-[#0F172A] to-[#1E293B] rounded-3xl p-6 sm:p-8 text-white shadow-lg border border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
-          <div className="flex items-center gap-2 text-[#00A878] text-xs font-black tracking-wider uppercase">
-            <BookOpen className="w-4 h-4" />
-            <span>Documento Integral Publicado (35 Páginas)</span>
+      <div className="bg-white rounded-2xl p-6 sm:p-7 border border-[#E2EAE5] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4 max-w-2xl">
+          <div className="hidden sm:flex w-12 h-12 rounded-xl bg-[#E8F7F1] border border-[#00A878]/20 text-[#087A5B] items-center justify-center shrink-0 mt-0.5">
+            <BookOpen className="w-6 h-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white">
-            Baixar Caderno Oficial do Regulamento Geral (PDF)
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Tenha em mãos o documento normativo completo contendo o Preâmbulo, os 17 Capítulos Regimentais, o Código Disciplinar Antirracismo e os 8 Apêndices Técnicos Oficiais.
-          </p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[#087A5B] text-xs font-bold tracking-wider uppercase">
+              <BookOpen className="w-4 h-4 sm:hidden" />
+              <span>Documento Integral Publicado (35 Páginas)</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#17221D] tracking-tight">
+              Baixar Caderno Oficial do Regulamento Geral (PDF)
+            </h2>
+            <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
+              Tenha em mãos o documento normativo completo contendo o Preâmbulo, os 17 Capítulos Regimentais, o Código Disciplinar Antirracismo e os 8 Apêndices Técnicos Oficiais.
+            </p>
+          </div>
         </div>
 
         <a
           href="/regulamento-oficial-jegd-2026.pdf"
           download="REGULAMENTO_GERAL_JEGDS_2026_SEMED.pdf"
-          className="px-6 py-4 rounded-2xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-sm shadow-md shadow-[#00A878]/30 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shrink-0"
+          className="w-full md:w-auto px-5 py-3.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2.5 transition-colors shrink-0"
         >
-          <Download className="w-5 h-5" />
+          <Download className="w-4 h-4" />
           <span>Baixar PDF Oficial (35 Páginas)</span>
         </a>
       </div>

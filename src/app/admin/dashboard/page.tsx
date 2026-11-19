@@ -905,6 +905,18 @@ export default function AdminDashboardPage() {
               <span>{sincronizandoOnline ? 'Sincronizando...' : `Online • ${ultimaSincronizacao}`}</span>
             </button>
 
+            {/* Imprimir Crachás em Lote (Todas as Escolas) */}
+            <button
+              type="button"
+              onClick={handleGerarTodosCrachas}
+              disabled={gerandoPdf || atletas.length === 0}
+              className="px-3 py-1.5 rounded-lg bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Gerar e imprimir PDF em lote com os crachás de todos os atletas cadastrados"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>{gerandoPdf ? 'Gerando PDF...' : 'Crachás em Lote (PDF)'}</span>
+            </button>
+
             {/* Cadastrar Nova Escola */}
             <button
               type="button"
@@ -1202,7 +1214,10 @@ export default function AdminDashboardPage() {
 
       {/* ABA 4: LOGÍSTICA & VALIDAÇÃO DE CRACHÁS */}
       {abaAtiva === 'CRACHA_LOGISTICA' && (
-        <AbaCrachaLogistica />
+        <AbaCrachaLogistica
+          onGerarTodosCrachas={handleGerarTodosCrachas}
+          gerandoPdf={gerandoPdf}
+        />
       )}
 
       {/* ABA 5: COMUNICADOS E AVISOS */}

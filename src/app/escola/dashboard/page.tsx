@@ -732,6 +732,18 @@ export default function EscolaDashboardPage() {
               <span className="sm:hidden">{sincronizandoOnline ? '...' : ultimaSincronizacao}</span>
             </button>
 
+            {/* Imprimir Crachás em Lote */}
+            <button
+              type="button"
+              onClick={handleGerarCrachasEscola}
+              disabled={gerandoCrachasLote || atletas.length === 0}
+              className="px-3 py-1.5 rounded-lg bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Baixar PDF com todos os crachás da escola em lote"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>{gerandoCrachasLote ? 'Gerando...' : 'Crachás em Lote (PDF)'}</span>
+            </button>
+
             {/* Cadastrar Aluno (Botão Primário) */}
             <button
               type="button"
@@ -942,11 +954,11 @@ export default function EscolaDashboardPage() {
                 type="button"
                 onClick={handleGerarCrachasEscola}
                 disabled={gerandoCrachasLote || atletas.length === 0}
-                className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-[#E8F7F1] hover:bg-[#00A878] border border-[#00A878]/30 text-[#087A5B] hover:text-white font-semibold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
                 title="Baixar todos os crachás desta escola em PDF"
               >
-                <QrCode className="w-3.5 h-3.5 text-slate-500" />
-                <span>Crachás (PDF)</span>
+                <QrCode className="w-3.5 h-3.5" />
+                <span>{gerandoCrachasLote ? 'Gerando...' : 'Crachás em Lote (PDF)'}</span>
               </button>
 
               {/* Botão Súmulas da Escola */}
