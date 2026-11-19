@@ -81,6 +81,7 @@ export default function TelaoEventosPage() {
   const [modalidadesSelecionadas, setModalidadesSelecionadas] = useState<string[]>([]); // vazio = TODAS
   const [relogio, setRelogio] = useState('');
   const [qrPublicoUrl, setQrPublicoUrl] = useState('');
+  const [autorizadoSemed, setAutorizadoSemed] = useState<boolean | null>(null);
 
   // Transição WHOOSH com logo JEGDS
   const [whooshAtivo, setWhooshAtivo] = useState(false);
@@ -90,6 +91,9 @@ export default function TelaoEventosPage() {
 
   useEffect(() => {
     JegdStorage.init();
+    const isAuth = JegdStorage.isAdminAuth();
+    setAutorizadoSemed(isAuth);
+    if (!isAuth) return;
     const mun = JegdStorage.getCurrentMunicipio();
     if (mun) {
       setMunicipioId(mun.id);
@@ -409,6 +413,36 @@ export default function TelaoEventosPage() {
     }
     return msgs;
   }, [bundle, siglaEvento, nomeEvento]);
+
+  if (autorizadoSemed === false) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-[#F5F8F6] flex items-center justify-center p-6">
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl p-8 max-w-md w-full text-center shadow-sm space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-[#E8F7F1] border border-[#00A878]/20 p-2 mx-auto">
+            <img src={logoUrl} alt={siglaEvento} className="w-full h-full object-contain" />
+          </div>
+          <h1 className="text-xl font-black text-[#17221D]">Modo Telão Exclusivo SEMED</h1>
+          <p className="text-sm text-[#4B5563]">
+            A projeção em tela cheia é de uso exclusivo da Coordenação SEMED (Elias / Herbert). Para acompanhar todos os eventos ao vivo pelo celular, acesse o portal público:
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <Link
+              href="/eventos"
+              className="w-full py-3 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-sm font-black transition-colors"
+            >
+              Ir para Eventos do Dia (Celular)
+            </Link>
+            <Link
+              href="/admin/login"
+              className="w-full py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold transition-colors"
+            >
+              Acesso Coordenação SEMED
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

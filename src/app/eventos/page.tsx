@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   RefreshCw,
   User,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { EventosBundle } from '@/types/eventos';
@@ -36,6 +38,8 @@ export default function EventosDoDiaPage() {
   const [filtroMod, setFiltroMod] = useState<string>('TODAS');
   const [municipioId, setMunicipioId] = useState<string | undefined>(undefined);
   const [siglaEvento, setSiglaEvento] = useState('JEGDS 2026');
+  const [isAdminSemed, setIsAdminSemed] = useState(false);
+  const [previaIdx, setPreviaIdx] = useState(0);
   const [bundle, setBundle] = useState<EventosBundle>({
     noticias: [],
     cronograma: [],
@@ -49,6 +53,7 @@ export default function EventosDoDiaPage() {
 
   useEffect(() => {
     JegdStorage.init();
+    setIsAdminSemed(JegdStorage.isAdminAuth());
     const mun = JegdStorage.getCurrentMunicipio();
     if (mun) {
       setMunicipioId(mun.id);
@@ -103,23 +108,96 @@ export default function EventosDoDiaPage() {
   const manchetePrincipal = bundle.noticias[0] || null;
   const demaisNoticias = bundle.noticias.slice(1);
 
+  // Prévia interativa do Telão adaptada ao celular/desktop para os alunos acompanharem
+  const slidesPrevia = useMemo(() => {
+    const items: { id: string; badge: string; titulo: string; subtitulo: string; detalhe?: string; imagemUrl?: string | null }[] = [];
+
+    partidasAoVivo.slice(0, 2).forEach((p) => {
+      items.push({
+        id: `live-${p.id}`,
+        badge: '● AO VIVO EM QUADRA',
+        titulo: `${p.escolaASigla || p.escolaANome}  ${p.placarA} × ${p.placarB}  ${p.escolaBSigla || p.escolaBNome}`,
+        subtitulo: `${p.modalidadeNome} • ${p.categoria} (${p.sexo === 'FEMININO' ? 'F' : 'M'})`,
+        detalhe: p.local || p.grupo || 'Quadra Oficial',
+      });
+    });
+
+    bundle.noticias.slice(0, 3).forEach((n) => {
+      items.push({
+        id: `news-${n.id}`,
+        badge: `${n.modalidadeNome || 'DESTAQUE DO DIA'}${n.horarioOcorrencia ? ` • ${n.horarioOcorrencia}` : ''}`,
+        titulo: n.titulo,
+        subtitulo: n.resumo,
+        detalhe: n.local || undefined,
+        imagemUrl: n.imagemUrl,
+      });
+    });
+
+    if (quadroMedalhas.length > 0) {
+      const lider = quadroMedalhas[0];
+      items.push({
+        id: 'medalhas-lider',
+        badge: 'QUADRO OLÍMPICO DE MEDALHAS',
+        titulo: `1º Lugar: ${lider.escolaNome}`,
+        subtitulo: `🥇 ${lider.ouro} Ouro  •  🥈 ${lider.prata} Prata  •  🥉 ${lider.bronze} Bronze  (Total: ${lider.total})`,
+        detalhe: `${quadroMedalhas.length} escolas pontuando no ranking geral`,
+      });
+    }
+
+    if (artilhariaAgrupada.length > 0 && artilhariaAgrupada[0].ranking.length > 0) {
+      const top = artilhariaAgrupada[0].ranking[0];
+      items.push({
+        id: 'art-top',
+        badge: `ARTILHARIA • ${artilhariaAgrupada[0].modalidadeNome.toUpperCase()}`,
+        titulo: `${top.atletaNome} — ${top.gols} ${top.gols === 1 ? 'gol' : 'gols'}`,
+        subtitulo: `${top.escolaSigla || top.escolaNome} • Categoria ${top.categoria}`,
+        imagemUrl: top.fotoUrl,
+      });
+    }
+
+    if (items.length === 0) {
+      const proxCron = cronogramaExibicao[0];
+      items.push({
+        id: 'welcome',
+        badge: `COBERTURA OFICIAL • ${siglaEvento}`,
+        titulo: proxCron ? proxCron.titulo : `Acompanhe os Jogos ao Vivo`,
+        subtitulo: proxCron
+          ? `${formatarDataBR(proxCron.dataEvento)} às ${proxCron.horarioInicio}${proxCron.local ? ` • ${proxCron.local}` : ''}`
+          : 'Notícias, cronograma, placares ao vivo, artilharia e quadro olímpico de medalhas.',
+        detalhe: proxCron?.descricao || undefined,
+      });
+    }
+
+    return items;
+  }, [partidasAoVivo, bundle.noticias, quadroMedalhas, artilhariaAgrupada, cronogramaExibicao, siglaEvento]);
+
+  useEffect(() => {
+    if (slidesPrevia.length <= 1) return;
+    const t = setInterval(() => {
+      setPreviaIdx((prev) => (prev + 1) % slidesPrevia.length);
+    }, 7000);
+    return () => clearInterval(t);
+  }, [slidesPrevia.length]);
+
+  const previaAtual = slidesPrevia[previaIdx % slidesPrevia.length] || slidesPrevia[0];
+
   return (
     <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6 w-full">
       {/* CABEÇALHO DO PORTAL DE EVENTOS DO DIA */}
-      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 sm:p-7 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+      <div className="bg-white border border-[#E2EAE5] rounded-2xl p-5 sm:p-7 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-black uppercase tracking-wider">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               <span>Cobertura em Tempo Real</span>
             </span>
-            <span className="text-xs font-semibold text-slate-400">• Atualização automática a cada 15s</span>
+            <span className="text-xs font-semibold text-slate-400">• Atualização automática</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-[#17221D] tracking-tight">
             Eventos do Dia • {siglaEvento}
           </h1>
           <p className="text-xs sm:text-sm text-[#4B5563] max-w-2xl">
-            Acompanhe notícias da competição, cronograma oficial, placares ao vivo, tabelas de classificação, artilharia por modalidade e o quadro olímpico de medalhas.
+            Acompanhe pelo celular as notícias da competição, cronograma oficial, placares ao vivo, tabelas, artilharia por modalidade e o quadro olímpico de medalhas.
           </p>
         </div>
 
@@ -133,16 +211,75 @@ export default function EventosDoDiaPage() {
             <span>Atualizar</span>
           </button>
 
-          <Link
-            href="/eventos/telao"
-            target="_blank"
-            className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-xs transition-colors"
-          >
-            <Tv className="w-4 h-4" />
-            <span>Modo Telão (Apresentação)</span>
-          </Link>
+          {/* Exclusivo da Coordenação SEMED (Elias / Herbert) */}
+          {isAdminSemed && (
+            <Link
+              href="/eventos/telao"
+              target="_blank"
+              className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-xs transition-colors"
+            >
+              <Tv className="w-4 h-4" />
+              <span>Modo Telão (SEMED)</span>
+            </Link>
+          )}
         </div>
       </div>
+
+      {/* PRÉVIA DO TELÃO ADAPTADA PARA CELULAR & DESKTOP (DESTAQUE ROTATIVO) */}
+      {previaAtual && (
+        <div className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-xs relative">
+          <div className="h-1.5 w-full bg-gradient-to-r from-[#8B1D2C] via-[#D97706] to-[#00A878]" />
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4 min-w-0 flex-1">
+              {previaAtual.imagemUrl && (
+                <img
+                  src={previaAtual.imagemUrl}
+                  alt={previaAtual.titulo}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-slate-200 shrink-0"
+                />
+              )}
+              <div className="min-w-0 space-y-1">
+                <span className="inline-block px-2.5 py-0.5 rounded-md bg-[#8B1D2C] text-white text-[10px] font-black uppercase tracking-wider">
+                  {previaAtual.badge}
+                </span>
+                <h2 className="text-base sm:text-xl font-black text-[#17221D] leading-snug">
+                  {previaAtual.titulo}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#4B5563] line-clamp-2">
+                  {previaAtual.subtitulo}
+                </p>
+                {previaAtual.detalhe && (
+                  <p className="text-[11px] font-bold text-[#087A5B]">{previaAtual.detalhe}</p>
+                )}
+              </div>
+            </div>
+
+            {slidesPrevia.length > 1 && (
+              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setPreviaIdx((i) => (i - 1 + slidesPrevia.length) % slidesPrevia.length)}
+                  className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-slate-200 border border-[#E2EAE5] text-slate-700 cursor-pointer"
+                  aria-label="Destaque anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[11px] font-black text-slate-500 px-1.5">
+                  {(previaIdx % slidesPrevia.length) + 1}/{slidesPrevia.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviaIdx((i) => (i + 1) % slidesPrevia.length)}
+                  className="p-1.5 rounded-lg bg-[#F7F9F8] hover:bg-slate-200 border border-[#E2EAE5] text-slate-700 cursor-pointer"
+                  aria-label="Próximo destaque"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* FAIXA DE AVISOS / CHAMADA DE QUADRA */}
       {avisosAtivos.length > 0 && (
