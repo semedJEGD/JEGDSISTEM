@@ -49,6 +49,47 @@ function formatarFaixaEtaria(cat: string): string {
   return DESCRICAO_FAIXA_ETARIA[key] || key;
 }
 
+type TipoLayoutModalidade = 'FUTSAL' | 'FUTEBOL' | 'BEACH' | 'VOLEI' | 'TENIS_MESA' | 'QUEIMADA' | 'ATLETISMO' | 'XADREZ';
+
+function detectarTipoModalidade(modalidadeNome: string): TipoLayoutModalidade {
+  const n = (modalidadeNome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (n.includes('futsal')) return 'FUTSAL';
+  if (n.includes('beach')) return 'BEACH';
+  if (n.includes('futebol')) return 'FUTEBOL';
+  if (n.includes('volei') || n.includes('voleibol')) return 'VOLEI';
+  if (n.includes('tenis')) return 'TENIS_MESA';
+  if (n.includes('queimada')) return 'QUEIMADA';
+  if (n.includes('atletismo')) return 'ATLETISMO';
+  if (n.includes('xadrez')) return 'XADREZ';
+  return 'FUTSAL';
+}
+
+function obterRegraRapidaModalidade(tipo: TipoLayoutModalidade, categoria: string): string {
+  const cat = (categoria || '').toUpperCase();
+  switch (tipo) {
+    case 'FUTSAL':
+      return cat === 'MIRIM'
+        ? 'Regulamento: 2x10 min (cron. parado) • Obrigatorio 1/4 do jogo (Mirim/Infantil) • Vit. 3 / Emp. 1 / Der. 0 • W.O.: 15 min (1x0)'
+        : 'Regulamento: 2x15 min (cron. parado) • Obrigatorio 1/4 do jogo (Infantil) • Vit. 3 / Emp. 1 / Der. 0 • W.O.: 15 min (1x0)';
+    case 'FUTEBOL':
+      return cat === 'MIRIM' || cat === 'INFANTIL'
+        ? 'Regulamento: 2x20 min (cron. corrido, s/ intervalo) • Ate 20 inscritos • Vit. 3 / Emp. 1 / Der. 0 • W.O.: 15 min (1x0)'
+        : 'Regulamento: 2x30 min (cron. corrido, s/ intervalo) • Ate 20 inscritos • Vit. 3 / Emp. 1 / Der. 0 • W.O.: 15 min (1x0)';
+    case 'BEACH':
+      return 'Regulamento: 3 periodos de 12 min (int. 3 min) • 5 em campo • Sem empate (Pror. 3 min + Penaltis) • Pts: 3/2/1 • W.O.: 15 min';
+    case 'VOLEI':
+      return 'Regulamento: Classif. melhor de 3 sets (25/25/15) | Semi/Final melhor de 5 • Sem libero • Rede: 2,20m (F) / 2,35m (M) • W.O.: 2x0 / 3x0';
+    case 'TENIS_MESA':
+      return 'Regulamento (ITTF/CBTM): Sets de 11 pts (dif. 2) • Classif.: melhor de 3 sets | Eliminatorias: melhor de 5 sets • W.O. elimina do grupo';
+    case 'QUEIMADA':
+      return 'Regulamento: 8 atletas em campo • Queimado: bola atinge o corpo e toca o chao s/ dominio, ou sair da quadra • W.O.: 15 min';
+    case 'ATLETISMO':
+      return 'Regulamento: Confirmacao obrigatoria na Cabine • Ate 2 atletas/escola por prova e 2 provas/atleta • DNS=nao largou | DNF=nao concluiu | DQ=descl.';
+    case 'XADREZ':
+      return 'Regulamento (FIDE): Resultado 1-0 (Brancas), 1/2-1/2 (Empate), 0-1 (Pretas) • Xadrez rapido dispensa anotacao de lances';
+  }
+}
+
 /**
  * Ajusta o texto para caber exatamente na largura máxima (em mm) com reticências limpas,
  * evitando qualquer sobreposição ou corte quebrado entre colunas.
@@ -118,6 +159,8 @@ export class SumulaChamadaService {
     const isManual = !!options?.isModeloManual;
     const escolaFiltro = options?.escolaFiltro;
     const ocultarColunaEscola = !!escolaFiltro;
+    const tipoMod = detectarTipoModalidade(modalidadeNome);
+    const futsalComUmQuarto = tipoMod === 'FUTSAL' && (categoria.toUpperCase() === 'MIRIM' || categoria.toUpperCase() === 'INFANTIL');
 
     let currentY = 8;
 
@@ -125,32 +168,32 @@ export class SumulaChamadaService {
     // 0. FAIXA DE SEÇÃO DA ESCOLA (QUANDO INÍCIO DE ESCOLA NO LIVRO)
     // ============================================================
     if (options?.faixaSecaoEscola) {
-      doc.setFillColor(241, 245, 249); // slate-100
+      doc.setFillColor(241, 245, 249);
       doc.setDrawColor(...CORES_JEGD.borda);
       doc.setLineWidth(0.25);
-      doc.roundedRect(margin, currentY, contentWidth, 6.2, 1, 1, 'FD');
+      doc.roundedRect(margin, currentY, contentWidth, 6, 1, 1, 'FD');
 
       doc.setFillColor(...CORES_JEGD.secundaria);
-      doc.rect(margin, currentY, 2.2, 6.2, 'F');
+      doc.rect(margin, currentY, 2.2, 6, 'F');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(6.8);
       doc.setTextColor(...CORES_JEGD.escuro);
-      doc.text(ajustarTexto(doc, options.faixaSecaoEscola.toUpperCase(), contentWidth - 8), margin + 5, currentY + 4.2);
-      currentY += 8;
+      doc.text(ajustarTexto(doc, options.faixaSecaoEscola.toUpperCase(), contentWidth - 8), margin + 5, currentY + 4.1);
+      currentY += 7.5;
     }
 
     // ============================================================
     // 1. CABEÇALHO OFICIAL DE SÚMULA
     // ============================================================
-    const headerH = 21;
+    const headerH = 19.5;
     doc.setFillColor(...CORES_JEGD.primaria);
     doc.roundedRect(margin, currentY, contentWidth, headerH, 1.5, 1.5, 'F');
     doc.setFillColor(...CORES_JEGD.destaqueOuro);
     doc.rect(margin, currentY + headerH - 0.8, contentWidth, 0.8, 'F');
 
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10.5);
+    doc.setFontSize(10.2);
     doc.setFont('helvetica', 'bold');
 
     let tituloHeader = 'JEGDS 2026 • SÚMULA OFICIAL DE PARTIDA & LISTA DE ARBITRAGEM';
@@ -162,98 +205,175 @@ export class SumulaChamadaService {
     if (options?.tituloPersonalizado) {
       tituloHeader = options.tituloPersonalizado;
     }
-    doc.text(ajustarTexto(doc, tituloHeader, contentWidth - 10), pageWidth / 2, currentY + 6.5, { align: 'center' });
+    doc.text(ajustarTexto(doc, tituloHeader, contentWidth - 10), pageWidth / 2, currentY + 6.2, { align: 'center' });
 
-    doc.setFontSize(7.2);
+    doc.setFontSize(7.0);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(245, 232, 234);
     doc.text(
       'PREFEITURA DE GONÇALVES DIAS - MA  •  SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED)  •  COMITÊ TÉCNICO',
       pageWidth / 2,
-      currentY + 12,
+      currentY + 11.4,
       { align: 'center' }
     );
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.6);
+    doc.setFontSize(7.4);
     doc.setTextColor(255, 255, 255);
     let infoLinha = `MODALIDADE: ${modalidadeNome.toUpperCase()}  •  FAIXA ETÁRIA: ${formatarFaixaEtaria(categoria)}  •  NAIPE: ${sexo.toUpperCase()}  •  DATA: ${dataJogo}`;
     if (isManual && (!modalidadeNome || modalidadeNome.toUpperCase().includes('UNIVERSAL') || modalidadeNome.toUpperCase().includes('GERAL'))) {
       infoLinha = 'MODALIDADE: ______________________  •  FAIXA ETÁRIA: _______________  •  NAIPE: ( ) MASC  ( ) FEM  •  DATA: ___/___/2026';
     }
-    doc.text(ajustarTexto(doc, infoLinha, contentWidth - 8), pageWidth / 2, currentY + 17.5, { align: 'center' });
+    doc.text(ajustarTexto(doc, infoLinha, contentWidth - 8), pageWidth / 2, currentY + 16.6, { align: 'center' });
 
-    currentY += headerH + 3;
+    currentY += headerH + 2;
 
     // ============================================================
-    // 2. QUADRO DO CONFRONTO & PLACAR OFICIAL (VETORIAL E ALINHADO)
+    // 1.5. FAIXA OPERACIONAL DA PARTIDA + REGRA RÁPIDA (PRÁTICO NA MESA)
     // ============================================================
-    const boxConfrontoH = 15.5;
+    const metaBoxH = 10.5;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...CORES_JEGD.borda);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(margin, currentY, contentWidth, metaBoxH, 1, 1, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('JOGO Nº:', margin + 3, currentY + 4);
+    doc.setDrawColor(...CORES_JEGD.borda);
+    doc.line(margin + 15.5, currentY + 4.3, margin + 27, currentY + 4.3);
+
+    doc.text('FASE / GRUPO:', margin + 30, currentY + 4);
+    doc.line(margin + 49, currentY + 4.3, margin + 84, currentY + 4.3);
+
+    doc.text('QUADRA / LOCAL:', margin + 87, currentY + 4);
+    doc.line(margin + 109.5, currentY + 4.3, margin + 143, currentY + 4.3);
+
+    doc.text('INÍCIO:', margin + 146, currentY + 4);
+    doc.line(margin + 156, currentY + 4.3, margin + 167.5, currentY + 4.3);
+
+    doc.text('TÉRM.:', margin + 170, currentY + 4);
+    doc.line(margin + 179.5, currentY + 4.3, rightEdge - 2.5, currentY + 4.3);
+
+    // Faixa inferior com regra rápida do regulamento da modalidade
+    doc.setFillColor(248, 250, 252);
+    doc.rect(margin + 0.2, currentY + 5.6, contentWidth - 0.4, 4.7, 'F');
+    doc.setDrawColor(...CORES_JEGD.bordaSuave);
+    doc.line(margin, currentY + 5.6, rightEdge, currentY + 5.6);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.9);
+    doc.setTextColor(...CORES_JEGD.grafite);
+    doc.text(
+      ajustarTexto(doc, obterRegraRapidaModalidade(tipoMod, categoria), contentWidth - 6),
+      pageWidth / 2,
+      currentY + 9,
+      { align: 'center' }
+    );
+
+    currentY += metaBoxH + 2;
+
+    // ============================================================
+    // 2. QUADRO DO CONFRONTO & PLACAR ADAPTADO À MODALIDADE
+    // ============================================================
+    const centerX = pageWidth / 2;
+    const isIndividual = tipoMod === 'ATLETISMO' || tipoMod === 'XADREZ';
+    const boxConfrontoH = isIndividual ? 9.5 : 14.5;
+
     doc.setFillColor(...CORES_JEGD.fundoCinza);
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.25);
     doc.roundedRect(margin, currentY, contentWidth, boxConfrontoH, 1.2, 1.2, 'FD');
 
-    doc.setTextColor(...CORES_JEGD.escuro);
-    doc.setFontSize(7.4);
-    doc.setFont('helvetica', 'bold');
-
-    // Equipe A (esquerda)
-    const labelEqA = 'EQUIPE A:';
-    doc.text(labelEqA, margin + 3.5, currentY + 5.8);
-    if (escolaFiltro) {
+    if (isIndividual) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...CORES_JEGD.primaria);
-      doc.text(
-        ajustarTexto(doc, (escolaFiltro.sigla || escolaFiltro.nome).toUpperCase(), 58),
-        margin + 19,
-        currentY + 5.8
-      );
+      doc.setFontSize(7);
       doc.setTextColor(...CORES_JEGD.escuro);
+      if (tipoMod === 'ATLETISMO') {
+        doc.text('PROVA / SÉRIE:', margin + 3.5, currentY + 6);
+        doc.setDrawColor(...CORES_JEGD.grafite);
+        doc.line(margin + 25, currentY + 6.3, margin + 92, currentY + 6.3);
+        doc.text('ETAPA:', margin + 96, currentY + 6);
+        doc.setFont('helvetica', 'normal');
+        doc.text('( ) Eliminatória   ( ) Semifinal   ( ) Final', margin + 107, currentY + 6);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CRON.:', margin + 158, currentY + 6);
+        doc.setFont('helvetica', 'normal');
+        doc.text('( ) Man.  ( ) Elet.', margin + 169, currentY + 6);
+      } else {
+        doc.text('RODADA Nº:', margin + 3.5, currentY + 6);
+        doc.setDrawColor(...CORES_JEGD.grafite);
+        doc.line(margin + 21, currentY + 6.3, margin + 36, currentY + 6.3);
+        doc.text('MODALIDADE:', margin + 40, currentY + 6);
+        doc.setFont('helvetica', 'normal');
+        doc.text('( ) Xadrez Clássico   ( ) Xadrez Rápido', margin + 60, currentY + 6);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RITMO / TEMPO:', margin + 122, currentY + 6);
+        doc.line(margin + 146, currentY + 6.3, rightEdge - 3.5, currentY + 6.3);
+      }
     } else {
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.setFontSize(7.3);
+      doc.setFont('helvetica', 'bold');
+
+      // Equipe A (esquerda)
+      doc.text('EQUIPE A:', margin + 3.5, currentY + 5.5);
+      if (escolaFiltro) {
+        doc.setTextColor(...CORES_JEGD.primaria);
+        doc.text(
+          ajustarTexto(doc, (escolaFiltro.sigla || escolaFiltro.nome).toUpperCase(), 58),
+          margin + 19,
+          currentY + 5.5
+        );
+        doc.setTextColor(...CORES_JEGD.escuro);
+      } else {
+        doc.setDrawColor(...CORES_JEGD.grafite);
+        doc.setLineWidth(0.2);
+        doc.line(margin + 19, currentY + 5.8, margin + 76, currentY + 5.8);
+      }
+
+      // Placar Central (vetorial)
+      doc.setDrawColor(...CORES_JEGD.borda);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(centerX - 16, currentY + 1.9, 11, 4.8, 0.8, 0.8, 'FD');
+      doc.roundedRect(centerX + 5, currentY + 1.9, 11, 4.8, 0.8, 0.8, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.text('X', centerX, currentY + 5.3, { align: 'center' });
+
+      // Equipe B (direita)
+      doc.setFontSize(7.3);
+      doc.text('EQUIPE B:', centerX + 20, currentY + 5.5);
       doc.setDrawColor(...CORES_JEGD.grafite);
       doc.setLineWidth(0.2);
-      doc.line(margin + 19, currentY + 6.1, margin + 76, currentY + 6.1);
+      doc.line(centerX + 36, currentY + 5.8, rightEdge - 3.5, currentY + 5.8);
+
+      // Linha divisória suave interna
+      doc.setDrawColor(...CORES_JEGD.bordaSuave);
+      doc.setLineWidth(0.15);
+      doc.line(margin + 3, currentY + 8.3, rightEdge - 3, currentY + 8.3);
+
+      // Placares Parciais adaptados à modalidade
+      doc.setFontSize(6.3);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...CORES_JEGD.grafite);
+      let textoParciais = '1º TEMPO: [    ] x [    ]    |    2º TEMPO: [    ] x [    ]    |    PRORROGAÇÃO: [    ] x [    ]    |    PÊNALTIS: [    ] x [    ]';
+      if (tipoMod === 'BEACH') {
+        textoParciais = '1º PER.: [   ] x [   ]  |  2º PER.: [   ] x [   ]  |  3º PER.: [   ] x [   ]  |  PROR.: [   ] x [   ]  |  PÊNALTIS: [   ] x [   ]';
+      } else if (tipoMod === 'VOLEI' || tipoMod === 'TENIS_MESA') {
+        textoParciais = '1º SET: [   ] x [   ]  |  2º SET: [   ] x [   ]  |  3º SET: [   ] x [   ]  |  4º SET: [   ] x [   ]  |  5º SET: [   ] x [   ]';
+      } else if (tipoMod === 'QUEIMADA') {
+        textoParciais = '1º PER.: [   ] x [   ]   |   2º PER.: [   ] x [   ]   |   3º PER.: [   ] x [   ]   |   RESTANTES FINAL: A [   ]  x  B [   ]';
+      }
+      doc.text(textoParciais, centerX, currentY + 12.4, { align: 'center' });
     }
 
-    // Placar Central (vetorial)
-    const centerX = pageWidth / 2;
-    doc.setDrawColor(...CORES_JEGD.borda);
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(centerX - 16, currentY + 2.2, 11, 5, 0.8, 0.8, 'FD');
-    doc.roundedRect(centerX + 5, currentY + 2.2, 11, 5, 0.8, 0.8, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...CORES_JEGD.escuro);
-    doc.text('X', centerX, currentY + 5.7, { align: 'center' });
-
-    // Equipe B (direita)
-    doc.setFontSize(7.4);
-    doc.text('EQUIPE B:', centerX + 20, currentY + 5.8);
-    doc.setDrawColor(...CORES_JEGD.grafite);
-    doc.setLineWidth(0.2);
-    doc.line(centerX + 36, currentY + 6.1, rightEdge - 3.5, currentY + 6.1);
-
-    // Linha divisória suave interna
-    doc.setDrawColor(...CORES_JEGD.bordaSuave);
-    doc.setLineWidth(0.15);
-    doc.line(margin + 3, currentY + 8.8, rightEdge - 3, currentY + 8.8);
-
-    // Placares Parciais
-    doc.setFontSize(6.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...CORES_JEGD.grafite);
-    doc.text(
-      '1º TEMPO: [    ] x [    ]     |     2º TEMPO: [    ] x [    ]     |     PRORROGAÇÃO: [    ] x [    ]     |     PÊNALTIS/DECISÃO: [    ] x [    ]',
-      centerX,
-      currentY + 13.2,
-      { align: 'center' }
-    );
-
-    currentY += boxConfrontoH + 3;
+    currentY += boxConfrontoH + 2.5;
 
     // ============================================================
-    // 3. DEFINIÇÃO MATEMÁTICA EXATA DAS COLUNAS (SOMA = 190.0mm)
+    // 3. DEFINIÇÃO MATEMÁTICA EXATA DAS COLUNAS POR MODALIDADE (SOMA = 190.0mm)
     // ============================================================
     type ColDef = {
       key: string;
@@ -263,52 +383,124 @@ export class SumulaChamadaService {
       align?: 'left' | 'center';
     };
 
-    const colunas: ColDef[] = ocultarColunaEscola
-      ? [
+    const montarColunas = (): ColDef[] => {
+      if (tipoMod === 'ATLETISMO') {
+        return [
           { key: 'num', label: 'Nº', x: margin + 0, w: 8, align: 'center' },
-          { key: 'camisa', label: 'CAM.', x: margin + 8, w: 11, align: 'center' },
-          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 19, w: 64, align: 'left' },
-          { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 83, w: 27, align: 'left' },
-          { key: 'pontos', label: 'PONTOS', x: margin + 110, w: 18, align: 'center' },
-          { key: 'faltas', label: 'FALTAS', x: margin + 128, w: 17, align: 'center' },
-          { key: 'ca', label: 'C.A.', x: margin + 145, w: 7.5, align: 'center' },
-          { key: 'cv', label: 'C.V.', x: margin + 152.5, w: 7.5, align: 'center' },
-          { key: 'rubrica', label: 'RUBRICA / CHECK-IN', x: margin + 160, w: 30, align: 'center' },
-        ]
-      : [
+          { key: 'peito', label: 'PEITO', x: margin + 8, w: 12, align: 'center' },
+          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 20, w: 54, align: 'left' },
+          { key: 'provas', label: 'PROVA(S) INSCRITAS', x: margin + 74, w: 34, align: 'left' },
+          { key: 'doc', label: 'DOCUMENTO', x: margin + 108, w: 25, align: 'left' },
+          { key: 'raia', label: 'RAIA', x: margin + 133, w: 10, align: 'center' },
+          { key: 'marca', label: 'TEMPO / MARCA', x: margin + 143, w: 20, align: 'center' },
+          { key: 'classif', label: 'CLASS.', x: margin + 163, w: 11, align: 'center' },
+          { key: 'rubrica', label: 'CHECK', x: margin + 174, w: 16, align: 'center' },
+        ];
+      }
+
+      if (tipoMod === 'XADREZ') {
+        return [
+          { key: 'num', label: 'Nº', x: margin + 0, w: 8, align: 'center' },
+          { key: 'mesa', label: 'MESA', x: margin + 8, w: 11, align: 'center' },
+          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 19, w: 62, align: 'left' },
+          { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 81, w: 27, align: 'left' },
+          { key: 'r1', label: 'R1', x: margin + 108, w: 10, align: 'center' },
+          { key: 'r2', label: 'R2', x: margin + 118, w: 10, align: 'center' },
+          { key: 'r3', label: 'R3', x: margin + 128, w: 10, align: 'center' },
+          { key: 'r4', label: 'R4', x: margin + 138, w: 10, align: 'center' },
+          { key: 'pts', label: 'PTS', x: margin + 148, w: 13, align: 'center' },
+          { key: 'rubrica', label: 'RUBRICA / CHECK', x: margin + 161, w: 29, align: 'center' },
+        ];
+      }
+
+      if (tipoMod === 'VOLEI' || tipoMod === 'TENIS_MESA') {
+        return [
+          { key: 'num', label: 'Nº', x: margin + 0, w: 9, align: 'center' },
+          { key: 'camisa', label: tipoMod === 'VOLEI' ? 'CAM.' : 'MESA', x: margin + 9, w: 13, align: 'center' },
+          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 22, w: 86, align: 'left' },
+          { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 108, w: 32, align: 'left' },
+          { key: 'cap', label: tipoMod === 'VOLEI' ? 'CAP.' : 'SAQ.', x: margin + 140, w: 12, align: 'center' },
+          { key: 'rubrica', label: 'RUBRICA / CHECK-IN', x: margin + 152, w: 38, align: 'center' },
+        ];
+      }
+
+      if (tipoMod === 'QUEIMADA') {
+        return [
+          { key: 'num', label: 'Nº', x: margin + 0, w: 9, align: 'center' },
+          { key: 'camisa', label: 'CAM.', x: margin + 9, w: 12, align: 'center' },
+          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 21, w: 78, align: 'left' },
+          { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 99, w: 30, align: 'left' },
+          { key: 'cap', label: 'T / R', x: margin + 129, w: 12, align: 'center' },
+          { key: 'queimado', label: 'QUEIM.', x: margin + 141, w: 14, align: 'center' },
+          { key: 'rubrica', label: 'RUBRICA / CHECK-IN', x: margin + 155, w: 35, align: 'center' },
+        ];
+      }
+
+      // FUTSAL (Mirim/Infantil com coluna 1/4 do jogo)
+      if (futsalComUmQuarto && ocultarColunaEscola) {
+        return [
           { key: 'num', label: 'Nº', x: margin + 0, w: 7.5, align: 'center' },
           { key: 'camisa', label: 'CAM.', x: margin + 7.5, w: 10.5, align: 'center' },
-          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 18, w: 50, align: 'left' },
-          { key: 'escola', label: 'ESCOLA', x: margin + 68, w: 22, align: 'left' },
-          { key: 'doc', label: 'DOCUMENTO', x: margin + 90, w: 25, align: 'left' },
-          { key: 'pontos', label: 'PONTOS', x: margin + 115, w: 16, align: 'center' },
-          { key: 'faltas', label: 'FALTAS', x: margin + 131, w: 16.5, align: 'center' },
-          { key: 'ca', label: 'C.A.', x: margin + 147.5, w: 7, align: 'center' },
-          { key: 'cv', label: 'C.V.', x: margin + 154.5, w: 7, align: 'center' },
-          { key: 'rubrica', label: 'RUBRICA / CHECK', x: margin + 161.5, w: 28.5, align: 'center' },
+          { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 18, w: 57, align: 'left' },
+          { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 75, w: 26, align: 'left' },
+          { key: 'quarto', label: '1/4', x: margin + 101, w: 9, align: 'center' },
+          { key: 'pontos', label: 'GOLS', x: margin + 110, w: 16, align: 'center' },
+          { key: 'faltas', label: 'FALTAS', x: margin + 126, w: 17, align: 'center' },
+          { key: 'ca', label: 'C.A.', x: margin + 143, w: 7.5, align: 'center' },
+          { key: 'cv', label: 'C.V.', x: margin + 150.5, w: 7.5, align: 'center' },
+          { key: 'rubrica', label: 'RUBRICA / CHECK-IN', x: margin + 158, w: 32, align: 'center' },
         ];
+      }
 
+      // COLETIVOS PADRÃO (Futsal Infanto/Junior, Futebol de Campo, Beach Soccer)
+      return ocultarColunaEscola
+        ? [
+            { key: 'num', label: 'Nº', x: margin + 0, w: 8, align: 'center' },
+            { key: 'camisa', label: 'CAM.', x: margin + 8, w: 11, align: 'center' },
+            { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 19, w: 64, align: 'left' },
+            { key: 'doc', label: 'DOCUMENTO (CPF/RG)', x: margin + 83, w: 27, align: 'left' },
+            { key: 'pontos', label: 'GOLS', x: margin + 110, w: 18, align: 'center' },
+            { key: 'faltas', label: 'FALTAS', x: margin + 128, w: 17, align: 'center' },
+            { key: 'ca', label: 'C.A.', x: margin + 145, w: 7.5, align: 'center' },
+            { key: 'cv', label: 'C.V.', x: margin + 152.5, w: 7.5, align: 'center' },
+            { key: 'rubrica', label: 'RUBRICA / CHECK-IN', x: margin + 160, w: 30, align: 'center' },
+          ]
+        : [
+            { key: 'num', label: 'Nº', x: margin + 0, w: 7.5, align: 'center' },
+            { key: 'camisa', label: 'CAM.', x: margin + 7.5, w: 10.5, align: 'center' },
+            { key: 'nome', label: 'NOME DO ESTUDANTE-ATLETA', x: margin + 18, w: 50, align: 'left' },
+            { key: 'escola', label: 'ESCOLA', x: margin + 68, w: 22, align: 'left' },
+            { key: 'doc', label: 'DOCUMENTO', x: margin + 90, w: 25, align: 'left' },
+            { key: 'pontos', label: 'GOLS', x: margin + 115, w: 16, align: 'center' },
+            { key: 'faltas', label: 'FALTAS', x: margin + 131, w: 16.5, align: 'center' },
+            { key: 'ca', label: 'C.A.', x: margin + 147.5, w: 7, align: 'center' },
+            { key: 'cv', label: 'C.V.', x: margin + 154.5, w: 7, align: 'center' },
+            { key: 'rubrica', label: 'RUBRICA / CHECK', x: margin + 161.5, w: 28.5, align: 'center' },
+          ];
+    };
+
+    const colunas = montarColunas();
     const colMap = Object.fromEntries(colunas.map((c) => [c.key, c]));
 
     const desenharCabecalhoTabela = () => {
-      const thH = 7;
+      const thH = 6.8;
       doc.setFillColor(...CORES_JEGD.escuro);
       doc.rect(margin, currentY, contentWidth, thH, 'F');
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(6.3);
+      doc.setFontSize(6.2);
       doc.setFont('helvetica', 'bold');
 
       colunas.forEach((col, idx) => {
         if (idx > 0) {
-          doc.setDrawColor(51, 65, 85); // slate-700
+          doc.setDrawColor(51, 65, 85);
           doc.setLineWidth(0.15);
           doc.line(col.x, currentY, col.x, currentY + thH);
         }
         if (col.align === 'center') {
-          doc.text(col.label, col.x + col.w / 2, currentY + 4.6, { align: 'center' });
+          doc.text(col.label, col.x + col.w / 2, currentY + 4.5, { align: 'center' });
         } else {
-          doc.text(col.label, col.x + 2, currentY + 4.6);
+          doc.text(col.label, col.x + 2, currentY + 4.5);
         }
       });
 
@@ -320,11 +512,11 @@ export class SumulaChamadaService {
       nome: string = '',
       escolaStr: string = '',
       docStr: string = '',
+      provasStr: string = '',
       presente: boolean = false
     ) => {
-      const rowH = 6.6;
+      const rowH = 6.4;
 
-      // Fundo zebra alternado
       if (index % 2 === 1) {
         doc.setFillColor(...CORES_JEGD.fundoZebra);
         doc.rect(margin, currentY, contentWidth, rowH, 'F');
@@ -333,7 +525,6 @@ export class SumulaChamadaService {
         doc.rect(margin, currentY, contentWidth, rowH, 'F');
       }
 
-      // Borda externa e divisórias verticais sutis
       doc.setDrawColor(...CORES_JEGD.bordaSuave);
       doc.setLineWidth(0.18);
       doc.rect(margin, currentY, contentWidth, rowH, 'S');
@@ -343,141 +534,165 @@ export class SumulaChamadaService {
         }
       });
 
-      const midY = currentY + 4.4;
+      const midY = currentY + 4.3;
 
       // Nº
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(...CORES_JEGD.grafite);
-      doc.text((index + 1).toString().padStart(2, '0'), colMap.num.x + colMap.num.w / 2, midY, { align: 'center' });
-
-      // Caixa de Camisa (centralizada)
-      doc.setDrawColor(...CORES_JEGD.borda);
-      doc.setLineWidth(0.22);
-      const camBoxW = 6.2;
-      const camBoxH = 4.0;
-      doc.rect(
-        colMap.camisa.x + (colMap.camisa.w - camBoxW) / 2,
-        currentY + (rowH - camBoxH) / 2,
-        camBoxW,
-        camBoxH,
-        'S'
-      );
-
-      // Nome do Estudante-Atleta
-      if (nome) {
+      if (colMap.num) {
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6.5);
+        doc.setFontSize(6.4);
+        doc.setTextColor(...CORES_JEGD.grafite);
+        doc.text((index + 1).toString().padStart(2, '0'), colMap.num.x + colMap.num.w / 2, midY, { align: 'center' });
+      }
+
+      // Caixa de Camisa / Peito / Mesa
+      const boxCol = colMap.camisa || colMap.peito || colMap.mesa;
+      if (boxCol) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        const bw = Math.min(boxCol.w - 4, 7);
+        const bh = 3.8;
+        doc.rect(boxCol.x + (boxCol.w - bw) / 2, currentY + (rowH - bh) / 2, bw, bh, 'S');
+      }
+
+      // Nome
+      if (colMap.nome && nome) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.4);
         doc.setTextColor(...CORES_JEGD.escuro);
         doc.text(ajustarTexto(doc, nome, colMap.nome.w - 3.5), colMap.nome.x + 2, midY);
       }
 
-      // Escola (quando tabela mista)
+      // Provas (Atletismo)
+      if (colMap.provas && provasStr) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.0);
+        doc.setTextColor(...CORES_JEGD.primaria);
+        doc.text(ajustarTexto(doc, provasStr, colMap.provas.w - 3), colMap.provas.x + 1.8, midY);
+      }
+
+      // Escola (se tabela mista)
       if (!ocultarColunaEscola && colMap.escola && escolaStr) {
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.2);
+        doc.setFontSize(6.1);
         doc.setTextColor(...CORES_JEGD.grafite);
         doc.text(ajustarTexto(doc, escolaStr, colMap.escola.w - 3), colMap.escola.x + 1.8, midY);
       }
 
-      // Documento (CPF / RG completo sem corte)
-      if (docStr) {
+      // Documento (CPF/RG completo)
+      if (colMap.doc && docStr) {
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.3);
+        doc.setFontSize(6.2);
         doc.setTextColor(...CORES_JEGD.grafite);
         doc.text(ajustarTexto(doc, docStr, colMap.doc.w - 3), colMap.doc.x + 1.8, midY);
       }
 
-      // Pontos / Gols (caixa centralizada)
-      doc.setDrawColor(...CORES_JEGD.borda);
-      doc.setLineWidth(0.2);
-      const ptsBoxW = colMap.pontos.w - 4.5;
-      doc.rect(
-        colMap.pontos.x + (colMap.pontos.w - ptsBoxW) / 2,
-        currentY + (rowH - 4.0) / 2,
-        ptsBoxW,
-        4.0,
-        'S'
-      );
-
-      // Faltas (5 quadrados perfeitamente centralizados)
-      const fBoxW = 2.3;
-      const fGap = 0.55;
-      const totalFaltasW = 5 * fBoxW + 4 * fGap;
-      const fStartX = colMap.faltas.x + (colMap.faltas.w - totalFaltasW) / 2;
-      for (let f = 0; f < 5; f++) {
-        doc.rect(fStartX + f * (fBoxW + fGap), currentY + (rowH - 3.8) / 2, fBoxW, 3.8, 'S');
+      // Checkbox 1/4 do jogo (Futsal Mirim/Infantil)
+      if (colMap.quarto) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        doc.rect(colMap.quarto.x + (colMap.quarto.w - 3.4) / 2, currentY + (rowH - 3.4) / 2, 3.4, 3.4, 'S');
       }
 
-      // C.A. e C.V. (quadrados centralizados)
-      const cardBox = 3.6;
-      doc.rect(
-        colMap.ca.x + (colMap.ca.w - cardBox) / 2,
-        currentY + (rowH - cardBox) / 2,
-        cardBox,
-        cardBox,
-        'S'
-      );
-      doc.rect(
-        colMap.cv.x + (colMap.cv.w - cardBox) / 2,
-        currentY + (rowH - cardBox) / 2,
-        cardBox,
-        cardBox,
-        'S'
-      );
-
-      // Rubrica / Check-in (checkbox vetorial + linha vetorial dentro dos limites da coluna!)
-      const rubX = colMap.rubrica.x;
-      const rubW = colMap.rubrica.w;
-      const chkSize = 3.2;
-      const chkX = rubX + 2.2;
-      const chkY = currentY + (rowH - chkSize) / 2;
-      doc.setDrawColor(...CORES_JEGD.borda);
-      doc.rect(chkX, chkY, chkSize, chkSize, 'S');
-      if (presente) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(6);
-        doc.setTextColor(...CORES_JEGD.secundaria);
-        doc.text('X', chkX + chkSize / 2, chkY + 2.5, { align: 'center' });
+      // Checkbox Cap / T-R / Queimado
+      if (colMap.cap) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        doc.rect(colMap.cap.x + (colMap.cap.w - 4.5) / 2, currentY + (rowH - 3.6) / 2, 4.5, 3.6, 'S');
       }
-      // Linha de assinatura vetorial terminando 2mm antes da borda direita
-      doc.setDrawColor(...CORES_JEGD.borda);
-      doc.setLineWidth(0.2);
-      doc.line(chkX + chkSize + 1.8, currentY + rowH - 1.6, rubX + rubW - 2.2, currentY + rowH - 1.6);
+      if (colMap.queimado) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        doc.rect(colMap.queimado.x + (colMap.queimado.w - 3.6) / 2, currentY + (rowH - 3.6) / 2, 3.6, 3.6, 'S');
+      }
+
+      // Pontos / Gols
+      if (colMap.pontos) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        const ptsBoxW = colMap.pontos.w - 4.5;
+        doc.rect(colMap.pontos.x + (colMap.pontos.w - ptsBoxW) / 2, currentY + (rowH - 3.8) / 2, ptsBoxW, 3.8, 'S');
+      }
+
+      // Faltas (5 quadrados)
+      if (colMap.faltas) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.18);
+        const fBoxW = 2.3;
+        const fGap = 0.55;
+        const totalFaltasW = 5 * fBoxW + 4 * fGap;
+        const fStartX = colMap.faltas.x + (colMap.faltas.w - totalFaltasW) / 2;
+        for (let f = 0; f < 5; f++) {
+          doc.rect(fStartX + f * (fBoxW + fGap), currentY + (rowH - 3.6) / 2, fBoxW, 3.6, 'S');
+        }
+      }
+
+      // C.A. e C.V.
+      if (colMap.ca && colMap.cv) {
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+        const cardBox = 3.5;
+        doc.rect(colMap.ca.x + (colMap.ca.w - cardBox) / 2, currentY + (rowH - cardBox) / 2, cardBox, cardBox, 'S');
+        doc.rect(colMap.cv.x + (colMap.cv.w - cardBox) / 2, currentY + (rowH - cardBox) / 2, cardBox, cardBox, 'S');
+      }
+
+      // Rubrica / Check-in
+      if (colMap.rubrica) {
+        const rubX = colMap.rubrica.x;
+        const rubW = colMap.rubrica.w;
+        const chkSize = 3.2;
+        doc.setDrawColor(...CORES_JEGD.borda);
+        doc.setLineWidth(0.2);
+
+        if (rubW <= 18) {
+          // Modo compacto (Atletismo): apenas checkbox centralizado
+          const cx = rubX + (rubW - chkSize) / 2;
+          const cy = currentY + (rowH - chkSize) / 2;
+          doc.rect(cx, cy, chkSize, chkSize, 'S');
+        } else {
+          const chkX = rubX + 2.2;
+          const chkY = currentY + (rowH - chkSize) / 2;
+          doc.rect(chkX, chkY, chkSize, chkSize, 'S');
+          if (presente) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6);
+            doc.setTextColor(...CORES_JEGD.secundaria);
+            doc.text('X', chkX + chkSize / 2, chkY + 2.4, { align: 'center' });
+          }
+          doc.line(chkX + chkSize + 1.8, currentY + rowH - 1.5, rubX + rubW - 2.2, currentY + rowH - 1.5);
+        }
+      }
 
       currentY += rowH;
     };
 
     desenharCabecalhoTabela();
 
-    // Limite inferior para reservar espaço confortável para Relatório + Assinaturas + Rodapé
-    const limiteTabelaY = pageHeight - 55;
+    // Limite inferior para reservar espaço confortável para Técnico + W.O./Ocorrências + Assinaturas + Rodapé
+    const limiteTabelaY = pageHeight - 69;
 
     if (isManual || atletasComEscola.length === 0) {
       const totalLinhasManual = 18;
       const escolaNomePreenchido = escolaFiltro ? (escolaFiltro.sigla || escolaFiltro.nome) : '';
       for (let i = 0; i < totalLinhasManual; i++) {
-        if (currentY + 6.6 > limiteTabelaY) break;
-        desenharLinha(i, '', escolaNomePreenchido, '');
+        if (currentY + 6.4 > limiteTabelaY) break;
+        desenharLinha(i, '', escolaNomePreenchido, '', '');
       }
     } else {
-      // Ordenação alfabética rigorosa dos atletas
       const atletasOrdenadosSumula = [...atletasComEscola].sort((a, b) =>
         a.atleta.nomeCompleto.localeCompare(b.atleta.nomeCompleto, 'pt-BR')
       );
 
       atletasOrdenadosSumula.forEach((item, index) => {
-        if (currentY + 6.6 > limiteTabelaY) {
+        if (currentY + 6.4 > limiteTabelaY) {
           doc.addPage();
           currentY = 12;
 
-          // Mini cabeçalho de continuação para nunca perder o contexto ao virar a folha
           doc.setFillColor(248, 250, 252);
           doc.setDrawColor(...CORES_JEGD.borda);
           doc.setLineWidth(0.2);
           doc.roundedRect(margin, currentY, contentWidth, 7, 1, 1, 'FD');
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(7.2);
+          doc.setFontSize(7.1);
           doc.setTextColor(...CORES_JEGD.primaria);
           const contTexto = escolaFiltro
             ? `CONTINUAÇÃO • ${escolaFiltro.nome.toUpperCase()} • ${modalidadeNome.toUpperCase()} • ${formatarFaixaEtaria(categoria)} • ${sexo.toUpperCase()}`
@@ -495,59 +710,101 @@ export class SumulaChamadaService {
             ? 'SEM DOC.'
             : item.atleta.documentoNumero || 'SEM DOC.';
 
+        const provasStr =
+          item.provas && item.provas.length > 0
+            ? item.provas.join(', ')
+            : item.atleta.modalidadesInscritas
+                ?.flatMap((m) => m.provas || [])
+                .join(', ') || '';
+
         desenharLinha(
           index,
           item.atleta.nomeCompleto.toUpperCase(),
           item.escola.sigla || item.escola.nome,
-          docExibicao
+          docExibicao,
+          provasStr
         );
       });
 
-      // Linhas extras para reservas/suplentes em súmulas de escola (até 3 linhas se houver espaço)
       const totalAtual = atletasOrdenadosSumula.length;
       const metaLinhas = escolaFiltro ? Math.min(Math.max(totalAtual + 2, 12), totalAtual + 4) : totalAtual;
       const escolaNomeExtra = escolaFiltro ? (escolaFiltro.sigla || escolaFiltro.nome) : '';
 
       for (let j = totalAtual; j < metaLinhas; j++) {
-        if (currentY + 6.6 > limiteTabelaY) break;
-        desenharLinha(j, '', escolaNomeExtra, '');
+        if (currentY + 6.4 > limiteTabelaY) break;
+        desenharLinha(j, '', escolaNomeExtra, '', '');
       }
     }
 
     // ============================================================
-    // 4. QUADRO DISCIPLINAR / OBSERVAÇÕES & WxO (LINHAS VETORIAIS)
+    // 4. LINHA COMPACTA DE COMISSÃO TÉCNICA
     // ============================================================
-    const obsY = Math.max(currentY + 4, pageHeight - 50);
-    const obsH = 15.5;
+    const tecY = Math.max(currentY + 2.5, pageHeight - 66);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...CORES_JEGD.borda);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(margin, tecY, contentWidth, 6.8, 1, 1, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('TÉCNICO / PROFESSOR RESPONSÁVEL:', margin + 3, tecY + 4.5);
+    doc.setDrawColor(...CORES_JEGD.borda);
+    doc.line(margin + 51, tecY + 4.8, margin + 128, tecY + 4.8);
+
+    doc.text('DOC. (RG/CPF):', margin + 132, tecY + 4.5);
+    doc.line(margin + 153, tecY + 4.8, rightEdge - 3, tecY + 4.8);
+
+    // ============================================================
+    // 5. QUADRO DE W.O., IRREGULARIDADES, PROTESTO & OBSERVAÇÕES
+    // ============================================================
+    const obsY = tecY + 8.5;
+    const obsH = 19.5;
     doc.setFillColor(...CORES_JEGD.fundoCinza);
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.25);
     doc.roundedRect(margin, obsY, contentWidth, obsH, 1.2, 1.2, 'FD');
 
-    doc.setFontSize(6.4);
+    // Linha de checkboxes rápidos (praticidade em quadra!)
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.1);
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.text('RELATÓRIO DA ARBITRAGEM, OCORRÊNCIAS DISCIPLINARES OU REGISTRO DE WxO:', margin + 3.5, obsY + 4.3);
+    doc.text('REGISTROS RÁPIDOS:', margin + 3.5, obsY + 4.3);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.0);
+    doc.setTextColor(...CORES_JEGD.grafite);
+    doc.text(
+      '( ) W.O. Equipe A     ( ) W.O. Equipe B     ( ) Duplo W.O.     ( ) Atleta s/ doc.     ( ) Uniforme irreg.     ( ) Intenção de protesto',
+      margin + 31,
+      obsY + 4.3
+    );
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.9);
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('RELATÓRIO / OCORRÊNCIAS:', margin + 3.5, obsY + 9.0);
 
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.2);
-    doc.line(margin + 3.5, obsY + 9.2, rightEdge - 3.5, obsY + 9.2);
-    doc.line(margin + 3.5, obsY + 13.4, rightEdge - 3.5, obsY + 13.4);
+    doc.line(margin + 39, obsY + 9.2, rightEdge - 3.5, obsY + 9.2);
+    doc.line(margin + 3.5, obsY + 13.5, rightEdge - 3.5, obsY + 13.5);
+    doc.line(margin + 3.5, obsY + 17.5, rightEdge - 3.5, obsY + 17.5);
 
     // ============================================================
-    // 5. ASSINATURAS DA EQUIPE DE ARBITRAGEM (4 COLUNAS ALINHADAS)
+    // 6. ASSINATURAS (ARBITRAGEM + CAPITÃES/REPRESENTANTES + CIÊNCIA)
     // ============================================================
     const signY = obsY + obsH + 10.5;
     const colSW = (contentWidth - 9) / 4;
 
-    const arbitros = [
-      'Árbitro Principal',
-      'Árbitro Auxiliar',
-      'Apontador / Cronometrista',
-      'Coordenador / SEMED',
+    const assinantes = [
+      { cargo: 'Árbitro Principal', sub: 'Nome legível e assinatura' },
+      { cargo: 'Auxiliar / Mesa', sub: 'Apontador / Cronometrista' },
+      { cargo: 'Cap. / Rep. Equipe A', sub: 'Ciência do resultado' },
+      { cargo: 'Cap. / Rep. Equipe B', sub: 'Ciência do resultado' },
     ];
 
-    arbitros.forEach((cargo, idx) => {
+    assinantes.forEach((itemAss, idx) => {
       const sX = margin + idx * (colSW + 3);
       doc.setDrawColor(...CORES_JEGD.grafite);
       doc.setLineWidth(0.25);
@@ -556,12 +813,23 @@ export class SumulaChamadaService {
       doc.setFontSize(6.2);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...CORES_JEGD.escuro);
-      doc.text(cargo, sX + colSW / 2, signY + 3.4, { align: 'center' });
-      doc.setFontSize(5.2);
+      doc.text(itemAss.cargo, sX + colSW / 2, signY + 3.3, { align: 'center' });
+      doc.setFontSize(5.1);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...CORES_JEGD.textoMuted);
-      doc.text('Assinatura / Visto', sX + colSW / 2, signY + 6.0, { align: 'center' });
+      doc.text(itemAss.sub, sX + colSW / 2, signY + 5.8, { align: 'center' });
     });
+
+    // Nota de ciência jurídica + Carimbo de recebimento SEMED
+    doc.setFontSize(5.3);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...CORES_JEGD.textoMuted);
+    doc.text(
+      'A assinatura dos representantes registra apenas ciência do resultado e ocorrências (não implica renúncia ao direito de protesto).   |   Recebido SEMED: ___/___ às ___:___',
+      pageWidth / 2,
+      signY + 10.2,
+      { align: 'center' }
+    );
   }
 
   // ==============================================================
@@ -1343,6 +1611,148 @@ export class SumulaChamadaService {
         doc.text(`Pág. ${reg.paginaInicial}`, idxCols[5].x + idxCols[5].w / 2, midY, { align: 'center' });
 
         y += rowH;
+      });
+    }
+
+    // 3.5. Página Final: Controle de Entrega de Súmulas à Coordenação (SEMED)
+    doc.addPage();
+    const pagControle = doc.getNumberOfPages();
+    contextosPorPagina[pagControle] = 'Controle de Entrega de Súmulas à Coordenação';
+    {
+      const pw = doc.internal.pageSize.getWidth();
+      const ph = doc.internal.pageSize.getHeight();
+      const m = 10;
+      const cw = pw - m * 2;
+      let cy = 10;
+
+      doc.setFillColor(...CORES_JEGD.primaria);
+      doc.roundedRect(m, cy, cw, 20, 1.5, 1.5, 'F');
+      doc.setFillColor(...CORES_JEGD.destaqueOuro);
+      doc.rect(m, cy + 19.2, cw, 0.8, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11.5);
+      doc.text('JEGDS 2026 • CONTROLE DE ENTREGA DE SÚMULAS À COORDENAÇÃO', pw / 2, cy + 7.5, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(245, 232, 234);
+      doc.text('PREFEITURA MUNICIPAL DE GONÇALVES DIAS - MA  •  SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED)', pw / 2, cy + 13.2, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(255, 240, 196);
+      doc.text('CONFERÊNCIA FINAL DE DEVOLUÇÃO DAS FICHAS DE ARBITRAGEM POR MODALIDADE', pw / 2, cy + 17.6, { align: 'center' });
+
+      cy += 24;
+
+      // Metadados do dia
+      doc.setFillColor(...CORES_JEGD.fundoCinza);
+      doc.setDrawColor(...CORES_JEGD.borda);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(m, cy, cw, 10, 1, 1, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.text('DATA: ____/____/2026', m + 4, cy + 6.3);
+      doc.text('LOCAL / ETAPA: _________________________________', m + 42, cy + 6.3);
+      doc.text('RESPONSÁVEL: ______________________________', m + 122, cy + 6.3);
+      cy += 14;
+
+      // Tabela de Controle das 8 Modalidades (soma = 190mm)
+      const cCols = [
+        { label: 'MODALIDADE', x: m + 0, w: 46, align: 'left' as const },
+        { label: 'QTD. SÚMULAS', x: m + 46, w: 28, align: 'center' as const },
+        { label: 'CONFERIDO POR', x: m + 74, w: 48, align: 'left' as const },
+        { label: 'DATA / HORA', x: m + 122, w: 30, align: 'center' as const },
+        { label: 'OBSERVAÇÕES', x: m + 152, w: 38, align: 'left' as const },
+      ];
+
+      doc.setFillColor(...CORES_JEGD.escuro);
+      doc.rect(m, cy, cw, 7.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(255, 255, 255);
+      cCols.forEach((col, i) => {
+        if (i > 0) {
+          doc.setDrawColor(51, 65, 85);
+          doc.line(col.x, cy, col.x, cy + 7.5);
+        }
+        if (col.align === 'center') {
+          doc.text(col.label, col.x + col.w / 2, cy + 5, { align: 'center' });
+        } else {
+          doc.text(col.label, col.x + 2.5, cy + 5);
+        }
+      });
+      cy += 7.5;
+
+      const listaModsControle = [
+        'Futebol de Campo',
+        'Futsal',
+        'Voleibol',
+        'Beach Soccer',
+        'Queimada',
+        'Atletismo',
+        'Tênis de Mesa',
+        'Xadrez / Xadrez Rápido',
+        'Outras / Ocorrências Extras',
+      ];
+
+      listaModsControle.forEach((modNome, idx) => {
+        const rh = 11;
+        doc.setFillColor(...(idx % 2 === 1 ? CORES_JEGD.fundoZebra : [255, 255, 255] as [number, number, number]));
+        doc.rect(m, cy, cw, rh, 'F');
+        doc.setDrawColor(...CORES_JEGD.bordaSuave);
+        doc.setLineWidth(0.2);
+        doc.rect(m, cy, cw, rh, 'S');
+        cCols.forEach((col, i) => {
+          if (i > 0) doc.line(col.x, cy, col.x, cy + rh);
+        });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(modNome, cCols[0].x + 2.5, cy + 6.8);
+        cy += rh;
+      });
+
+      cy += 8;
+
+      // Observações Gerais da Coordenação
+      doc.setFillColor(...CORES_JEGD.fundoCinza);
+      doc.setDrawColor(...CORES_JEGD.borda);
+      doc.setLineWidth(0.25);
+      doc.roundedRect(m, cy, cw, 56, 1.2, 1.2, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.text('OBSERVAÇÕES GERAIS DA COORDENAÇÃO DOS JOGOS (OCORRÊNCIAS DO DIA, PENDÊNCIAS E PROVIDÊNCIAS):', m + 4, cy + 6);
+
+      doc.setDrawColor(...CORES_JEGD.borda);
+      doc.setLineWidth(0.2);
+      for (let l = 1; l <= 6; l++) {
+        doc.line(m + 4, cy + 6 + l * 7.5, m + cw - 4, cy + 6 + l * 7.5);
+      }
+
+      // Assinaturas da Coordenação
+      const sY = ph - 32;
+      const halfW = (cw - 14) / 2;
+      [
+        { title: 'Coordenação Geral dos Jogos (SEMED)', sub: 'Nome legível e assinatura' },
+        { title: 'Coordenação Técnica / Arbitragem', sub: 'Nome legível e assinatura' },
+      ].forEach((ass, idx) => {
+        const sx = m + idx * (halfW + 14);
+        doc.setDrawColor(...CORES_JEGD.grafite);
+        doc.setLineWidth(0.25);
+        doc.line(sx + 6, sY, sx + halfW - 6, sY);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(ass.title, sx + halfW / 2, sY + 4.5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(...CORES_JEGD.textoMuted);
+        doc.text(ass.sub, sx + halfW / 2, sY + 8, { align: 'center' });
       });
     }
 
