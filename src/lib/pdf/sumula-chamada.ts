@@ -737,9 +737,9 @@ export class SumulaChamadaService {
     }
 
     // ============================================================
-    // 4. LINHA COMPACTA DE COMISSÃO TÉCNICA
+    // 4. LINHA COMPACTA DE COMISSÃO TÉCNICA (LOGO ABAIXO DA TABELA)
     // ============================================================
-    const tecY = Math.max(currentY + 2.5, pageHeight - 66);
+    const tecY = Math.min(currentY + 3, pageHeight - 66);
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.2);
@@ -756,10 +756,13 @@ export class SumulaChamadaService {
     doc.line(margin + 153, tecY + 4.8, rightEdge - 3, tecY + 4.8);
 
     // ============================================================
-    // 5. QUADRO DE W.O., IRREGULARIDADES, PROTESTO & OBSERVAÇÕES
+    // 5. QUADRO DE W.O., IRREGULARIDADES, PROTESTO & RELATÓRIO (EXPANSÃO DINÂMICA)
     // ============================================================
-    const obsY = tecY + 8.5;
-    const obsH = 19.5;
+    const obsY = tecY + 8.8;
+    const signY = pageHeight - 25;
+    const maxObsBottom = signY - 10;
+    const obsH = Math.max(19.5, maxObsBottom - obsY);
+
     doc.setFillColor(...CORES_JEGD.fundoCinza);
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.25);
@@ -769,7 +772,7 @@ export class SumulaChamadaService {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.1);
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.text('REGISTROS RÁPIDOS:', margin + 3.5, obsY + 4.3);
+    doc.text('REGISTROS RÁPIDOS:', margin + 3.5, obsY + 4.5);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.0);
@@ -777,24 +780,33 @@ export class SumulaChamadaService {
     doc.text(
       '( ) W.O. Equipe A     ( ) W.O. Equipe B     ( ) Duplo W.O.     ( ) Atleta s/ doc.     ( ) Uniforme irreg.     ( ) Intenção de protesto',
       margin + 31,
-      obsY + 4.3
+      obsY + 4.5
     );
 
+    // Divisória suave abaixo dos checkboxes
+    doc.setDrawColor(...CORES_JEGD.bordaSuave);
+    doc.setLineWidth(0.15);
+    doc.line(margin + 3, obsY + 6.4, rightEdge - 3, obsY + 6.4);
+
+    // Linhas pautadas dinâmicas aproveitando 100% do espaço livre da folha
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.9);
+    doc.setFontSize(6.0);
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.text('RELATÓRIO / OCORRÊNCIAS:', margin + 3.5, obsY + 9.0);
+    const primeiraLinhaY = obsY + 11.0;
+    doc.text('RELATÓRIO / OCORRÊNCIAS:', margin + 3.5, primeiraLinhaY - 0.3);
 
     doc.setDrawColor(...CORES_JEGD.borda);
     doc.setLineWidth(0.2);
-    doc.line(margin + 39, obsY + 9.2, rightEdge - 3.5, obsY + 9.2);
-    doc.line(margin + 3.5, obsY + 13.5, rightEdge - 3.5, obsY + 13.5);
-    doc.line(margin + 3.5, obsY + 17.5, rightEdge - 3.5, obsY + 17.5);
+    doc.line(margin + 39, primeiraLinhaY, rightEdge - 3.5, primeiraLinhaY);
+
+    const espacamentoLinha = 5.6;
+    for (let ly = primeiraLinhaY + espacamentoLinha; ly <= obsY + obsH - 2.8; ly += espacamentoLinha) {
+      doc.line(margin + 3.5, ly, rightEdge - 3.5, ly);
+    }
 
     // ============================================================
     // 6. ASSINATURAS (ARBITRAGEM + CAPITÃES/REPRESENTANTES + CIÊNCIA)
     // ============================================================
-    const signY = obsY + obsH + 10.5;
     const colSW = (contentWidth - 9) / 4;
 
     const assinantes = [
