@@ -569,7 +569,8 @@ export class SumulaChamadaService {
   // ==============================================================
 
   /**
-   * Gera a Lista de Chamada Individual (1 única categoria com todas as escolas)
+   * Gera a Súmula por Etapa/Categoria separada rigorosamente por ESCOLA:
+   * cada escola participante recebe sua própria página oficial de súmula (sem misturar alunos de escolas diferentes).
    */
   public static async gerarListaChamadaOficial(
     modalidadeNome: string,
@@ -579,13 +580,64 @@ export class SumulaChamadaService {
     atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[]
   ): Promise<void> {
     const doc = criarDocumentoA4('portrait');
-    this.desenharPaginaSumula(doc, modalidadeNome, categoria, sexo, dataJogo, atletasComEscola);
-    aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Oficial • ${modalidadeNome}`);
+
+    if (atletasComEscola.length === 0) {
+      this.desenharPaginaSumula(doc, modalidadeNome, categoria, sexo, dataJogo, [], { isModeloManual: true });
+      aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Oficial • ${modalidadeNome}`);
+      doc.save(`Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
+      return;
+    }
+
+    // Agrupar atletas por escola (ordem alfabética de escola)
+    const mapaEscolas = new Map<string, { escola: Escola; atletas: { atleta: Atleta; escola: Escola; provas?: string[] }[] }>();
+    atletasComEscola.forEach((entry) => {
+      const key = entry.escola.id || entry.escola.nome;
+      if (!mapaEscolas.has(key)) {
+        mapaEscolas.set(key, { escola: entry.escola, atletas: [] });
+      }
+      const lista = mapaEscolas.get(key)!.atletas;
+      if (!lista.some((x) => x.atleta.id === entry.atleta.id)) {
+        lista.push(entry);
+      }
+    });
+
+    const escolasOrdenadas = Array.from(mapaEscolas.values()).sort((a, b) =>
+      a.escola.nome.localeCompare(b.escola.nome, 'pt-BR')
+    );
+
+    const contextosPorPagina: Record<number, string> = {};
+
+    escolasOrdenadas.forEach((grupo, idx) => {
+      if (idx > 0) doc.addPage();
+      const pagAntes = doc.getNumberOfPages();
+
+      this.desenharPaginaSumula(
+        doc,
+        modalidadeNome,
+        categoria,
+        sexo,
+        dataJogo,
+        grupo.atletas,
+        {
+          escolaFiltro: grupo.escola,
+          faixaSecaoEscola: `ESCOLA ${(idx + 1).toString().padStart(2, '0')} DE ${escolasOrdenadas.length.toString().padStart(2, '0')}  •  ${grupo.escola.nome} (${grupo.escola.sigla || 'SEMED'})  •  ${grupo.atletas.length} ${grupo.atletas.length === 1 ? 'ATLETA' : 'ATLETAS'}`,
+        }
+      );
+
+      const pagDepois = doc.getNumberOfPages();
+      for (let p = pagAntes; p <= pagDepois; p++) {
+        contextosPorPagina[p] = `${grupo.escola.sigla || grupo.escola.nome} • ${modalidadeNome} (${categoria} - ${sexo})`;
+      }
+    });
+
+    aplicarRodapePaginado(doc, `JEGDS 2026 • Súmula Oficial • ${modalidadeNome}`, contextosPorPagina);
     doc.save(`Sumula_Geral_JEGDS_${modalidadeNome.replace(/\s+/g, '_')}_${categoria}_${sexo}.pdf`);
   }
 
   /**
-   * Gera o Caderno Completo de uma Modalidade (Todas as Categorias em 1 só PDF)
+   * Gera o Caderno Completo de uma Modalidade:
+   *  - Sem filtro de escola: Página 1 com Índice da Modalidade por Escola -> organizado por ESCOLA (A-Z) -> FAIXA ETÁRIA -> NAIPE -> ATLETAS (A-Z).
+   *  - Com filtro de escola: organizado por FAIXA ETÁRIA -> NAIPE -> ATLETAS (A-Z) daquela escola.
    */
   public static async gerarCadernoModalidadeCompleto(
     modalidade: ModalidadeConfig,
@@ -594,37 +646,110 @@ export class SumulaChamadaService {
   ): Promise<void> {
     const doc = criarDocumentoA4('portrait');
     const dataJogo = new Date(modalidade.dataEvento).toLocaleDateString('pt-BR');
+    const nomeFormatado = modalidade.nome.toUpperCase().replace(/\s+/g, '_');
 
-    const categoriasOrdenadas = [...categoriasData].sort((a, b) => {
-      const diffCat = ordemCategoria(a.categoria) - ordemCategoria(b.categoria);
-      if (diffCat !== 0) return diffCat;
-      return ordemNaipe(a.sexo) - ordemNaipe(b.sexo);
-    });
+    // Caso 1: Filtrado por uma única escola
+    if (options?.escolaFiltro) {
+      const categoriasOrdenadas = [...categoriasData].sort((a, b) => {
+        const diffCat = ordemCategoria(a.categoria) - ordemCategoria(b.categoria);
+        if (diffCat !== 0) return diffCat;
+        return ordemNaipe(a.sexo) - ordemNaipe(b.sexo);
+      });
 
-    let pageAdded = false;
-    categoriasOrdenadas.forEach((catData) => {
-      if (options?.escolaFiltro && catData.atletasComEscola.length === 0) {
-        return;
+      const contextosPorPagina: Record<number, string> = {};
+      let pageAdded = false;
+
+      categoriasOrdenadas.forEach((catData) => {
+        if (catData.atletasComEscola.length === 0) return;
+
+        if (pageAdded) {
+          doc.addPage();
+        } else {
+          pageAdded = true;
+        }
+
+        const pagAntes = doc.getNumberOfPages();
+        this.desenharPaginaSumula(
+          doc,
+          modalidade.nome,
+          catData.categoria,
+          catData.sexo,
+          dataJogo,
+          catData.atletasComEscola,
+          options
+        );
+        const pagDepois = doc.getNumberOfPages();
+        for (let p = pagAntes; p <= pagDepois; p++) {
+          contextosPorPagina[p] = `${options.escolaFiltro?.sigla || options.escolaFiltro?.nome} • ${modalidade.nome} (${catData.categoria})`;
+        }
+      });
+
+      if (!pageAdded) {
+        this.desenharPaginaSumula(
+          doc,
+          modalidade.nome,
+          modalidade.categoriasPermitidas[0] || 'LIVRE',
+          'MASCULINO',
+          dataJogo,
+          [],
+          options
+        );
       }
 
-      if (pageAdded) {
-        doc.addPage();
-      } else {
-        pageAdded = true;
-      }
+      aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`, contextosPorPagina);
+      const prefixo = `SUMULA_${(options.escolaFiltro.sigla || options.escolaFiltro.nome).replace(/\s+/g, '_')}`;
+      doc.save(`${prefixo}_${nomeFormatado}_JEGDS2026.pdf`);
+      return;
+    }
 
-      this.desenharPaginaSumula(
-        doc,
-        modalidade.nome,
-        catData.categoria,
-        catData.sexo,
-        dataJogo,
-        catData.atletasComEscola,
-        options
-      );
+    // Caso 2: Caderno Geral da Modalidade (Todas as Escolas) -> Separado rigorosamente por ESCOLA -> FAIXA ETÁRIA -> NAIPE
+    type GrupoEscolaMod = {
+      escola: Escola;
+      atletasUnicos: Set<string>;
+      categorias: Map<
+        string,
+        {
+          categoria: string;
+          sexo: string;
+          atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[];
+        }
+      >;
+    };
+
+    const mapaEscolas = new Map<string, GrupoEscolaMod>();
+    categoriasData.forEach((catData) => {
+      catData.atletasComEscola.forEach((entry) => {
+        const escKey = entry.escola.id || entry.escola.nome;
+        if (!mapaEscolas.has(escKey)) {
+          mapaEscolas.set(escKey, {
+            escola: entry.escola,
+            atletasUnicos: new Set<string>(),
+            categorias: new Map(),
+          });
+        }
+        const grupo = mapaEscolas.get(escKey)!;
+        grupo.atletasUnicos.add(entry.atleta.id);
+
+        const catKey = `${catData.categoria}__${catData.sexo}`;
+        if (!grupo.categorias.has(catKey)) {
+          grupo.categorias.set(catKey, {
+            categoria: catData.categoria,
+            sexo: catData.sexo,
+            atletasComEscola: [],
+          });
+        }
+        const lista = grupo.categorias.get(catKey)!.atletasComEscola;
+        if (!lista.some((x) => x.atleta.id === entry.atleta.id)) {
+          lista.push(entry);
+        }
+      });
     });
 
-    if (!pageAdded) {
+    const escolasOrdenadas = Array.from(mapaEscolas.values()).sort((a, b) =>
+      a.escola.nome.localeCompare(b.escola.nome, 'pt-BR')
+    );
+
+    if (escolasOrdenadas.length === 0) {
       this.desenharPaginaSumula(
         doc,
         modalidade.nome,
@@ -632,17 +757,245 @@ export class SumulaChamadaService {
         'MASCULINO',
         dataJogo,
         [],
-        options
+        { isModeloManual: true }
       );
+      aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`);
+      doc.save(`CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
+      return;
     }
 
-    aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`);
+    // Reservar página(s) do Índice da Modalidade por Escola
+    const maxLinhasIndice = 26;
+    const paginasIndice = Math.max(1, Math.ceil(escolasOrdenadas.length / maxLinhasIndice));
+    for (let i = 1; i < paginasIndice; i++) {
+      doc.addPage();
+    }
 
-    const prefixo = options?.escolaFiltro
-      ? `SUMULA_${(options.escolaFiltro.sigla || options.escolaFiltro.nome).replace(/\s+/g, '_')}`
-      : 'CADERNO_OFICIAL_SUMULAS';
-    const nomeFormatado = modalidade.nome.toUpperCase().replace(/\s+/g, '_');
-    doc.save(`${prefixo}_${nomeFormatado}_JEGDS2026.pdf`);
+    const contextosPorPagina: Record<number, string> = {};
+    for (let p = 1; p <= paginasIndice; p++) {
+      contextosPorPagina[p] = `${modalidade.nome} • Índice por Escola`;
+    }
+
+    const indiceRegistros: {
+      numero: number;
+      escola: Escola;
+      totalAtletas: number;
+      totalSumulas: number;
+      faixasLabel: string;
+      paginaInicial: number;
+    }[] = [];
+
+    let totalSumulasMod = 0;
+
+    escolasOrdenadas.forEach((grupoEsc, idxEsc) => {
+      const categoriasOrdenadas = Array.from(grupoEsc.categorias.values()).sort((a, b) => {
+        const diffCat = ordemCategoria(a.categoria) - ordemCategoria(b.categoria);
+        if (diffCat !== 0) return diffCat;
+        return ordemNaipe(a.sexo) - ordemNaipe(b.sexo);
+      });
+
+      let paginaInicialEscola = 0;
+      let sumulasDaEscola = 0;
+      const faixasResumo: string[] = [];
+
+      categoriasOrdenadas.forEach((catObj) => {
+        if (catObj.atletasComEscola.length === 0) return;
+
+        faixasResumo.push(`${catObj.categoria} (${catObj.sexo === 'FEMININO' ? 'F' : 'M'})`);
+        doc.addPage();
+        const pagAntes = doc.getNumberOfPages();
+        const ehPrimeiraDaEscola = paginaInicialEscola === 0;
+        if (ehPrimeiraDaEscola) {
+          paginaInicialEscola = pagAntes;
+        }
+
+        sumulasDaEscola++;
+        totalSumulasMod++;
+
+        this.desenharPaginaSumula(
+          doc,
+          modalidade.nome,
+          catObj.categoria,
+          catObj.sexo,
+          dataJogo,
+          catObj.atletasComEscola,
+          {
+            escolaFiltro: grupoEsc.escola,
+            faixaSecaoEscola: ehPrimeiraDaEscola
+              ? `ESCOLA ${(idxEsc + 1).toString().padStart(2, '0')} DE ${escolasOrdenadas.length.toString().padStart(2, '0')}  •  ${grupoEsc.escola.nome} (${grupoEsc.escola.sigla || 'SEMED'})  •  ${grupoEsc.atletasUnicos.size} ATLETAS`
+              : undefined,
+          }
+        );
+
+        const pagDepois = doc.getNumberOfPages();
+        for (let p = pagAntes; p <= pagDepois; p++) {
+          contextosPorPagina[p] = `${grupoEsc.escola.sigla || grupoEsc.escola.nome} • ${modalidade.nome} (${catObj.categoria} - ${catObj.sexo})`;
+        }
+      });
+
+      indiceRegistros.push({
+        numero: idxEsc + 1,
+        escola: grupoEsc.escola,
+        totalAtletas: grupoEsc.atletasUnicos.size,
+        totalSumulas: sumulasDaEscola,
+        faixasLabel: faixasResumo.join(', '),
+        paginaInicial: paginaInicialEscola,
+      });
+    });
+
+    // Preencher Índice da Modalidade por Escola na(s) página(s) inicial(is)
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 10;
+    const contentWidth = pageWidth - margin * 2;
+    const totalAtletasMod = indiceRegistros.reduce((acc, r) => acc + r.totalAtletas, 0);
+
+    for (let pagIdx = 0; pagIdx < paginasIndice; pagIdx++) {
+      doc.setPage(pagIdx + 1);
+      let y = 10;
+
+      doc.setFillColor(...CORES_JEGD.primaria);
+      doc.roundedRect(margin, y, contentWidth, 24, 1.8, 1.8, 'F');
+      doc.setFillColor(...CORES_JEGD.destaqueOuro);
+      doc.rect(margin, y + 23.1, contentWidth, 0.9, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12.5);
+      doc.text(`JEGDS 2026 • CADERNO OFICIAL DE ${modalidade.nome.toUpperCase()}`, pageWidth / 2, y + 8.5, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.8);
+      doc.setTextColor(245, 232, 234);
+      doc.text(
+        'PREFEITURA MUNICIPAL DE GONÇALVES DIAS - MA  •  SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED)',
+        pageWidth / 2,
+        y + 14.5,
+        { align: 'center' }
+      );
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 240, 196);
+      doc.text(
+        `ORGANIZAÇÃO: POR ESCOLA  →  FAIXA ETÁRIA  →  NAIPE  •  DATA PREVISTA: ${dataJogo}`,
+        pageWidth / 2,
+        y + 20.2,
+        { align: 'center' }
+      );
+
+      y += 28;
+
+      if (pagIdx === 0) {
+        const cardW = (contentWidth - 9) / 4;
+        const resumoCards = [
+          { label: 'ESCOLAS INSCRITAS', valor: String(indiceRegistros.length) },
+          { label: 'ATLETAS NA MODALIDADE', valor: String(totalAtletasMod) },
+          { label: 'TOTAL DE SÚMULAS', valor: String(totalSumulasMod) },
+          { label: 'DATA DA ETAPA', valor: dataJogo },
+        ];
+        resumoCards.forEach((card, cIdx) => {
+          const cx = margin + cIdx * (cardW + 3);
+          doc.setFillColor(...CORES_JEGD.fundoCinza);
+          doc.setDrawColor(...CORES_JEGD.borda);
+          doc.setLineWidth(0.22);
+          doc.roundedRect(cx, y, cardW, 13.5, 1.2, 1.2, 'FD');
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.2);
+          doc.setTextColor(...CORES_JEGD.textoMuted);
+          doc.text(card.label, cx + cardW / 2, y + 4.8, { align: 'center' });
+
+          doc.setFontSize(10.5);
+          doc.setTextColor(...CORES_JEGD.escuro);
+          doc.text(card.valor, cx + cardW / 2, y + 10.8, { align: 'center' });
+        });
+        y += 18;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.text(
+        pagIdx === 0
+          ? `ÍNDICE DE ESCOLAS EM ${modalidade.nome.toUpperCase()} (MANUSEIO RÁPIDO)`
+          : `ÍNDICE DE ESCOLAS EM ${modalidade.nome.toUpperCase()} (CONTINUAÇÃO)`,
+        margin,
+        y
+      );
+      y += 3.5;
+
+      const idxCols = [
+        { key: 'num', label: 'Nº', x: margin + 0, w: 9, align: 'center' as const },
+        { key: 'escola', label: 'ESCOLA / UNIDADE', x: margin + 9, w: 66, align: 'left' as const },
+        { key: 'faixas', label: 'FAIXAS ETÁRIAS & NAIPES', x: margin + 75, w: 66, align: 'left' as const },
+        { key: 'atl', label: 'ATLETAS', x: margin + 141, w: 16, align: 'center' as const },
+        { key: 'sum', label: 'SÚMULAS', x: margin + 157, w: 16, align: 'center' as const },
+        { key: 'pag', label: 'PÁG.', x: margin + 173, w: 17, align: 'center' as const },
+      ];
+
+      const thH = 7;
+      doc.setFillColor(...CORES_JEGD.escuro);
+      doc.rect(margin, y, contentWidth, thH, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(255, 255, 255);
+      idxCols.forEach((col, i) => {
+        if (i > 0) {
+          doc.setDrawColor(51, 65, 85);
+          doc.setLineWidth(0.15);
+          doc.line(col.x, y, col.x, y + thH);
+        }
+        if (col.align === 'center') {
+          doc.text(col.label, col.x + col.w / 2, y + 4.7, { align: 'center' });
+        } else {
+          doc.text(col.label, col.x + 2.2, y + 4.7);
+        }
+      });
+      y += thH;
+
+      const sliceInicio = pagIdx * maxLinhasIndice;
+      const itensPagina = indiceRegistros.slice(sliceInicio, sliceInicio + maxLinhasIndice);
+
+      itensPagina.forEach((reg, rIdx) => {
+        const rowH = 7.4;
+        doc.setFillColor(...(rIdx % 2 === 1 ? CORES_JEGD.fundoZebra : [255, 255, 255] as [number, number, number]));
+        doc.rect(margin, y, contentWidth, rowH, 'F');
+        doc.setDrawColor(...CORES_JEGD.bordaSuave);
+        doc.setLineWidth(0.18);
+        doc.rect(margin, y, contentWidth, rowH, 'S');
+        idxCols.forEach((col, i) => {
+          if (i > 0) doc.line(col.x, y, col.x, y + rowH);
+        });
+
+        const midY = y + 4.9;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.8);
+        doc.setTextColor(...CORES_JEGD.grafite);
+        doc.text(reg.numero.toString().padStart(2, '0'), idxCols[0].x + idxCols[0].w / 2, midY, { align: 'center' });
+
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(ajustarTexto(doc, reg.escola.nome.toUpperCase(), idxCols[1].w - 4), idxCols[1].x + 2.2, midY);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.3);
+        doc.setTextColor(...CORES_JEGD.grafite);
+        doc.text(ajustarTexto(doc, reg.faixasLabel, idxCols[2].w - 4), idxCols[2].x + 2.2, midY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(String(reg.totalAtletas), idxCols[3].x + idxCols[3].w / 2, midY, { align: 'center' });
+        doc.text(String(reg.totalSumulas), idxCols[4].x + idxCols[4].w / 2, midY, { align: 'center' });
+
+        doc.setTextColor(...CORES_JEGD.primaria);
+        doc.text(`Pág. ${reg.paginaInicial}`, idxCols[5].x + idxCols[5].w / 2, midY, { align: 'center' });
+
+        y += rowH;
+      });
+    }
+
+    aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas • ${modalidade.nome}`, contextosPorPagina);
+    doc.save(`CADERNO_OFICIAL_SUMULAS_${nomeFormatado}_JEGDS2026.pdf`);
   }
 
   /**
@@ -1030,15 +1383,26 @@ export class SumulaChamadaService {
   }
 
   /**
-   * Gera o Caderno Completo de Súmulas da Escola (ordenado por Modalidade -> Faixa Etária -> Naipe)
+   * Gera o Caderno Completo de Súmulas da Escola:
+   *  - Página 1: Índice de Modalidades & Faixas Etárias da Escola (quando há 2+ súmulas)
+   *  - Sequência: Modalidade -> Faixa Etária (Mirim, Infantil, Infanto, Junior) -> Naipe -> Atletas (A-Z)
    */
   public static async gerarCadernoSumulasEscola(
     escola: Escola,
     modalidadesCompletas: { modalidade: ModalidadeConfig; categoriasData: CategoriaSumulaData[] }[]
   ): Promise<void> {
     const doc = criarDocumentoA4('portrait');
-    let isFirstPage = true;
-    const contextosPorPagina: Record<number, string> = {};
+
+    // Coletar lista plana ordenada de súmulas da escola
+    const sumulasEscola: {
+      modalidade: ModalidadeConfig;
+      dataJogo: string;
+      categoria: string;
+      sexo: string;
+      atletasComEscola: { atleta: Atleta; escola: Escola; provas?: string[] }[];
+    }[] = [];
+
+    const atletasUnicosSet = new Set<string>();
 
     modalidadesCompletas.forEach((item) => {
       const dataJogo = new Date(item.modalidade.dataEvento).toLocaleDateString('pt-BR');
@@ -1050,31 +1414,18 @@ export class SumulaChamadaService {
 
       categoriasOrdenadas.forEach((catData) => {
         if (catData.atletasComEscola.length === 0) return;
-
-        if (!isFirstPage) {
-          doc.addPage();
-        } else {
-          isFirstPage = false;
-        }
-
-        const pagAntes = doc.getNumberOfPages();
-        this.desenharPaginaSumula(
-          doc,
-          item.modalidade.nome,
-          catData.categoria,
-          catData.sexo,
+        catData.atletasComEscola.forEach((x) => atletasUnicosSet.add(x.atleta.id));
+        sumulasEscola.push({
+          modalidade: item.modalidade,
           dataJogo,
-          catData.atletasComEscola,
-          { escolaFiltro: escola }
-        );
-        const pagDepois = doc.getNumberOfPages();
-        for (let p = pagAntes; p <= pagDepois; p++) {
-          contextosPorPagina[p] = `${escola.sigla || escola.nome} • ${item.modalidade.nome} (${catData.categoria})`;
-        }
+          categoria: catData.categoria,
+          sexo: catData.sexo,
+          atletasComEscola: catData.atletasComEscola,
+        });
       });
     });
 
-    if (isFirstPage) {
+    if (sumulasEscola.length === 0) {
       this.desenharPaginaSumula(
         doc,
         'MODALIDADE GERAL',
@@ -1084,6 +1435,221 @@ export class SumulaChamadaService {
         [],
         { escolaFiltro: escola, isModeloManual: true }
       );
+      aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas (${escola.sigla || escola.nome})`);
+      const siglaSafe = (escola.sigla || escola.nome).replace(/[^a-zA-Z0-9]/g, '_');
+      doc.save(`CADERNO_SUMULAS_ESCOLA_${siglaSafe}_JEGDS2026.pdf`);
+      return;
+    }
+
+    const incluirIndice = sumulasEscola.length >= 2;
+    const maxLinhasIndice = 26;
+    const paginasIndice = incluirIndice ? Math.max(1, Math.ceil(sumulasEscola.length / maxLinhasIndice)) : 0;
+
+    if (incluirIndice) {
+      for (let i = 1; i < paginasIndice; i++) {
+        doc.addPage();
+      }
+    }
+
+    const contextosPorPagina: Record<number, string> = {};
+    for (let p = 1; p <= paginasIndice; p++) {
+      contextosPorPagina[p] = `${escola.sigla || escola.nome} • Índice de Súmulas`;
+    }
+
+    const indiceRegistros: {
+      numero: number;
+      modalidade: string;
+      faixa: string;
+      naipe: string;
+      totalAtletas: number;
+      paginaInicial: number;
+    }[] = [];
+
+    sumulasEscola.forEach((sum, idx) => {
+      if (incluirIndice || idx > 0) {
+        doc.addPage();
+      }
+      const pagAntes = doc.getNumberOfPages();
+
+      this.desenharPaginaSumula(
+        doc,
+        sum.modalidade.nome,
+        sum.categoria,
+        sum.sexo,
+        sum.dataJogo,
+        sum.atletasComEscola,
+        { escolaFiltro: escola }
+      );
+
+      const pagDepois = doc.getNumberOfPages();
+      for (let p = pagAntes; p <= pagDepois; p++) {
+        contextosPorPagina[p] = `${escola.sigla || escola.nome} • ${sum.modalidade.nome} (${sum.categoria} - ${sum.sexo})`;
+      }
+
+      indiceRegistros.push({
+        numero: idx + 1,
+        modalidade: sum.modalidade.nome,
+        faixa: formatarFaixaEtaria(sum.categoria),
+        naipe: sum.sexo,
+        totalAtletas: sum.atletasComEscola.length,
+        paginaInicial: pagAntes,
+      });
+    });
+
+    if (incluirIndice) {
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 10;
+      const contentWidth = pageWidth - margin * 2;
+      const dataEmissao = new Date().toLocaleDateString('pt-BR');
+
+      for (let pagIdx = 0; pagIdx < paginasIndice; pagIdx++) {
+        doc.setPage(pagIdx + 1);
+        let y = 10;
+
+        doc.setFillColor(...CORES_JEGD.primaria);
+        doc.roundedRect(margin, y, contentWidth, 24, 1.8, 1.8, 'F');
+        doc.setFillColor(...CORES_JEGD.destaqueOuro);
+        doc.rect(margin, y + 23.1, contentWidth, 0.9, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(
+          ajustarTexto(doc, `JEGDS 2026 • CADERNO DE SÚMULAS — ${escola.nome.toUpperCase()}`, contentWidth - 10),
+          pageWidth / 2,
+          y + 8.5,
+          { align: 'center' }
+        );
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.8);
+        doc.setTextColor(245, 232, 234);
+        doc.text(
+          'PREFEITURA MUNICIPAL DE GONÇALVES DIAS - MA  •  SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED)',
+          pageWidth / 2,
+          y + 14.5,
+          { align: 'center' }
+        );
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(255, 240, 196);
+        doc.text(
+          'ORGANIZAÇÃO: MODALIDADE  →  FAIXA ETÁRIA (MIRIM, INFANTIL, INFANTO, JUNIOR)  →  NAIPE',
+          pageWidth / 2,
+          y + 20.2,
+          { align: 'center' }
+        );
+
+        y += 28;
+
+        if (pagIdx === 0) {
+          const cardW = (contentWidth - 6) / 3;
+          const resumoCards = [
+            { label: 'ATLETAS DA ESCOLA', valor: String(atletasUnicosSet.size) },
+            { label: 'TOTAL DE SÚMULAS', valor: String(sumulasEscola.length) },
+            { label: 'DATA DE EMISSÃO', valor: dataEmissao },
+          ];
+          resumoCards.forEach((card, cIdx) => {
+            const cx = margin + cIdx * (cardW + 3);
+            doc.setFillColor(...CORES_JEGD.fundoCinza);
+            doc.setDrawColor(...CORES_JEGD.borda);
+            doc.setLineWidth(0.22);
+            doc.roundedRect(cx, y, cardW, 13.5, 1.2, 1.2, 'FD');
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6.2);
+            doc.setTextColor(...CORES_JEGD.textoMuted);
+            doc.text(card.label, cx + cardW / 2, y + 4.8, { align: 'center' });
+
+            doc.setFontSize(10.5);
+            doc.setTextColor(...CORES_JEGD.escuro);
+            doc.text(card.valor, cx + cardW / 2, y + 10.8, { align: 'center' });
+          });
+          y += 18;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...CORES_JEGD.escuro);
+        doc.text(
+          pagIdx === 0 ? 'ÍNDICE DE SÚMULAS DA DELEGAÇÃO ESCOLAR' : 'ÍNDICE DE SÚMULAS (CONTINUAÇÃO)',
+          margin,
+          y
+        );
+        y += 3.5;
+
+        const idxCols = [
+          { key: 'num', label: 'Nº', x: margin + 0, w: 10, align: 'center' as const },
+          { key: 'mod', label: 'MODALIDADE', x: margin + 10, w: 54, align: 'left' as const },
+          { key: 'faixa', label: 'FAIXA ETÁRIA', x: margin + 64, w: 54, align: 'left' as const },
+          { key: 'naipe', label: 'NAIPE', x: margin + 118, w: 28, align: 'center' as const },
+          { key: 'atl', label: 'ATLETAS', x: margin + 146, w: 22, align: 'center' as const },
+          { key: 'pag', label: 'PÁG.', x: margin + 168, w: 22, align: 'center' as const },
+        ];
+
+        const thH = 7;
+        doc.setFillColor(...CORES_JEGD.escuro);
+        doc.rect(margin, y, contentWidth, thH, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(255, 255, 255);
+        idxCols.forEach((col, i) => {
+          if (i > 0) {
+            doc.setDrawColor(51, 65, 85);
+            doc.setLineWidth(0.15);
+            doc.line(col.x, y, col.x, y + thH);
+          }
+          if (col.align === 'center') {
+            doc.text(col.label, col.x + col.w / 2, y + 4.7, { align: 'center' });
+          } else {
+            doc.text(col.label, col.x + 2.2, y + 4.7);
+          }
+        });
+        y += thH;
+
+        const sliceInicio = pagIdx * maxLinhasIndice;
+        const itensPagina = indiceRegistros.slice(sliceInicio, sliceInicio + maxLinhasIndice);
+
+        itensPagina.forEach((reg, rIdx) => {
+          const rowH = 7.4;
+          doc.setFillColor(...(rIdx % 2 === 1 ? CORES_JEGD.fundoZebra : [255, 255, 255] as [number, number, number]));
+          doc.rect(margin, y, contentWidth, rowH, 'F');
+          doc.setDrawColor(...CORES_JEGD.bordaSuave);
+          doc.setLineWidth(0.18);
+          doc.rect(margin, y, contentWidth, rowH, 'S');
+          idxCols.forEach((col, i) => {
+            if (i > 0) doc.line(col.x, y, col.x, y + rowH);
+          });
+
+          const midY = y + 4.9;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.8);
+          doc.setTextColor(...CORES_JEGD.grafite);
+          doc.text(reg.numero.toString().padStart(2, '0'), idxCols[0].x + idxCols[0].w / 2, midY, { align: 'center' });
+
+          doc.setTextColor(...CORES_JEGD.escuro);
+          doc.text(ajustarTexto(doc, reg.modalidade.toUpperCase(), idxCols[1].w - 4), idxCols[1].x + 2.2, midY);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+          doc.setTextColor(...CORES_JEGD.grafite);
+          doc.text(ajustarTexto(doc, reg.faixa, idxCols[2].w - 4), idxCols[2].x + 2.2, midY);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.5);
+          doc.text(reg.naipe, idxCols[3].x + idxCols[3].w / 2, midY, { align: 'center' });
+
+          doc.setFontSize(7);
+          doc.setTextColor(...CORES_JEGD.escuro);
+          doc.text(String(reg.totalAtletas), idxCols[4].x + idxCols[4].w / 2, midY, { align: 'center' });
+
+          doc.setTextColor(...CORES_JEGD.primaria);
+          doc.text(`Pág. ${reg.paginaInicial}`, idxCols[5].x + idxCols[5].w / 2, midY, { align: 'center' });
+
+          y += rowH;
+        });
+      }
     }
 
     aplicarRodapePaginado(doc, `JEGDS 2026 • Caderno de Súmulas (${escola.sigla || escola.nome})`, contextosPorPagina);
