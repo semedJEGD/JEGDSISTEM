@@ -123,7 +123,7 @@ export function AbaEventosCompeticao({
 
   const [avisoTitulo, setAvisoTitulo] = useState('');
   const [avisoMensagem, setAvisoMensagem] = useState('');
-  const [avisoTipo, setAvisoTipo] = useState<'CHAMADA' | 'INFORMATIVO' | 'URGENTE'>('CHAMADA');
+  const [avisoTipo, setAvisoTipo] = useState<'CHAMADA' | 'INFORMATIVO' | 'URGENTE' | 'VIDEO'>('CHAMADA');
 
   const carregarDados = useCallback(async () => {
     try {
@@ -1391,32 +1391,68 @@ export function AbaEventosCompeticao({
             <form onSubmit={handleCriarAvisoTelao} className="bg-white border border-[#E2EAE5] rounded-2xl p-5 shadow-2xs space-y-3">
               <h3 className="text-sm font-black text-[#17221D] flex items-center gap-2">
                 <Megaphone className="w-4 h-4 text-[#00A878]" />
-                <span>Chamada de Quadra / Aviso no Telão</span>
+                <span>Chamadas de Quadra & Vinhetas de Vídeo (Mascotes) no Telão</span>
               </h3>
               <input
                 type="text"
                 required
                 value={avisoTitulo}
                 onChange={(e) => setAvisoTitulo(e.target.value)}
-                placeholder="Ex.: CHAMADA DE QUADRA 01"
+                placeholder={avisoTipo === 'VIDEO' ? 'Ex.: Vinheta Mascotes JEGDS 2026' : 'Ex.: CHAMADA DE QUADRA 01'}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold"
               />
-              <textarea
-                required
-                rows={2}
-                value={avisoMensagem}
-                onChange={(e) => setAvisoMensagem(e.target.value)}
-                placeholder="Ex.: Queimada Mirim (F) — Aldenora Araújo × José GD comparecer em 10 minutos!"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium"
-              />
+              {avisoTipo === 'VIDEO' ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    required
+                    value={avisoMensagem}
+                    onChange={(e) => setAvisoMensagem(e.target.value)}
+                    placeholder="Caminho do vídeo (ex.: /VIDEOJEGDS.mp4 ou /videos/mascote.mp4)"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAvisoTitulo('Vinheta Oficial JEGDS 2026');
+                        setAvisoMensagem('/VIDEOJEGDS.mp4');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 cursor-pointer"
+                    >
+                      Usar /VIDEOJEGDS.mp4
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAvisoTitulo('Vinheta Banner JEGDS');
+                        setAvisoMensagem('/SEGUNDOVIDEODOBANNER.mp4');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 cursor-pointer"
+                    >
+                      Usar /SEGUNDOVIDEODOBANNER.mp4
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  required
+                  rows={2}
+                  value={avisoMensagem}
+                  onChange={(e) => setAvisoMensagem(e.target.value)}
+                  placeholder="Ex.: Queimada Mirim (F) — Aldenora Araújo × José GD comparecer em 10 minutos!"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium"
+                />
+              )}
               <div className="flex items-center justify-between gap-2">
                 <select value={avisoTipo} onChange={(e) => setAvisoTipo(e.target.value as any)} className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
-                  <option value="CHAMADA">Chamada de Quadra</option>
-                  <option value="INFORMATIVO">Informativo</option>
-                  <option value="URGENTE">Urgente</option>
+                  <option value="CHAMADA">Chamada de Quadra (Ticker)</option>
+                  <option value="INFORMATIVO">Informativo (Ticker)</option>
+                  <option value="URGENTE">Urgente (Ticker)</option>
+                  <option value="VIDEO">🎬 Vídeo / Vinheta Mascote (Slide Telão)</option>
                 </select>
                 <button type="submit" disabled={salvando} className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black cursor-pointer">
-                  Disparar no Telão
+                  {avisoTipo === 'VIDEO' ? 'Ativar Vídeo no Telão' : 'Disparar no Telão'}
                 </button>
               </div>
             </form>
