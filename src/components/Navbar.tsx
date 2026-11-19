@@ -14,7 +14,8 @@ import {
   X, 
   Home, 
   LogIn,
-  MapPin 
+  MapPin,
+  Trophy
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { Escola, Municipio } from '@/types/jegd';
@@ -58,8 +59,8 @@ export default function Navbar() {
     setMenuMobileAberto(false);
   }, [pathname]);
 
-  // Se estiver na rota do portal, oculta a barra geral para exibir exclusivamente o layout i6 Systems
-  if (pathname === '/portal' || pathname.startsWith('/portal')) {
+  // Oculta a barra geral no portal i6 Systems e no Modo Telão Fullscreen
+  if (pathname === '/portal' || pathname.startsWith('/portal') || pathname.startsWith('/eventos/telao')) {
     return null;
   }
 
@@ -138,6 +139,18 @@ export default function Navbar() {
             >
               <Home className={`w-3.5 h-3.5 ${pathname === homeHref || pathname === '/' ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Início</span>
+            </Link>
+
+            <Link
+              href={`/eventos?m=${munSlug}`}
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                pathname.startsWith('/eventos')
+                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+              }`}
+            >
+              <Trophy className={`w-3.5 h-3.5 ${pathname.startsWith('/eventos') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <span>Eventos do Dia</span>
             </Link>
 
             <Link
@@ -265,6 +278,19 @@ export default function Navbar() {
             >
               <Home className="w-4 h-4 text-emerald-600" aria-hidden="true" />
               <span>Início</span>
+            </Link>
+
+            <Link
+              href={`/eventos?m=${munSlug}`}
+              onClick={() => setMenuMobileAberto(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname.startsWith('/eventos')
+                  ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Trophy className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Eventos do Dia & Ranking</span>
             </Link>
 
             <Link

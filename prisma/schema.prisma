@@ -214,3 +214,136 @@ model Comunicado {
 
   @@index([municipioId])
 }
+
+// ============================================================
+// MÓDULO EVENTOS DO DIA, PORTAL DE NOTÍCIAS & MODO TELÃO
+// ============================================================
+
+model NoticiaEvento {
+  id                String   @id @default(uuid())
+  municipioId       String?
+  titulo            String
+  resumo            String
+  conteudo          String?
+  modalidadeNome    String?
+  categoria         String?
+  horarioOcorrencia String?  // ex: "08:30 • Manhã"
+  local             String?
+  imagemUrl         String?
+  destaqueTelao     Boolean  @default(true)
+  publicado         Boolean  @default(true)
+  autor             String   @default("Coordenação SEMED")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([municipioId])
+}
+
+model CronogramaItem {
+  id              String   @id @default(uuid())
+  municipioId     String?
+  titulo          String
+  descricao       String?
+  etapa           String   @default("1ª Etapa")
+  modalidadeNome  String?
+  categoria       String?
+  local           String?
+  dataEvento      String   // YYYY-MM-DD
+  horarioInicio   String   // HH:mm
+  horarioFim      String?  // HH:mm
+  status          String   @default("PREVISTO") // PREVISTO | EM_ANDAMENTO | CONCLUIDO
+  resumoResultado String?
+  ordem           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([municipioId])
+  @@index([dataEvento])
+}
+
+model PartidaEvento {
+  id               String   @id @default(uuid())
+  municipioId      String?
+  numeroJogo       Int?
+  modalidadeCodigo String
+  modalidadeNome   String
+  categoria        String   // MIRIM | INFANTIL | INFANTO | JUNIOR
+  sexo             String   // MASCULINO | FEMININO
+  fase             String   @default("GRUPOS") // GRUPOS | OITAVAS | QUARTAS | SEMIFINAL | TERCEIRO_LUGAR | FINAL
+  grupo            String?  // ex: "Grupo A"
+  dataEvento       String   // YYYY-MM-DD
+  horario          String   // HH:mm
+  local            String?  // ex: "Quadra 01 — Aldenora Araújo"
+  escolaAId        String
+  escolaANome      String
+  escolaASigla     String?
+  escolaBId        String
+  escolaBNome      String
+  escolaBSigla     String?
+  placarA          Int      @default(0)
+  placarB          Int      @default(0)
+  detalhesPlacar   String?  // ex: "25x21, 25x18" ou "Prorr. 2x1"
+  status           String   @default("AGENDADO") // AGENDADO | AO_VIVO | ENCERRADO | WO
+  woEscolaId       String?
+  vencedorEscolaId String?
+  observacao       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([municipioId])
+  @@index([modalidadeCodigo])
+  @@index([status])
+}
+
+model ArtilhariaEvento {
+  id               String   @id @default(uuid())
+  municipioId      String?
+  atletaId         String?
+  atletaNome       String
+  fotoUrl          String?
+  escolaId         String
+  escolaNome       String
+  escolaSigla      String?
+  modalidadeCodigo String
+  modalidadeNome   String
+  categoria        String   @default("INFANTIL")
+  sexo             String   @default("MASCULINO")
+  gols             Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([municipioId])
+  @@index([modalidadeCodigo])
+}
+
+model MedalhaEvento {
+  id               String   @id @default(uuid())
+  municipioId      String?
+  escolaId         String
+  escolaNome       String
+  escolaSigla      String?
+  modalidadeCodigo String
+  modalidadeNome   String
+  categoria        String   @default("INFANTIL")
+  sexo             String   @default("MASCULINO")
+  prova            String?  // ex: "100m Rasos"
+  tipo             String   // OURO | PRATA | BRONZE
+  atletaNome       String?
+  createdAt        DateTime @default(now())
+
+  @@index([municipioId])
+  @@index([escolaId])
+}
+
+model AvisoTelao {
+  id          String   @id @default(uuid())
+  municipioId String?
+  titulo      String
+  mensagem    String
+  tipo        String   @default("CHAMADA") // CHAMADA | INFORMATIVO | URGENTE
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([municipioId])
+}

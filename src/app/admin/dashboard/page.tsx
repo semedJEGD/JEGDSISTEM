@@ -63,6 +63,7 @@ import { AbaAlertas } from './components/AbaAlertas';
 import { AbaSumulas } from './components/AbaSumulas';
 import { AbaComunicados } from './components/AbaComunicados';
 import { AbaCrachaLogistica } from './components/AbaCrachaLogistica';
+import { AbaEventosCompeticao } from './components/AbaEventosCompeticao';
 import { ModalCadastroAtleta } from '@/app/escola/atletas/components/ModalCadastroAtleta';
 
 export default function AdminDashboardPage() {
@@ -76,7 +77,7 @@ export default function AdminDashboardPage() {
   const [comunicados, setComunicados] = useState<ComunicadoAviso[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'PAINEL_ALUNOS' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'AVISOS'>('ESCOLAS_LOTE');
+  const [abaAtiva, setAbaAtiva] = useState<'ESCOLAS_LOTE' | 'PAINEL_ALUNOS' | 'HOMOLOGACAO' | 'ALERTAS' | 'LISTAS_CHAMADA' | 'CRACHA_LOGISTICA' | 'EVENTOS_DIA' | 'AVISOS'>('ESCOLAS_LOTE');
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState<string>('');
   const [filtroStatus, setFiltroStatus] = useState<string>('TODOS');
   const [subAbaHomologacao, setSubAbaHomologacao] = useState<'EQUIPES' | 'ALERTAS'>('EQUIPES');
@@ -1124,6 +1125,18 @@ export default function AdminDashboardPage() {
         </button>
 
         <button
+          onClick={() => setAbaAtiva('EVENTOS_DIA')}
+          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+            abaAtiva === 'EVENTOS_DIA'
+              ? 'bg-[#00A878] text-white shadow-2xs'
+              : 'text-[#087A5B] bg-[#E8F7F1]/70 hover:bg-[#E8F7F1]'
+          }`}
+        >
+          <Trophy className="w-4 h-4" />
+          <span>Eventos do Dia & Telão</span>
+        </button>
+
+        <button
           onClick={() => setAbaAtiva('AVISOS')}
           className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
             abaAtiva === 'AVISOS'
@@ -1217,6 +1230,15 @@ export default function AdminDashboardPage() {
         <AbaCrachaLogistica
           onGerarTodosCrachas={handleGerarTodosCrachas}
           gerandoPdf={gerandoPdf}
+        />
+      )}
+
+      {/* ABA: EVENTOS DO DIA, PORTAL DE NOTÍCIAS & TELÃO */}
+      {abaAtiva === 'EVENTOS_DIA' && (
+        <AbaEventosCompeticao
+          municipioId={municipioAtual?.id}
+          escolas={escolas}
+          atletas={atletas}
         />
       )}
 

@@ -40,7 +40,7 @@ export default function Footer() {
   const ufCidade = municipioAtual?.uf || 'MA';
   const nomeEvento = municipioAtual?.nomeEvento || `Jogos Escolares de ${nomeCidade}`;
 
-  if (pathname === '/portal' || pathname?.startsWith('/portal')) {
+  if (pathname === '/portal' || pathname?.startsWith('/portal') || pathname?.startsWith('/eventos/telao')) {
     return null;
   }
 
