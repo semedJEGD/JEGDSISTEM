@@ -82,6 +82,7 @@ export default function TelaoEventosPage() {
   const [relogio, setRelogio] = useState('');
   const [qrPublicoUrl, setQrPublicoUrl] = useState('');
   const [autorizadoSemed, setAutorizadoSemed] = useState<boolean | null>(null);
+  const [imagensQuebradas, setImagensQuebradas] = useState<Record<string, boolean>>({});
 
   // Transição WHOOSH com logo JEGDS
   const [whooshAtivo, setWhooshAtivo] = useState(false);
@@ -105,7 +106,7 @@ export default function TelaoEventosPage() {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://jegdsistem-five.vercel.app';
     QRCode.toDataURL(`${origin}/eventos`, { margin: 1, width: 320, color: { dark: '#17221D', light: '#FFFFFF' } })
       .then(setQrPublicoUrl)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -133,13 +134,18 @@ export default function TelaoEventosPage() {
   }, [carregar]);
 
   // =========================================================================
-  // MOTOR EDITORIAL DO TELÃO: ROTEIRO INTERCALADO POR CAPÍTULOS DE MODALIDADE
-  // Ritmo pensado para prender a atenção sem cansar:
-  //   Pulso (Ao Vivo / Próximos) -> Notícia -> Capítulo Modalidade 1 (Grupos + Jogos -> Artilharia)
-  //   -> Vinheta Mascote/Vídeo (se houver) -> Capítulo Modalidade 2 -> Cronograma -> Pódio Medalhas -> QR Code
+  // MOTOR EDITORIAL DO TELÃO (ZERO REPETIÇÃO + ROTEIRO EQUILIBRADO)
+  // 1. Destaque Principal (1ª Notícia com cartaz/foto — sem duplicar título no header)
+  // 2. Pulso de Quadra (Ao Vivo OU Próximos Confrontos em destaque)
+  // 3. Capítulos por Modalidade (APENAS se tiver Tabela de Grupos ou jogos ainda não exibidos)
+  // 4. Vídeos / Vinhetas dos Mascotes + Demais Notícias (máx 2 extras, sem repetir)
+  // 5. Cronograma Completo do Dia (até 6 horários numa grade limpa)
+  // 6. Pódio de Medalhas (quando houver)
+  // 7. QR Code Portal Público
   // =========================================================================
   const slides = useMemo<SlideDef[]>(() => {
     const lista: SlideDef[] = [];
+    const partidasJaExibidas = new Set<string>();
 
     const filtrarPorMod = (modCodigo?: string | null) => {
       if (modalidadesSelecionadas.length === 0) return true;
@@ -151,9 +157,22 @@ export default function TelaoEventosPage() {
     const noticiasTelao = bundle.noticias.filter((n) => n.destaqueTelao !== false);
     const videosVinheta = bundle.avisos.filter((a) => a.ativo && a.tipo === 'VIDEO');
 
-    // 1. PULSO DO MOMENTO: AO VIVO (máx 2 jogos grandes) ou PRÓXIMOS 3 JOGOS
+    // 1. DESTAQUE PRINCIPAL (Notícia #1 — ex: Cartaz da Abertura)
+    if (noticiasTelao.length > 0) {
+      const n0 = noticiasTelao[0];
+      lista.push({
+        id: `noticia-${n0.id}`,
+        tag: 'DESTAQUE OFICIAL',
+        titulo: n0.modalidadeNome ? `Boletim • ${n0.modalidadeNome}` : `Cobertura Oficial • ${siglaEvento}`,
+        tipo: 'NOTICIA',
+        payload: n0,
+      });
+    }
+
+    // 2. PULSO DO MOMENTO: AO VIVO (máx 2 jogos grandes) ou PRÓXIMOS JOGOS (até 4)
     const aoVivo = partidasFiltradas.filter((p) => p.status === 'AO_VIVO');
     if (aoVivo.length > 0) {
+      aoVivo.forEach((p) => partidasJaExibidas.add(p.id));
       for (let i = 0; i < aoVivo.length; i += 2) {
         lista.push({
           id: `ao-vivo-${i}`,
@@ -165,37 +184,25 @@ export default function TelaoEventosPage() {
         });
       }
     } else {
-      const proximos = partidasFiltradas.filter((p) => p.status === 'AGENDADO').slice(0, 3);
+      const proximos = partidasFiltradas.filter((p) => p.status === 'AGENDADO').slice(0, 4);
       if (proximos.length > 0) {
+        proximos.forEach((p) => partidasJaExibidas.add(p.id));
         lista.push({
           id: 'proximos-jogos',
-          tag: 'A SEGUIR EM QUADRA',
-          titulo: 'Próximos Confrontos do Dia',
+          tag: proximos.length === 1 ? 'CONFRONTO EM DESTAQUE' : 'A SEGUIR EM QUADRA',
+          titulo: proximos.length === 1 ? proximos[0].modalidadeNome || 'Próximo Jogo' : 'Próximos Confrontos do Dia',
           tipo: 'PROXIMOS',
           payload: proximos,
         });
       }
     }
 
-    // 2. RESPIRO EMOCIONAL: 1ª Notícia / Destaque do Dia
-    if (noticiasTelao.length > 0) {
-      const n0 = noticiasTelao[0];
-      lista.push({
-        id: `noticia-${n0.id}`,
-        tag: 'BOLETIM & DESTAQUE DO DIA',
-        titulo: n0.titulo,
-        tipo: 'NOTICIA',
-        payload: n0,
-      });
-    }
-
-    // 3. CAPÍTULOS POR MODALIDADE (Modalidade -> Cards de Grupos + Placares daquela modalidade -> Artilharia dela)
+    // 3. CAPÍTULOS POR MODALIDADE (SEM REPETIR PARTIDAS ISOLADAS JÁ MOSTRADAS ACIMA)
     const classificacoes = calcularClassificacaoPorChave(partidasFiltradas);
     const artilhariaAgrupada = agruparArtilhariaPorModalidade(
       bundle.artilharia.filter((a) => filtrarPorMod(a.modalidadeCodigo))
     );
 
-    // Descobrir todas as modalidades ativas (que têm partidas ou artilharia)
     const modsAtivasMap = new Map<string, string>();
     partidasFiltradas.forEach((p) => modsAtivasMap.set(p.modalidadeCodigo, p.modalidadeNome));
     artilhariaAgrupada.forEach((a) => modsAtivasMap.set(a.modalidadeCodigo, a.modalidadeNome));
@@ -210,43 +217,43 @@ export default function TelaoEventosPage() {
         .filter((p) => p.status === 'ENCERRADO' || p.status === 'WO' || p.status === 'AO_VIVO')
         .slice(-3)
         .reverse();
-      const proximosMod = partidasDaMod.filter((p) => p.status === 'AGENDADO').slice(0, 3);
+      const proximosModNovos = partidasDaMod
+        .filter((p) => p.status === 'AGENDADO' && !partidasJaExibidas.has(p.id))
+        .slice(0, 3);
 
-      // Slide A da Modalidade: Máximo 2 cards de grupo por slide + jogos da modalidade à direita
+      // Só cria capítulo se houver tabela de grupos OU placares encerrados OU jogos novos não exibidos
       if (gruposDaMod.length > 0) {
         for (let gIdx = 0; gIdx < gruposDaMod.length; gIdx += 2) {
           const fatiaGrupos = gruposDaMod.slice(gIdx, gIdx + 2);
           const parteTxt = gruposDaMod.length > 2 ? ` • Parte ${Math.floor(gIdx / 2) + 1}/${Math.ceil(gruposDaMod.length / 2)}` : '';
           lista.push({
             id: `cap-${modCodigo}-g-${gIdx}`,
-            tag: `MODALIDADE EM FOCO • ${modNome.toUpperCase()}${parteTxt}`,
+            tag: `CLASSIFICAÇÃO • ${modNome.toUpperCase()}${parteTxt}`,
             titulo: `${modNome} — Grupos & Confrontos`,
             tipo: 'CAPITULO_MODALIDADE',
             payload: {
               modNome,
               grupos: fatiaGrupos,
               ultimos: ultimosMod,
-              proximos: proximosMod,
+              proximos: partidasDaMod.filter((p) => p.status === 'AGENDADO').slice(0, 3),
             },
           });
         }
-      } else if (partidasDaMod.length > 0) {
-        // Modalidade só com mata-mata ou jogos avulsos
+      } else if (ultimosMod.length > 0 || proximosModNovos.length > 0) {
         lista.push({
           id: `cap-${modCodigo}-jogos`,
-          tag: `MODALIDADE EM FOCO • ${modNome.toUpperCase()}`,
-          titulo: `${modNome} — Placares & Próximos Jogos`,
+          tag: `RESULTADOS • ${modNome.toUpperCase()}`,
+          titulo: `${modNome} — Placares & Agenda`,
           tipo: 'CAPITULO_MODALIDADE',
           payload: {
             modNome,
             grupos: [],
             ultimos: ultimosMod,
-            proximos: proximosMod,
+            proximos: proximosModNovos,
           },
         });
       }
 
-      // Slide B da Modalidade: Artilharia dela (se houver!)
       const artDaMod = artilhariaAgrupada.find((a) => a.modalidadeCodigo === modCodigo);
       if (artDaMod && artDaMod.ranking.length > 0) {
         lista.push({
@@ -258,7 +265,6 @@ export default function TelaoEventosPage() {
         });
       }
 
-      // Intercalar Vinheta de Vídeo dos Mascotes ou próxima Notícia entre capítulos para manter o ritmo leve!
       if (videoCursor < videosVinheta.length) {
         const vid = videosVinheta[videoCursor++];
         lista.push({
@@ -268,21 +274,12 @@ export default function TelaoEventosPage() {
           tipo: 'VIDEO_VINHETA',
           payload: vid,
         });
-      } else if (noticiaCursor < noticiasTelao.length) {
-        const proxNot = noticiasTelao[noticiaCursor++];
-        lista.push({
-          id: `noticia-${proxNot.id}`,
-          tag: 'BOLETIM DO DIA',
-          titulo: proxNot.titulo,
-          tipo: 'NOTICIA',
-          payload: proxNot,
-        });
       }
     });
 
-    // Se sobraram vídeos de vinheta e não houve capítulos, exibe pelo menos 1 vídeo no ciclo
-    if (videoCursor === 0 && videosVinheta.length > 0) {
-      const vid = videosVinheta[0];
+    // Vinhetas de vídeo restantes (se houver)
+    while (videoCursor < videosVinheta.length && videoCursor < 2) {
+      const vid = videosVinheta[videoCursor++];
       lista.push({
         id: `video-${vid.id}`,
         tag: 'VINHETA OFICIAL JEGDS',
@@ -292,7 +289,19 @@ export default function TelaoEventosPage() {
       });
     }
 
-    // 4. RESPIRO DE SERVIÇO: Cronograma (máx 4 blocos limpos para leitura instantânea)
+    // Demais notícias relevantes (máx 1 extra para manter o ciclo ágil e sem cansar)
+    if (noticiaCursor < noticiasTelao.length) {
+      const proxNot = noticiasTelao[noticiaCursor++];
+      lista.push({
+        id: `noticia-${proxNot.id}`,
+        tag: 'BOLETIM DO DIA',
+        titulo: proxNot.modalidadeNome ? `Boletim • ${proxNot.modalidadeNome}` : `Notícias • ${siglaEvento}`,
+        tipo: 'NOTICIA',
+        payload: proxNot,
+      });
+    }
+
+    // 4. CRONOGRAMA OFICIAL (até 6 itens organizados numa grade limpa sem cortar!)
     const cron =
       bundle.cronograma.length > 0
         ? bundle.cronograma
@@ -300,12 +309,12 @@ export default function TelaoEventosPage() {
     lista.push({
       id: 'cronograma',
       tag: 'CRONOGRAMA OFICIAL',
-      titulo: 'O Que Já Ocorreu & Próximos Eventos',
+      titulo: 'Programação do Dia',
       tipo: 'CRONOGRAMA',
-      payload: cron.slice(0, 4),
+      payload: cron.slice(0, 6),
     });
 
-    // 5. GRAND FINALE: Pódio Olímpico Top 3 + Quadro de Medalhas
+    // 5. PÓDIO OLÍMPICO & MEDALHAS (só aparece quando já houver medalhas)
     const medalhas = calcularQuadroMedalhas(bundle.medalhas);
     if (medalhas.length > 0) {
       lista.push({
@@ -386,9 +395,9 @@ export default function TelaoEventosPage() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+      document.documentElement.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => { });
     } else {
-      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => { });
     }
   };
 
@@ -447,9 +456,8 @@ export default function TelaoEventosPage() {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className={`fixed inset-0 z-[100] flex flex-col overflow-hidden select-none transition-colors duration-300 ${
-        temaEscuro ? 'bg-[#0B1210] text-white' : 'bg-[#F5F8F6] text-[#17221D]'
-      }`}
+      className={`fixed inset-0 z-[100] flex flex-col overflow-hidden select-none transition-colors duration-300 ${temaEscuro ? 'bg-[#0B1210] text-white' : 'bg-[#F5F8F6] text-[#17221D]'
+        }`}
     >
       <style jsx global>{`
         @keyframes jegdsWhooshRibbon1 {
@@ -507,24 +515,23 @@ export default function TelaoEventosPage() {
 
       {/* BARRA SUPERIOR BROADCAST */}
       <header
-        className={`relative px-6 sm:px-10 py-3.5 border-b flex items-center justify-between gap-4 shrink-0 ${
-          temaEscuro ? 'bg-[#111B18] border-white/10' : 'bg-white border-[#E2EAE5]'
-        }`}
+        className={`relative px-6 sm:px-10 py-2.5 border-b flex items-center justify-between gap-4 shrink-0 ${temaEscuro ? 'bg-[#111B18] border-white/10' : 'bg-white border-[#E2EAE5]'
+          }`}
       >
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 p-1 shadow-xs shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 p-1 shadow-xs shrink-0">
             <img src={logoUrl} alt={siglaEvento} className="w-full h-full object-contain" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-3 py-0.5 rounded-md bg-[#8B1D2C] text-white text-xs font-black uppercase tracking-wider">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-md bg-[#8B1D2C] text-white text-[11px] font-black uppercase tracking-wider">
                 {slideAtual?.tag}
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#00A878]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A878]">
                 {siglaEvento} • SEMED
               </span>
             </div>
-            <h1 className="text-xl sm:text-3xl font-black tracking-tight truncate mt-0.5">
+            <h1 className="text-lg sm:text-2xl font-black tracking-tight truncate mt-0.5">
               {slideAtual?.titulo}
             </h1>
           </div>
@@ -536,10 +543,10 @@ export default function TelaoEventosPage() {
               <button
                 key={s.id}
                 type="button"
+                title={s.titulo}
                 onClick={() => irParaSlideComWhoosh(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${
-                  idx === slideIdx ? 'w-8 bg-[#00A878]' : temaEscuro ? 'w-2 bg-white/25' : 'w-2 bg-slate-300'
-                }`}
+                className={`h-2 rounded-full transition-all cursor-pointer ${idx === (slideIdx % slides.length) ? 'w-8 bg-[#00A878]' : temaEscuro ? 'w-2 bg-white/25' : 'w-2 bg-slate-300'
+                  }`}
               />
             ))}
           </div>
@@ -565,11 +572,11 @@ export default function TelaoEventosPage() {
         )}
       </header>
 
-      {/* PALCO PRINCIPAL */}
-      <main key={slideAtual?.id} className="flex-1 overflow-hidden px-6 sm:px-12 py-5 sm:py-7 flex items-center justify-center anim-slide-enter">
+      {/* PALCO PRINCIPAL (100% CONTIDO — NUNCA CORTA TOPO OU BASE EM 720p/1080p) */}
+      <main key={slideAtual?.id} className="flex-1 min-h-0 overflow-hidden px-6 sm:px-10 py-4 sm:py-5 flex items-center justify-center anim-slide-enter">
         {/* SLIDE: VÍDEO VINHETA / MASCOTES */}
         {slideAtual?.tipo === 'VIDEO_VINHETA' && (
-          <div className="w-full max-w-6xl h-full max-h-[76vh] rounded-3xl overflow-hidden border-4 border-[#00A878]/50 shadow-2xl bg-black relative flex items-center justify-center">
+          <div className="w-full max-w-6xl h-full max-h-full rounded-3xl overflow-hidden border-4 border-[#00A878]/50 shadow-2xl bg-black relative flex items-center justify-center">
             <video
               src={slideAtual.payload.mensagem}
               autoPlay
@@ -585,39 +592,61 @@ export default function TelaoEventosPage() {
           </div>
         )}
 
-        {/* SLIDE: NOTÍCIA / BOLETIM DO DIA */}
-        {slideAtual?.tipo === 'NOTICIA' && (
-          <div className={`w-full max-w-6xl rounded-3xl overflow-hidden border shadow-lg grid grid-cols-1 ${slideAtual.payload.imagemUrl ? 'lg:grid-cols-12' : ''} ${temaEscuro ? 'bg-[#15221E] border-white/10' : 'bg-white border-[#E2EAE5]'}`}>
-            {slideAtual.payload.imagemUrl && (
-              <div className="lg:col-span-6 h-72 lg:h-[480px] bg-slate-200 overflow-hidden">
-                <img src={slideAtual.payload.imagemUrl} alt={slideAtual.payload.titulo} className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className={`${slideAtual.payload.imagemUrl ? 'lg:col-span-6' : ''} p-8 sm:p-12 flex flex-col justify-center space-y-5`}>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="px-3.5 py-1 rounded-full bg-[#00A878] text-white text-xs sm:text-sm font-black uppercase">
-                  {slideAtual.payload.modalidadeNome || 'Boletim Oficial'}
-                </span>
-                {slideAtual.payload.horarioOcorrencia && (
-                  <span className={`text-sm font-bold flex items-center gap-1.5 ${temaEscuro ? 'text-amber-300' : 'text-[#8B1D2C]'}`}>
-                    <Clock className="w-4 h-4" /> {slideAtual.payload.horarioOcorrencia}
+        {/* SLIDE: NOTÍCIA / BOLETIM DO DIA (CARTAZ INTEIRO COM object-contain + TEXTO SEM CORTE) */}
+        {slideAtual?.tipo === 'NOTICIA' && (() => {
+          const temImagemValida = Boolean(slideAtual.payload.imagemUrl && !imagensQuebradas[slideAtual.payload.id]);
+          return (
+            <div
+              className={`w-full max-w-6xl h-full max-h-full rounded-3xl overflow-hidden border shadow-lg grid grid-cols-1 ${
+                temImagemValida ? 'lg:grid-cols-12' : ''
+              } ${temaEscuro ? 'bg-[#15221E] border-white/10' : 'bg-white border-[#E2EAE5]'}`}
+            >
+              {temImagemValida && (
+                <div
+                  className={`lg:col-span-5 h-full min-h-0 p-3 sm:p-4 flex items-center justify-center overflow-hidden ${
+                    temaEscuro ? 'bg-black/30' : 'bg-[#F2F6F4]'
+                  }`}
+                >
+                  <img
+                    src={slideAtual.payload.imagemUrl}
+                    alt={slideAtual.payload.titulo}
+                    onError={() =>
+                      setImagensQuebradas((prev) => ({ ...prev, [slideAtual.payload.id]: true }))
+                    }
+                    className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl shadow-md"
+                  />
+                </div>
+              )}
+              <div
+                className={`${
+                  temImagemValida ? 'lg:col-span-7' : 'max-w-4xl mx-auto'
+                } h-full min-h-0 p-6 sm:p-8 xl:p-10 flex flex-col justify-center gap-3.5 overflow-hidden`}
+              >
+                <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+                  <span className="px-3 py-1 rounded-full bg-[#00A878] text-white text-xs font-black uppercase">
+                    {slideAtual.payload.modalidadeNome || 'Boletim Oficial'}
                   </span>
+                  {slideAtual.payload.horarioOcorrencia && (
+                    <span className={`text-xs sm:text-sm font-bold flex items-center gap-1.5 ${temaEscuro ? 'text-amber-300' : 'text-[#8B1D2C]'}`}>
+                      <Clock className="w-4 h-4" /> {slideAtual.payload.horarioOcorrencia}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-2xl sm:text-3xl xl:text-4xl font-black leading-tight tracking-tight line-clamp-3 shrink-0">
+                  {slideAtual.payload.titulo}
+                </h2>
+                <p className={`text-sm sm:text-base xl:text-xl leading-relaxed line-clamp-6 ${temaEscuro ? 'text-slate-200' : 'text-[#374151]'}`}>
+                  {slideAtual.payload.resumo}
+                </p>
+                {slideAtual.payload.local && (
+                  <p className={`text-xs sm:text-sm font-bold flex items-center gap-2 pt-1 shrink-0 ${temaEscuro ? 'text-emerald-300' : 'text-[#087A5B]'}`}>
+                    <MapPin className="w-4 h-4 shrink-0" /> {slideAtual.payload.local}
+                  </p>
                 )}
               </div>
-              <h2 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
-                {slideAtual.payload.titulo}
-              </h2>
-              <p className={`text-lg sm:text-2xl leading-relaxed ${temaEscuro ? 'text-slate-200' : 'text-[#374151]'}`}>
-                {slideAtual.payload.resumo}
-              </p>
-              {slideAtual.payload.local && (
-                <p className={`text-sm font-bold flex items-center gap-2 pt-2 ${temaEscuro ? 'text-emerald-300' : 'text-[#087A5B]'}`}>
-                  <MapPin className="w-4 h-4" /> {slideAtual.payload.local}
-                </p>
-              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* SLIDE: JOGOS AO VIVO (MÁX 2 GIGANTES) */}
         {slideAtual?.tipo === 'AO_VIVO' && (
@@ -646,30 +675,85 @@ export default function TelaoEventosPage() {
           </div>
         )}
 
-        {/* SLIDE: PRÓXIMOS JOGOS (A SEGUIR EM QUADRA) */}
+        {/* SLIDE: PRÓXIMOS JOGOS (HERO GRANDIOSO QUANDO FOR 1 CONFRONTO, OU LISTA LIMPA ATÉ 4) */}
         {slideAtual?.tipo === 'PROXIMOS' && (
-          <div className="w-full max-w-5xl space-y-5">
-            {slideAtual.payload.map((p: PartidaEventoItem) => (
-              <div key={p.id} className={`rounded-2xl px-8 py-6 border-l-8 border-l-[#00A878] border shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 ${temaEscuro ? 'bg-[#15221E] border-white/10' : 'bg-white border-[#E2EAE5]'}`}>
-                <div className="flex items-center gap-5">
-                  <div className="px-4 py-2 rounded-xl bg-[#00A878] text-white text-2xl font-black font-mono shrink-0">
-                    {p.horario}
+          slideAtual.payload.length === 1 ? (() => {
+            const p: PartidaEventoItem = slideAtual.payload[0];
+            return (
+              <div
+                className={`w-full max-w-5xl rounded-3xl p-8 sm:p-12 border-t-8 border-t-[#00A878] border shadow-xl flex flex-col items-center text-center gap-6 ${
+                  temaEscuro ? 'bg-[#15221E] border-white/10' : 'bg-white border-[#E2EAE5]'
+                }`}
+              >
+                <div className="flex items-center gap-3 flex-wrap justify-center">
+                  <span className="px-4 py-1.5 rounded-full bg-[#8B1D2C] text-white text-xs sm:text-sm font-black uppercase tracking-wider">
+                    {p.modalidadeNome} • {p.grupo || FASES_LABEL[p.fase] || p.fase}
+                  </span>
+                  <span className="px-4 py-1.5 rounded-full bg-[#00A878] text-white text-sm sm:text-base font-black font-mono flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" /> {formatarDataBR(p.dataEvento)} às {p.horario}
+                  </span>
+                </div>
+
+                <div className="w-full grid grid-cols-1 md:grid-cols-7 items-center gap-4 py-4">
+                  <div className="md:col-span-3 space-y-1">
+                    <p className="text-3xl sm:text-5xl font-black tracking-tight text-[#087A5B]">
+                      {p.escolaASigla || p.escolaANome}
+                    </p>
+                    {p.escolaASigla && p.escolaANome !== p.escolaASigla && (
+                      <p className={`text-xs sm:text-sm font-bold ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
+                        {p.escolaANome}
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-xs font-black uppercase text-[#8B1D2C] tracking-wider">
-                      {p.modalidadeNome} • {p.categoria} ({p.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) • {p.grupo || FASES_LABEL[p.fase] || p.fase}
+
+                  <div className="md:col-span-1 flex items-center justify-center">
+                    <span className="w-16 h-16 rounded-2xl bg-[#8B1D2C]/10 border-2 border-[#8B1D2C]/30 text-[#8B1D2C] text-3xl font-black flex items-center justify-center">
+                      ×
                     </span>
-                    <h3 className="text-2xl sm:text-3xl font-black mt-0.5">
-                      {p.escolaASigla || p.escolaANome} <span className="text-[#00A878] mx-2">×</span> {p.escolaBSigla || p.escolaBNome}
-                    </h3>
+                  </div>
+
+                  <div className="md:col-span-3 space-y-1">
+                    <p className="text-3xl sm:text-5xl font-black tracking-tight text-[#8B1D2C]">
+                      {p.escolaBSigla || p.escolaBNome}
+                    </p>
+                    {p.escolaBSigla && p.escolaBNome !== p.escolaBSigla && (
+                      <p className={`text-xs sm:text-sm font-bold ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
+                        {p.escolaBNome}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className={`text-sm font-bold flex items-center gap-1.5 shrink-0 ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
-                  <MapPin className="w-4 h-4 text-[#00A878]" /> {p.local || 'Quadra Oficial'}
+
+                <div className={`px-5 py-2.5 rounded-2xl text-sm sm:text-base font-bold flex items-center gap-2 ${temaEscuro ? 'bg-white/5 text-slate-200' : 'bg-[#F7F9F8] text-slate-600'}`}>
+                  <MapPin className="w-5 h-5 text-[#00A878]" />
+                  <span>{p.local || 'Quadra Oficial'}</span>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })() : (
+            <div className="w-full max-w-5xl max-h-full space-y-3.5 overflow-hidden">
+              {slideAtual.payload.map((p: PartidaEventoItem) => (
+                <div key={p.id} className={`rounded-2xl px-6 py-4 border-l-8 border-l-[#00A878] border shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 ${temaEscuro ? 'bg-[#15221E] border-white/10' : 'bg-white border-[#E2EAE5]'}`}>
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="px-3.5 py-1.5 rounded-xl bg-[#00A878] text-white text-xl font-black font-mono shrink-0">
+                      {p.horario}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs font-black uppercase text-[#8B1D2C] tracking-wider block truncate">
+                        {p.modalidadeNome} • {p.categoria} ({p.sexo === 'FEMININO' ? 'Fem' : 'Masc'}) • {p.grupo || FASES_LABEL[p.fase] || p.fase}
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black mt-0.5 truncate">
+                        {p.escolaASigla || p.escolaANome} <span className="text-[#00A878] mx-2">×</span> {p.escolaBSigla || p.escolaBNome}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className={`text-xs sm:text-sm font-bold flex items-center gap-1.5 shrink-0 ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <MapPin className="w-4 h-4 text-[#00A878]" /> {p.local || 'Quadra Oficial'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {/* SLIDE: CAPÍTULO POR MODALIDADE (CARDS DE GRUPO À ESQUERDA + JOGOS DA MODALIDADE À DIREITA) */}
@@ -761,15 +845,14 @@ export default function TelaoEventosPage() {
             {slideAtual.payload.ranking.slice(0, 6).map((art: any, idx: number) => (
               <div
                 key={art.id}
-                className={`rounded-2xl p-5 border flex items-center justify-between gap-4 shadow-sm ${
-                  idx === 0
-                    ? temaEscuro
-                      ? 'bg-amber-950/30 border-amber-400/60'
-                      : 'bg-amber-50/70 border-amber-300'
-                    : temaEscuro
+                className={`rounded-2xl p-5 border flex items-center justify-between gap-4 shadow-sm ${idx === 0
+                  ? temaEscuro
+                    ? 'bg-amber-950/30 border-amber-400/60'
+                    : 'bg-amber-50/70 border-amber-300'
+                  : temaEscuro
                     ? 'bg-[#15221E] border-white/10'
                     : 'bg-white border-[#E2EAE5]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <span className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl font-black shrink-0 ${idx === 0 ? 'bg-amber-400 text-amber-950' : 'bg-[#00A878] text-white'}`}>
@@ -798,51 +881,56 @@ export default function TelaoEventosPage() {
           </div>
         )}
 
-        {/* SLIDE: CRONOGRAMA (MÁX 4 CARDS LIMPOS) */}
+        {/* SLIDE: CRONOGRAMA (ATÉ 6 CARDS COMPACTOS SEM CORTAR) */}
         {slideAtual?.tipo === 'CRONOGRAMA' && (
-          <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            className={`w-full max-w-6xl max-h-full grid grid-cols-1 md:grid-cols-2 ${
+              slideAtual.payload.length > 4 ? 'lg:grid-cols-3 gap-4' : 'gap-5'
+            }`}
+          >
             {slideAtual.payload.map((item: any) => (
               <div
                 key={item.id}
-                className={`rounded-2xl p-6 border-l-8 border shadow-sm space-y-2.5 ${
-                  item.status === 'EM_ANDAMENTO'
-                    ? temaEscuro
-                      ? 'bg-rose-950/40 border-rose-500/40 border-l-rose-500'
-                      : 'bg-rose-50 border-rose-200 border-l-rose-600'
-                    : item.status === 'CONCLUIDO'
+                className={`rounded-2xl p-4 sm:p-5 border-l-8 border shadow-sm space-y-2 flex flex-col justify-between ${item.status === 'EM_ANDAMENTO'
+                  ? temaEscuro
+                    ? 'bg-rose-950/40 border-rose-500/40 border-l-rose-500'
+                    : 'bg-rose-50 border-rose-200 border-l-rose-600'
+                  : item.status === 'CONCLUIDO'
                     ? temaEscuro
                       ? 'bg-emerald-950/40 border-emerald-500/30 border-l-[#00A878]'
                       : 'bg-white border-[#E2EAE5] border-l-[#00A878]'
                     : temaEscuro
-                    ? 'bg-[#15221E] border-white/10 border-l-amber-400'
-                    : 'bg-white border-[#E2EAE5] border-l-amber-500'
-                }`}
+                      ? 'bg-[#15221E] border-white/10 border-l-amber-400'
+                      : 'bg-white border-[#E2EAE5] border-l-amber-500'
+                  }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-black text-[#00A878]">
-                    {formatarDataBR(item.dataEvento)} • {item.horarioInicio}
-                  </span>
-                  <span
-                    className={`px-3 py-0.5 rounded-full text-xs font-black uppercase ${
-                      item.status === 'EM_ANDAMENTO'
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm font-black text-[#00A878] font-mono">
+                      {item.horarioInicio} • {formatarDataBR(item.dataEvento)}
+                    </span>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 ${item.status === 'EM_ANDAMENTO'
                         ? 'bg-rose-600 text-white'
                         : item.status === 'CONCLUIDO'
-                        ? 'bg-[#00A878] text-white'
-                        : 'bg-amber-100 text-amber-900'
-                    }`}
-                  >
-                    {item.status === 'EM_ANDAMENTO' ? 'Agora' : item.status === 'CONCLUIDO' ? 'Já Ocorreu' : 'A Seguir'}
-                  </span>
+                          ? 'bg-[#00A878] text-white'
+                          : 'bg-amber-100 text-amber-900'
+                        }`}
+                    >
+                      {item.status === 'EM_ANDAMENTO' ? 'Agora' : item.status === 'CONCLUIDO' ? 'Concluído' : 'Previsto'}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black leading-snug line-clamp-2">{item.titulo}</h3>
+                  {(item.resumoResultado || item.descricao) && (
+                    <p className={`text-xs sm:text-sm leading-relaxed line-clamp-2 ${temaEscuro ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {item.resumoResultado || item.descricao}
+                    </p>
+                  )}
                 </div>
-                <h3 className="text-2xl font-black leading-snug">{item.titulo}</h3>
                 {item.local && (
-                  <p className={`text-sm font-bold flex items-center gap-1.5 ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
-                    <MapPin className="w-4 h-4 text-[#00A878]" /> {item.local}
-                  </p>
-                )}
-                {(item.resumoResultado || item.descricao) && (
-                  <p className={`text-base leading-relaxed line-clamp-2 ${temaEscuro ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {item.resumoResultado || item.descricao}
+                  <p className={`text-xs font-bold flex items-center gap-1.5 pt-1 truncate ${temaEscuro ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <MapPin className="w-3.5 h-3.5 text-[#00A878] shrink-0" />
+                    <span className="truncate">{item.local}</span>
                   </p>
                 )}
               </div>
@@ -994,11 +1082,10 @@ export default function TelaoEventosPage() {
                       ativo ? prev.filter((x) => x !== m.codigo) : [...prev, m.codigo]
                     )
                   }
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border ${
-                    ativo
-                      ? 'bg-[#00A878] text-white border-[#00A878]'
-                      : 'bg-white/10 text-slate-200 border-white/15 hover:bg-white/20'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border ${ativo
+                    ? 'bg-[#00A878] text-white border-[#00A878]'
+                    : 'bg-white/10 text-slate-200 border-white/15 hover:bg-white/20'
+                    }`}
                 >
                   {m.nome}
                 </button>
@@ -1010,9 +1097,8 @@ export default function TelaoEventosPage() {
 
       {/* BARRA FLUTUANTE DE CONTROLES */}
       <div
-        className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#17221D]/92 text-white backdrop-blur-md shadow-2xl border border-white/15 transition-opacity duration-300 ${
-          mostrarControles ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed bottom-16 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#17221D]/92 text-white backdrop-blur-md shadow-2xl border border-white/15 transition-opacity duration-300 ${mostrarControles ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
       >
         <Link href="/eventos" className="p-2 rounded-xl hover:bg-white/10" title="Voltar ao Portal">
           <ArrowLeft className="w-4 h-4" />
@@ -1036,9 +1122,8 @@ export default function TelaoEventosPage() {
         <button
           type="button"
           onClick={() => setMostrarFiltroMods((v) => !v)}
-          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
-            modalidadesSelecionadas.length > 0 ? 'bg-amber-500 text-amber-950' : 'bg-white/10 hover:bg-white/20 text-white'
-          }`}
+          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer ${modalidadesSelecionadas.length > 0 ? 'bg-amber-500 text-amber-950' : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
           title="Escolher quais modalidades passam no telão"
         >
           <Filter className="w-3.5 h-3.5" />
