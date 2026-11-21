@@ -102,7 +102,7 @@ export default function TelaoEventosPage() {
       if (mun.logoUrl || mun.brasaoUrl) setLogoUrl(mun.logoUrl || mun.brasaoUrl || '/logo-jegd.png');
     }
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://jegdsistem-nu.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://jegdsistem-five.vercel.app';
     QRCode.toDataURL(`${origin}/eventos`, { margin: 1, width: 320, color: { dark: '#17221D', light: '#FFFFFF' } })
       .then(setQrPublicoUrl)
       .catch(() => {});
