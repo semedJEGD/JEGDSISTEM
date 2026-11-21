@@ -153,39 +153,57 @@ export async function POST(request: Request) {
 
         modalidadeIdsMantidas.push(modDb.id);
 
-        const provasArr = Array.isArray(modInsc.provas) ? modInsc.provas : [];
+        const provasArr = Array.isArray(modInsc.provas) ? modInsc.provas.filter(Boolean) : [];
         const provaStr = provasArr.length > 0 ? provasArr.join(',') : '';
         const equipeId = `insc-${atleta.escolaId}-${modDb.codigo}-eq1`;
 
-        await prisma.inscricao.upsert({
+        // Busca inscrições existentes para (atletaId, modalidadeId) para atualizar in-place
+        // sem criar linhas duplicadas quando o usuário altera as provas de Atletismo!
+        const existentes = await prisma.inscricao.findMany({
           where: {
-            atletaId_modalidadeId_prova: {
-              atletaId: atleta.id,
-              modalidadeId: modDb.id,
-              prova: provaStr
-            }
-          },
-          update: {
-            escolaId: atleta.escolaId,
-            municipioId: atleta.municipioId,
-            categoria: atleta.categoria,
-            sexo: atleta.sexo,
-            equipe: equipeId,
-            status: 'PENDENTE'
-          },
-          create: {
-            id: `insc-${Date.now()}-${atleta.id}-${modDb.codigo}`,
             atletaId: atleta.id,
             modalidadeId: modDb.id,
-            escolaId: atleta.escolaId,
-            municipioId: atleta.municipioId,
-            categoria: atleta.categoria,
-            sexo: atleta.sexo,
-            prova: provaStr,
-            equipe: equipeId,
-            status: 'PENDENTE'
-          }
+          },
+          orderBy: { dataInscricao: 'desc' },
         });
+
+        if (existentes.length > 0) {
+          const principal = existentes[0];
+          // Remove eventuais duplicatas antigas da mesma modalidade antes de atualizar a chave única prova
+          if (existentes.length > 1) {
+            await prisma.inscricao.deleteMany({
+              where: {
+                id: { in: existentes.slice(1).map((e) => e.id) },
+              },
+            });
+          }
+          await prisma.inscricao.update({
+            where: { id: principal.id },
+            data: {
+              escolaId: atleta.escolaId,
+              municipioId: atleta.municipioId,
+              categoria: atleta.categoria,
+              sexo: atleta.sexo,
+              prova: provaStr,
+              equipe: equipeId,
+            },
+          });
+        } else {
+          await prisma.inscricao.create({
+            data: {
+              id: `insc-${Date.now()}-${atleta.id}-${modDb.codigo}`,
+              atletaId: atleta.id,
+              modalidadeId: modDb.id,
+              escolaId: atleta.escolaId,
+              municipioId: atleta.municipioId,
+              categoria: atleta.categoria,
+              sexo: atleta.sexo,
+              prova: provaStr,
+              equipe: equipeId,
+              status: 'PENDENTE',
+            },
+          });
+        }
       }
 
       // Remove inscrições em modalidades que foram desmarcadas

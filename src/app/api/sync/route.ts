@@ -55,15 +55,33 @@ export async function GET(request: Request) {
         ? a.dataNascimento.toISOString().split('T')[0] 
         : String(a.dataNascimento).split('T')[0];
 
-      // Vincular modalidades em que o atleta está inscrito
+      // Vincular modalidades em que o atleta está inscrito (deduplicando por modalidade e preservando provas preenchidas)
       const inscricoesDoAtleta = inscricoes.filter(i => i.atletaId === a.id);
-      const modalidadesDoAtleta = inscricoesDoAtleta.map(i => ({
-        modalidadeCodigo: i.modalidade?.codigo || i.modalidadeId,
-        modalidadeNome: i.modalidade?.nome || i.modalidadeId,
-        categoria: i.categoria,
-        sexo: i.sexo,
-        provas: i.prova ? i.prova.split(',') : []
-      }));
+      const modsPorCodigo = new Map<string, {
+        modalidadeCodigo: string;
+        modalidadeNome: string;
+        categoria: any;
+        sexo: any;
+        provas: string[];
+      }>();
+      for (const i of inscricoesDoAtleta) {
+        const cod = i.modalidade?.codigo || i.modalidadeId;
+        const provasList = i.prova ? i.prova.split(',').map((p: string) => p.trim()).filter(Boolean) : [];
+        const atual = modsPorCodigo.get(cod);
+        if (!atual) {
+          modsPorCodigo.set(cod, {
+            modalidadeCodigo: cod,
+            modalidadeNome: i.modalidade?.nome || i.modalidadeId,
+            categoria: i.categoria,
+            sexo: i.sexo,
+            provas: provasList,
+          });
+        } else if (provasList.length > 0) {
+          const merged = Array.from(new Set([...atual.provas, ...provasList]));
+          atual.provas = merged;
+        }
+      }
+      const modalidadesDoAtleta = Array.from(modsPorCodigo.values());
       const todosValidados = inscricoesDoAtleta.length > 0 && inscricoesDoAtleta.every(i => i.status === 'VALIDADA');
         
       return {

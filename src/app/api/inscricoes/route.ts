@@ -90,38 +90,56 @@ export async function POST(request: Request) {
       }
 
       const provas = provasPorAtleta?.[atletaId];
-      const provaStr = provas && provas.length > 0 ? provas.join(',') : '';
+      const provaStr = Array.isArray(provas) && provas.length > 0 ? provas.filter(Boolean).join(',') : '';
 
-      const insc = await prisma.inscricao.upsert({
+      // Atualiza a inscrição existente da mesma modalidade in-place (sem duplicar nem apagar provas já salvas!)
+      const existentes = await prisma.inscricao.findMany({
         where: {
-          atletaId_modalidadeId_prova: {
-            atletaId,
-            modalidadeId: modalidade.id,
-            prova: provaStr
-          }
-        },
-        update: {
-          status: status || 'PENDENTE',
-          motivoRejeicao: motivoRejeicao || null,
-          categoria: categoria as any,
-          sexo: sexo as any,
-          equipe: equipeChave,
-          municipioId: municipioId || atletaExiste.municipioId || undefined
-        },
-        create: {
-          id: `${equipeChave}-${atletaId}`,
           atletaId,
           modalidadeId: modalidade.id,
-          escolaId,
-          municipioId: municipioId || atletaExiste.municipioId || undefined,
-          categoria: categoria as any,
-          sexo: sexo as any,
-          prova: provaStr,
-          equipe: equipeChave,
-          status: status || 'PENDENTE',
-          motivoRejeicao: motivoRejeicao || null
-        }
+        },
+        orderBy: { dataInscricao: 'desc' },
       });
+
+      let insc;
+      if (existentes.length > 0) {
+        const principal = existentes.find((e) => e.prova && e.prova.trim() !== '') || existentes[0];
+        const duplicatas = existentes.filter((e) => e.id !== principal.id);
+        if (duplicatas.length > 0) {
+          await prisma.inscricao.deleteMany({
+            where: { id: { in: duplicatas.map((d) => d.id) } },
+          });
+        }
+        const provaFinal = provaStr || principal.prova || '';
+        insc = await prisma.inscricao.update({
+          where: { id: principal.id },
+          data: {
+            status: status || principal.status || 'PENDENTE',
+            motivoRejeicao: motivoRejeicao !== undefined ? motivoRejeicao : principal.motivoRejeicao,
+            categoria: categoria as any,
+            sexo: sexo as any,
+            prova: provaFinal,
+            equipe: equipeChave,
+            municipioId: municipioId || atletaExiste.municipioId || undefined,
+          },
+        });
+      } else {
+        insc = await prisma.inscricao.create({
+          data: {
+            id: `${equipeChave}-${atletaId}`,
+            atletaId,
+            modalidadeId: modalidade.id,
+            escolaId,
+            municipioId: municipioId || atletaExiste.municipioId || undefined,
+            categoria: categoria as any,
+            sexo: sexo as any,
+            prova: provaStr,
+            equipe: equipeChave,
+            status: status || 'PENDENTE',
+            motivoRejeicao: motivoRejeicao || null,
+          },
+        });
+      }
       criados.push(insc);
     }
 
