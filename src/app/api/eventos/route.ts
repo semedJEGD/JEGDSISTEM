@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const municipioId = searchParams.get('municipioId');
     const where = municipioId && municipioId !== 'ALL' ? { municipioId } : {};
 
-    const [noticias, cronograma, partidas, artilharia, medalhas, avisos] = await Promise.all([
+    const [noticias, cronograma, partidas, artilharia, medalhas, avisos, inscricoes] = await Promise.all([
       prisma.noticiaEvento.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -34,7 +34,101 @@ export async function GET(request: Request) {
         where,
         orderBy: { createdAt: 'desc' },
       }),
+      prisma.inscricao.findMany({
+        where,
+        select: {
+          atletaId: true,
+          categoria: true,
+          sexo: true,
+          prova: true,
+          atleta: {
+            select: {
+              id: true,
+              nomeCompleto: true,
+              fotoUrl: true,
+              categoria: true,
+              sexo: true,
+            },
+          },
+          escola: {
+            select: {
+              id: true,
+              nome: true,
+              sigla: true,
+            },
+          },
+          modalidade: {
+            select: {
+              codigo: true,
+              nome: true,
+            },
+          },
+        },
+      }),
     ]);
+
+    // Monta quadro público de atletas participantes (LGPD-safe: sem CPF/RG/telefone)
+    const atletasMap = new Map<
+      string,
+      {
+        id: string;
+        nomeCompleto: string;
+        fotoUrl?: string | null;
+        escolaId: string;
+        escolaNome: string;
+        escolaSigla: string;
+        categoria: string;
+        sexo: string;
+        modsMap: Map<string, { codigo: string; nome: string; provas: Set<string> }>;
+      }
+    >();
+
+    for (const i of inscricoes) {
+      if (!i.atleta || !i.escola || !i.modalidade) continue;
+      if (!atletasMap.has(i.atleta.id)) {
+        atletasMap.set(i.atleta.id, {
+          id: i.atleta.id,
+          nomeCompleto: i.atleta.nomeCompleto,
+          fotoUrl: i.atleta.fotoUrl,
+          escolaId: i.escola.id,
+          escolaNome: i.escola.nome,
+          escolaSigla: i.escola.sigla || i.escola.nome,
+          categoria: i.categoria || i.atleta.categoria,
+          sexo: i.sexo || i.atleta.sexo,
+          modsMap: new Map(),
+        });
+      }
+      const entry = atletasMap.get(i.atleta.id)!;
+      const cod = i.modalidade.codigo;
+      if (!entry.modsMap.has(cod)) {
+        entry.modsMap.set(cod, { codigo: cod, nome: i.modalidade.nome, provas: new Set() });
+      }
+      if (i.prova) {
+        i.prova
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean)
+          .forEach((p) => entry.modsMap.get(cod)!.provas.add(p));
+      }
+    }
+
+    const atletasParticipantes = Array.from(atletasMap.values())
+      .map((a) => ({
+        id: a.id,
+        nomeCompleto: a.nomeCompleto,
+        fotoUrl: a.fotoUrl,
+        escolaId: a.escolaId,
+        escolaNome: a.escolaNome,
+        escolaSigla: a.escolaSigla,
+        categoria: a.categoria,
+        sexo: a.sexo,
+        modalidades: Array.from(a.modsMap.values()).map((m) => ({
+          codigo: m.codigo,
+          nome: m.nome,
+          provas: Array.from(m.provas),
+        })),
+      }))
+      .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'));
 
     return NextResponse.json({
       success: true,
@@ -45,6 +139,7 @@ export async function GET(request: Request) {
         artilharia,
         medalhas,
         avisos,
+        atletasParticipantes,
         updatedAt: new Date().toISOString(),
       },
     });

@@ -15,6 +15,8 @@ import {
   Radio,
   RefreshCw,
   User,
+  Users,
+  Search,
   X,
   Share2,
   ArrowUpRight,
@@ -31,12 +33,24 @@ import {
   formatarDataBR,
 } from '@/lib/eventos-service';
 
-type AbaPublica = 'COBERTURA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
+type AbaPublica = 'COBERTURA' | 'ATLETAS_DIA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
+
+const ETAPAS_DIA_CONFIG = [
+  { id: 'ETAPA1', label: '1ª Etapa (28/11)', sub: 'Queimada & Tênis de Mesa', codigos: ['queimada', 'tenis-mesa'] },
+  { id: 'ETAPA2', label: '2ª Etapa (05/12)', sub: 'Atletismo & Beach Soccer', codigos: ['atletismo', 'beach-soccer'] },
+  { id: 'ETAPA3', label: '3ª Etapa (12/12)', sub: 'Futsal, Futebol, Vôlei & Xadrez', codigos: ['futsal', 'futebol-campo', 'voleibol', 'xadrez'] },
+  { id: 'TODAS', label: 'Todas as Etapas', sub: 'Todas as modalidades', codigos: [] as string[] },
+] as const;
 
 export default function EventosDoDiaPage() {
   const [aba, setAba] = useState<AbaPublica>('COBERTURA');
   const [filtroMod, setFiltroMod] = useState<string>('TODAS');
   const [filtroNoticiaTag, setFiltroNoticiaTag] = useState<string>('TODAS');
+  const [etapaAtletas, setEtapaAtletas] = useState<string>('ETAPA1');
+  const [buscaAtleta, setBuscaAtleta] = useState('');
+  const [filtroEscolaAtleta, setFiltroEscolaAtleta] = useState('TODAS');
+  const [filtroModAtleta, setFiltroModAtleta] = useState('TODAS');
+  const [filtroCatAtleta, setFiltroCatAtleta] = useState('TODAS');
   const [noticiaAberta, setNoticiaAberta] = useState<NoticiaEventoItem | null>(null);
   const [municipioId, setMunicipioId] = useState<string | undefined>(undefined);
   const [siglaEvento, setSiglaEvento] = useState('JEGDS 2026');
@@ -127,6 +141,58 @@ export default function EventosDoDiaPage() {
 
   const manchetePrincipal = noticiasFiltradas[0] || null;
   const demaisNoticias = noticiasFiltradas.slice(1);
+
+  // Quadro de Atletas Participantes da Etapa / Dia
+  const todosAtletasPublicos = bundle.atletasParticipantes || [];
+
+  const etapaSelecionadaObj = useMemo(
+    () => ETAPAS_DIA_CONFIG.find((e) => e.id === etapaAtletas) || ETAPAS_DIA_CONFIG[0],
+    [etapaAtletas]
+  );
+
+  const escolasNoQuadro = useMemo(() => {
+    const map = new Map<string, string>();
+    todosAtletasPublicos.forEach((a) => map.set(a.escolaId, a.escolaSigla || a.escolaNome));
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  }, [todosAtletasPublicos]);
+
+  const atletasDoDiaFiltrados = useMemo(() => {
+    const codsEtapa = etapaSelecionadaObj.codigos;
+    const termo = buscaAtleta.trim().toLowerCase();
+
+    return todosAtletasPublicos
+      .map((a) => {
+        const modsNaEtapa =
+          codsEtapa.length === 0
+            ? a.modalidades
+            : a.modalidades.filter((m) => (codsEtapa as readonly string[]).includes(m.codigo));
+        return { ...a, modsNaEtapa };
+      })
+      .filter((a) => {
+        if (a.modsNaEtapa.length === 0) return false;
+        if (filtroEscolaAtleta !== 'TODAS' && a.escolaId !== filtroEscolaAtleta) return false;
+        if (filtroCatAtleta !== 'TODAS' && a.categoria !== filtroCatAtleta) return false;
+        if (filtroModAtleta !== 'TODAS' && !a.modsNaEtapa.some((m) => m.codigo === filtroModAtleta)) return false;
+        if (termo) {
+          const bateNome = a.nomeCompleto.toLowerCase().includes(termo);
+          const bateEsc = a.escolaNome.toLowerCase().includes(termo) || a.escolaSigla.toLowerCase().includes(termo);
+          const bateMod = a.modsNaEtapa.some((m) => m.nome.toLowerCase().includes(termo));
+          if (!bateNome && !bateEsc && !bateMod) return false;
+        }
+        return true;
+      });
+  }, [todosAtletasPublicos, etapaSelecionadaObj, buscaAtleta, filtroEscolaAtleta, filtroModAtleta, filtroCatAtleta]);
+
+  const atletasAgrupadosPorEscola = useMemo(() => {
+    const map = new Map<string, { escolaNome: string; escolaSigla: string; atletas: typeof atletasDoDiaFiltrados }>();
+    atletasDoDiaFiltrados.forEach((a) => {
+      if (!map.has(a.escolaId)) {
+        map.set(a.escolaId, { escolaNome: a.escolaNome, escolaSigla: a.escolaSigla, atletas: [] });
+      }
+      map.get(a.escolaId)!.atletas.push(a);
+    });
+    return Array.from(map.values()).sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
+  }, [atletasDoDiaFiltrados]);
 
   const handleCompartilharWhatsApp = (n: NoticiaEventoItem) => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -223,6 +289,7 @@ export default function EventosDoDiaPage() {
         {(
           [
             { id: 'COBERTURA', label: 'Notícias & Cronograma', icon: Newspaper, count: 0 },
+            { id: 'ATLETAS_DIA', label: 'Atletas de Hoje', icon: Users, count: atletasDoDiaFiltrados.length },
             { id: 'JOGOS', label: 'Jogos & Placares', icon: Trophy, count: bundle.partidas.length },
             { id: 'TABELAS', label: 'Tabelas & Chaveamento', icon: CalendarClock, count: 0 },
             { id: 'ARTILHARIA', label: 'Artilharia', icon: Target, count: bundle.artilharia.length },
@@ -496,6 +563,155 @@ export default function EventosDoDiaPage() {
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* ABA: QUADRO DE ATLETAS DE HOJE (QUEM VAI PARA QUAL EVENTO) */}
+      {/* ============================================================ */}
+      {aba === 'ATLETAS_DIA' && (
+        <div className="space-y-5">
+          {/* Seletor de Etapa do Calendário */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {ETAPAS_DIA_CONFIG.map((et) => {
+              const ativa = etapaAtletas === et.id;
+              return (
+                <button
+                  key={et.id}
+                  type="button"
+                  onClick={() => {
+                    setEtapaAtletas(et.id);
+                    setFiltroModAtleta('TODAS');
+                  }}
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    ativa
+                      ? 'bg-[#E8F7F1] border-[#00A878] shadow-2xs'
+                      : 'bg-white border-[#E2EAE5] hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`text-xs font-black block ${ativa ? 'text-[#087A5B]' : 'text-[#17221D]'}`}>
+                    {et.label}
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5 truncate">{et.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Barra de Busca e Filtros */}
+          <div className="bg-white border border-[#E2EAE5] rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 shadow-2xs">
+            <div className="lg:col-span-2 relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={buscaAtleta}
+                onChange={(e) => setBuscaAtleta(e.target.value)}
+                placeholder="Buscar por nome do aluno ou escola..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-medium text-[#17221D] focus:outline-none focus:border-[#00A878] focus:bg-white"
+              />
+            </div>
+
+            <select
+              value={filtroEscolaAtleta}
+              onChange={(e) => setFiltroEscolaAtleta(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#00A878]"
+            >
+              <option value="TODAS">Todas as Escolas</option>
+              {escolasNoQuadro.map(([id, sigla]) => (
+                <option key={id} value={id}>{sigla}</option>
+              ))}
+            </select>
+
+            <select
+              value={filtroModAtleta}
+              onChange={(e) => setFiltroModAtleta(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#00A878]"
+            >
+              <option value="TODAS">Todas Modalidades</option>
+              {(etapaSelecionadaObj.codigos.length > 0
+                ? etapaSelecionadaObj.codigos
+                : ['queimada', 'tenis-mesa', 'atletismo', 'beach-soccer', 'futsal', 'futebol-campo', 'voleibol', 'xadrez']
+              ).map((cod) => (
+                <option key={cod} value={cod}>
+                  {cod.replace('-', ' ').toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filtroCatAtleta}
+              onChange={(e) => setFiltroCatAtleta(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-[#F7F9F8] border border-[#E2EAE5] text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#00A878]"
+            >
+              <option value="TODAS">Todas Faixas Etárias</option>
+              <option value="MIRIM">Mirim (9–11)</option>
+              <option value="INFANTIL">Infantil (12–14)</option>
+              <option value="INFANTO">Infanto (15–17)</option>
+              <option value="JUNIOR">Júnior (18–20)</option>
+            </select>
+          </div>
+
+          {/* Lista Agrupada por Escola */}
+          {atletasAgrupadosPorEscola.length === 0 ? (
+            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-10 text-center text-sm text-slate-500">
+              Nenhum atleta encontrado para os filtros selecionados nesta etapa.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {atletasAgrupadosPorEscola.map((grupo) => (
+                <div key={grupo.escolaNome} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
+                  <div className="px-5 py-3 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-black text-[#17221D] truncate">
+                      {grupo.escolaNome}
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] text-xs font-bold shrink-0">
+                      {grupo.atletas.length} {grupo.atletas.length === 1 ? 'atleta' : 'atletas'}
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-slate-100">
+                    {grupo.atletas.map((atl) => (
+                      <div key={atl.id} className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {atl.fotoUrl ? (
+                            <img
+                              src={atl.fotoUrl}
+                              alt={atl.nomeCompleto}
+                              className="w-9 h-9 rounded-full object-cover border border-[#00A878]/40 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                              <User className="w-4 h-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-bold text-[#17221D] truncate">{atl.nomeCompleto}</p>
+                            <p className="text-[11px] font-semibold text-slate-400">
+                              {atl.categoria} • {atl.sexo === 'FEMININO' ? 'Feminino' : 'Masculino'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5 sm:justify-end pl-12 sm:pl-0">
+                          {atl.modsNaEtapa.map((m) => (
+                            <span
+                              key={m.codigo}
+                              className="px-2.5 py-1 rounded-lg bg-[#E8F7F1] border border-[#00A878]/20 text-[#087A5B] text-[11px] font-bold"
+                            >
+                              {m.nome}
+                              {m.provas.length > 0 && (
+                                <span className="text-amber-700 font-black ml-1">({m.provas.join(', ')})</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

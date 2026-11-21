@@ -108,6 +108,22 @@ export interface AvisoTelaoItem {
   createdAt: string;
 }
 
+export interface AtletaEventoPublico {
+  id: string;
+  nomeCompleto: string;
+  fotoUrl?: string | null;
+  escolaId: string;
+  escolaNome: string;
+  escolaSigla: string;
+  categoria: string;
+  sexo: string;
+  modalidades: {
+    codigo: string;
+    nome: string;
+    provas: string[];
+  }[];
+}
+
 export interface EventosBundle {
   noticias: NoticiaEventoItem[];
   cronograma: CronogramaEventoItem[];
@@ -115,6 +131,7 @@ export interface EventosBundle {
   artilharia: ArtilhariaEventoItem[];
   medalhas: MedalhaEventoItem[];
   avisos: AvisoTelaoItem[];
+  atletasParticipantes?: AtletaEventoPublico[];
   updatedAt: string;
 }
 
