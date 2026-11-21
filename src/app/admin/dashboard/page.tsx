@@ -1012,20 +1012,20 @@ export default function AdminDashboardPage() {
             type="button"
             onClick={() => {
               setSubAbaHomologacao('EQUIPES');
-              setFiltroStatus('APROVADA');
+              setFiltroStatus('VALIDADA');
               setAbaAtiva('HOMOLOGACAO');
             }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA'
+              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA'
                 ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
                 : 'bg-white text-emerald-800 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300'
             }`}
             title="Ver inscrições e atletas homologados"
           >
-            <CheckCheck className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA' ? 'text-white' : 'text-teal-600'}`} />
+            <CheckCheck className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'text-white' : 'text-teal-600'}`} />
             <span>Homologados:</span>
             <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
-              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'APROVADA' ? 'bg-white/20 text-white' : 'bg-teal-100/70 text-teal-900'
+              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'bg-white/20 text-white' : 'bg-teal-100/70 text-teal-900'
             }`}>
               {atletas.filter(a => a.conferidoPeloCoordenador).length}
             </span>
