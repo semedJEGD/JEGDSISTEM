@@ -20,6 +20,8 @@ import {
   X,
   Share2,
   ArrowUpRight,
+  ChevronRight,
+  Building2,
 } from 'lucide-react';
 import { JegdStorage } from '@/lib/storage';
 import { EventosBundle, NoticiaEventoItem } from '@/types/eventos';
@@ -34,6 +36,28 @@ import {
 } from '@/lib/eventos-service';
 
 type AbaPublica = 'COBERTURA' | 'ATLETAS_DIA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
+
+interface EquipeModalInfo {
+  escolaNome: string;
+  escolaSigla: string;
+  titulo: string;
+  subtitulo: string;
+  atletas: Array<{
+    id: string;
+    nomeCompleto: string;
+    fotoUrl?: string | null;
+    categoria: string;
+    sexo: string;
+    detalhe?: string;
+  }>;
+}
+
+const ORDEM_CATEGORIAS: Record<string, number> = {
+  MIRIM: 1,
+  INFANTIL: 2,
+  INFANTO: 3,
+  JUNIOR: 4,
+};
 
 const ETAPAS_DIA_CONFIG = [
   { id: 'ETAPA1', label: '1ª Etapa (28/11)', sub: 'Queimada & Tênis de Mesa', codigos: ['queimada', 'tenis-mesa'] },
@@ -52,6 +76,7 @@ export default function EventosDoDiaPage() {
   const [filtroModAtleta, setFiltroModAtleta] = useState('TODAS');
   const [filtroCatAtleta, setFiltroCatAtleta] = useState('TODAS');
   const [noticiaAberta, setNoticiaAberta] = useState<NoticiaEventoItem | null>(null);
+  const [equipeAberta, setEquipeAberta] = useState<EquipeModalInfo | null>(null);
   const [municipioId, setMunicipioId] = useState<string | undefined>(undefined);
   const [siglaEvento, setSiglaEvento] = useState('JEGDS 2026');
   const [isAdminSemed, setIsAdminSemed] = useState(false);
@@ -183,16 +208,96 @@ export default function EventosDoDiaPage() {
       });
   }, [todosAtletasPublicos, etapaSelecionadaObj, buscaAtleta, filtroEscolaAtleta, filtroModAtleta, filtroCatAtleta]);
 
-  const atletasAgrupadosPorEscola = useMemo(() => {
-    const map = new Map<string, { escolaNome: string; escolaSigla: string; atletas: typeof atletasDoDiaFiltrados }>();
+  const escolasComEquipes = useMemo(() => {
+    type AtletaEquipe = {
+      id: string;
+      nomeCompleto: string;
+      fotoUrl?: string | null;
+      categoria: string;
+      sexo: string;
+      provas: string[];
+    };
+    type EquipeGrupo = {
+      chave: string;
+      modalidadeCodigo: string;
+      modalidadeNome: string;
+      categoria: string;
+      sexo: string;
+      atletas: AtletaEquipe[];
+    };
+    type EscolaGrupo = {
+      escolaId: string;
+      escolaNome: string;
+      escolaSigla: string;
+      atletasUnicos: typeof atletasDoDiaFiltrados;
+      equipesMap: Map<string, EquipeGrupo>;
+    };
+
+    const map = new Map<string, EscolaGrupo>();
+
     atletasDoDiaFiltrados.forEach((a) => {
       if (!map.has(a.escolaId)) {
-        map.set(a.escolaId, { escolaNome: a.escolaNome, escolaSigla: a.escolaSigla, atletas: [] });
+        map.set(a.escolaId, {
+          escolaId: a.escolaId,
+          escolaNome: a.escolaNome,
+          escolaSigla: a.escolaSigla,
+          atletasUnicos: [],
+          equipesMap: new Map(),
+        });
       }
-      map.get(a.escolaId)!.atletas.push(a);
+      const esc = map.get(a.escolaId)!;
+      esc.atletasUnicos.push(a);
+
+      a.modsNaEtapa.forEach((m) => {
+        if (filtroModAtleta !== 'TODAS' && m.codigo !== filtroModAtleta) return;
+        const chave = `${m.codigo}|${a.categoria}|${a.sexo}`;
+        if (!esc.equipesMap.has(chave)) {
+          esc.equipesMap.set(chave, {
+            chave,
+            modalidadeCodigo: m.codigo,
+            modalidadeNome: m.nome,
+            categoria: a.categoria,
+            sexo: a.sexo,
+            atletas: [],
+          });
+        }
+        esc.equipesMap.get(chave)!.atletas.push({
+          id: a.id,
+          nomeCompleto: a.nomeCompleto,
+          fotoUrl: a.fotoUrl,
+          categoria: a.categoria,
+          sexo: a.sexo,
+          provas: m.provas,
+        });
+      });
     });
-    return Array.from(map.values()).sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
-  }, [atletasDoDiaFiltrados]);
+
+    return Array.from(map.values())
+      .map((esc) => ({
+        escolaId: esc.escolaId,
+        escolaNome: esc.escolaNome,
+        escolaSigla: esc.escolaSigla,
+        atletasUnicos: esc.atletasUnicos.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR')),
+        equipes: Array.from(esc.equipesMap.values())
+          .map((eq) => ({
+            ...eq,
+            atletas: eq.atletas.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR')),
+          }))
+          .sort((a, b) => {
+            const cmpMod = a.modalidadeNome.localeCompare(b.modalidadeNome, 'pt-BR');
+            if (cmpMod !== 0) return cmpMod;
+            const cmpCat = (ORDEM_CATEGORIAS[a.categoria] || 9) - (ORDEM_CATEGORIAS[b.categoria] || 9);
+            if (cmpCat !== 0) return cmpCat;
+            return a.sexo.localeCompare(b.sexo);
+          }),
+      }))
+      .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'));
+  }, [atletasDoDiaFiltrados, filtroModAtleta]);
+
+  const totalEquipesNoQuadro = useMemo(
+    () => escolasComEquipes.reduce((acc, esc) => acc + esc.equipes.length, 0),
+    [escolasComEquipes]
+  );
 
   const handleCompartilharWhatsApp = (n: NoticiaEventoItem) => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -651,65 +756,186 @@ export default function EventosDoDiaPage() {
             </select>
           </div>
 
-          {/* Lista Agrupada por Escola */}
-          {atletasAgrupadosPorEscola.length === 0 ? (
+          {/* Resumo Compacto */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 px-1">
+            <span>
+              <strong className="text-[#17221D]">{escolasComEquipes.length}</strong>{' '}
+              {escolasComEquipes.length === 1 ? 'escola' : 'escolas'} •{' '}
+              <strong className="text-[#17221D]">{totalEquipesNoQuadro}</strong>{' '}
+              {totalEquipesNoQuadro === 1 ? 'equipe' : 'equipes'} •{' '}
+              <strong className="text-[#087A5B]">{atletasDoDiaFiltrados.length}</strong>{' '}
+              {atletasDoDiaFiltrados.length === 1 ? 'atleta' : 'atletas'}
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Clique em uma equipe para ver os atletas escalados
+            </span>
+          </div>
+
+          {/* Grade de Cards de Equipes por Escola */}
+          {escolasComEquipes.length === 0 ? (
             <div className="bg-white border border-[#E2EAE5] rounded-2xl p-10 text-center text-sm text-slate-500">
-              Nenhum atleta encontrado para os filtros selecionados nesta etapa.
+              Nenhuma equipe ou atleta encontrado para os filtros selecionados nesta etapa.
             </div>
           ) : (
-            <div className="space-y-4">
-              {atletasAgrupadosPorEscola.map((grupo) => (
-                <div key={grupo.escolaNome} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
-                  <div className="px-5 py-3 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-black text-[#17221D] truncate">
-                      {grupo.escolaNome}
-                    </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] text-xs font-bold shrink-0">
-                      {grupo.atletas.length} {grupo.atletas.length === 1 ? 'atleta' : 'atletas'}
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-slate-100">
-                    {grupo.atletas.map((atl) => (
-                      <div key={atl.id} className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {atl.fotoUrl ? (
-                            <img
-                              src={atl.fotoUrl}
-                              alt={atl.nomeCompleto}
-                              className="w-9 h-9 rounded-full object-cover border border-[#00A878]/40 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
-                              <User className="w-4 h-4" />
-                            </div>
-                          )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {escolasComEquipes.map((escola) => {
+                const buscando = buscaAtleta.trim().length > 0;
+                return (
+                  <div
+                    key={escola.escolaId}
+                    className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs flex flex-col justify-between hover:border-[#00A878]/50 transition-colors"
+                  >
+                    <div>
+                      {/* Cabeçalho do Card da Escola */}
+                      <div className="px-4 py-3.5 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex items-start gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#E8F7F1] border border-[#00A878]/20 flex items-center justify-center text-[#087A5B] shrink-0 mt-0.5">
+                            <Building2 className="w-4 h-4" />
+                          </div>
                           <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-bold text-[#17221D] truncate">{atl.nomeCompleto}</p>
-                            <p className="text-[11px] font-semibold text-slate-400">
-                              {atl.categoria} • {atl.sexo === 'FEMININO' ? 'Feminino' : 'Masculino'}
+                            <h3 className="text-sm font-black text-[#17221D] leading-snug line-clamp-2">
+                              {escola.escolaNome}
+                            </h3>
+                            <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                              {escola.equipes.length} {escola.equipes.length === 1 ? 'equipe' : 'equipes'} •{' '}
+                              {escola.atletasUnicos.length} {escola.atletasUnicos.length === 1 ? 'atleta' : 'atletas'}
                             </p>
                           </div>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-1.5 sm:justify-end pl-12 sm:pl-0">
-                          {atl.modsNaEtapa.map((m) => (
-                            <span
-                              key={m.codigo}
-                              className="px-2.5 py-1 rounded-lg bg-[#E8F7F1] border border-[#00A878]/20 text-[#087A5B] text-[11px] font-bold"
-                            >
-                              {m.nome}
-                              {m.provas.length > 0 && (
-                                <span className="text-amber-700 font-black ml-1">({m.provas.join(', ')})</span>
-                              )}
-                            </span>
-                          ))}
-                        </div>
                       </div>
-                    ))}
+
+                      {/* Lista Compacta de Equipes da Escola */}
+                      <div className="p-3 space-y-1.5">
+                        {escola.equipes.map((eq) => (
+                          <button
+                            key={eq.chave}
+                            type="button"
+                            onClick={() =>
+                              setEquipeAberta({
+                                escolaNome: escola.escolaNome,
+                                escolaSigla: escola.escolaSigla,
+                                titulo: `${eq.modalidadeNome} • ${eq.categoria}`,
+                                subtitulo: `${eq.sexo === 'FEMININO' ? 'Feminino' : 'Masculino'} • ${eq.atletas.length} ${
+                                  eq.atletas.length === 1 ? 'atleta escalado' : 'atletas escalados'
+                                }`,
+                                atletas: eq.atletas.map((a) => ({
+                                  id: a.id,
+                                  nomeCompleto: a.nomeCompleto,
+                                  fotoUrl: a.fotoUrl,
+                                  categoria: a.categoria,
+                                  sexo: a.sexo,
+                                  detalhe: a.provas.length > 0 ? a.provas.join(', ') : undefined,
+                                })),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl bg-[#F7F9F8] hover:bg-[#E8F7F1] border border-transparent hover:border-[#00A878]/30 flex items-center justify-between gap-2 text-left transition-all cursor-pointer group"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-bold text-[#17221D] group-hover:text-[#087A5B] truncate">
+                                  {eq.modalidadeNome}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                                  {eq.categoria}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                                    eq.sexo === 'FEMININO'
+                                      ? 'bg-rose-50 text-rose-700'
+                                      : 'bg-sky-50 text-sky-700'
+                                  }`}
+                                >
+                                  {eq.sexo === 'FEMININO' ? 'F' : 'M'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Mini Avatares Empilhados + Contador */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="hidden sm:flex -space-x-1.5">
+                                {eq.atletas.slice(0, 3).map((atl) =>
+                                  atl.fotoUrl ? (
+                                    <img
+                                      key={atl.id}
+                                      src={atl.fotoUrl}
+                                      alt=""
+                                      className="w-5 h-5 rounded-full object-cover ring-2 ring-white"
+                                    />
+                                  ) : (
+                                    <span
+                                      key={atl.id}
+                                      className="w-5 h-5 rounded-full bg-slate-200 ring-2 ring-white flex items-center justify-center text-[9px] font-bold text-slate-500"
+                                    >
+                                      {atl.nomeCompleto.charAt(0)}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full bg-white border border-[#E2EAE5] text-[11px] font-black text-[#087A5B]">
+                                {eq.atletas.length}
+                              </span>
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#087A5B] group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Quando o usuário pesquisa por nome, mostra o(s) atleta(s) encontrados direto no card */}
+                      {buscando && (
+                        <div className="mx-3 mb-3 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-amber-800">
+                            Encontrados na busca ({escola.atletasUnicos.length})
+                          </p>
+                          {escola.atletasUnicos.slice(0, 5).map((atl) => (
+                            <div key={atl.id} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="font-bold text-[#17221D] truncate">{atl.nomeCompleto}</span>
+                              <span className="text-[10px] font-semibold text-amber-900 shrink-0">
+                                {atl.modsNaEtapa.map((m) => m.nome).join(', ')}
+                              </span>
+                            </div>
+                          ))}
+                          {escola.atletasUnicos.length > 5 && (
+                            <p className="text-[10px] font-semibold text-amber-700">
+                              + {escola.atletasUnicos.length - 5} atleta(s) — clique abaixo para ver todos
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rodapé do Card — Ver Delegação Completa */}
+                    <div className="px-3 py-2.5 border-t border-slate-100 bg-white">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEquipeAberta({
+                            escolaNome: escola.escolaNome,
+                            escolaSigla: escola.escolaSigla,
+                            titulo: 'Delegação Completa',
+                            subtitulo: `${etapaSelecionadaObj.label} • ${escola.atletasUnicos.length} ${
+                              escola.atletasUnicos.length === 1 ? 'atleta' : 'atletas'
+                            }`,
+                            atletas: escola.atletasUnicos.map((a) => ({
+                              id: a.id,
+                              nomeCompleto: a.nomeCompleto,
+                              fotoUrl: a.fotoUrl,
+                              categoria: a.categoria,
+                              sexo: a.sexo,
+                              detalhe: a.modsNaEtapa
+                                .map((m) => (m.provas.length > 0 ? `${m.nome} (${m.provas.join(', ')})` : m.nome))
+                                .join(' • '),
+                            })),
+                          })
+                        }
+                        className="w-full py-1.5 rounded-lg text-xs font-bold text-[#087A5B] hover:bg-[#E8F7F1] transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Ver todos os {escola.atletasUnicos.length} atletas da escola</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1055,6 +1281,87 @@ export default function EventosDoDiaPage() {
                   <span>Compartilhar no WhatsApp</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL DE ESCALAÇÃO DA EQUIPE / DELEGAÇÃO DA ESCOLA */}
+      {/* ============================================================ */}
+      {equipeAberta && (
+        <div
+          onClick={() => setEquipeAberta(null)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border border-[#E2EAE5]"
+          >
+            {/* Topo fixo do modal */}
+            <div className="px-5 py-4 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-start justify-between gap-3 shrink-0">
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#087A5B] block truncate">
+                  {equipeAberta.escolaNome}
+                </span>
+                <h2 className="text-lg font-black text-[#17221D] leading-snug mt-0.5">
+                  {equipeAberta.titulo}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">{equipeAberta.subtitulo}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEquipeAberta(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lista rolável compacta de atletas */}
+            <div className="overflow-y-auto divide-y divide-slate-100 px-2 py-1">
+              {equipeAberta.atletas.map((atl, idx) => (
+                <div key={`${atl.id}-${idx}`} className="px-3 py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[11px] font-black text-slate-300 w-5 text-right shrink-0">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    {atl.fotoUrl ? (
+                      <img
+                        src={atl.fotoUrl}
+                        alt={atl.nomeCompleto}
+                        className="w-8 h-8 rounded-full object-cover border border-[#00A878]/30 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                        <User className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-bold text-[#17221D] truncate">{atl.nomeCompleto}</p>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        {atl.categoria} • {atl.sexo === 'FEMININO' ? 'Feminino' : 'Masculino'}
+                      </p>
+                    </div>
+                  </div>
+                  {atl.detalhe && (
+                    <span className="px-2 py-0.5 rounded-md bg-[#E8F7F1] text-[#087A5B] text-[10px] font-bold shrink-0 max-w-[45%] truncate" title={atl.detalhe}>
+                      {atl.detalhe}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Rodapé do modal */}
+            <div className="px-5 py-3 border-t border-slate-100 bg-[#F7F9F8] flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setEquipeAberta(null)}
+                className="px-4 py-1.5 rounded-xl bg-[#17221D] hover:bg-slate-800 text-white text-xs font-bold cursor-pointer"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
