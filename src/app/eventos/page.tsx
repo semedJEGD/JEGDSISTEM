@@ -118,7 +118,10 @@ export default function EventosDoDiaPage() {
 
   useEffect(() => {
     carregar(false);
-    const interval = setInterval(() => carregar(true), 15000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      carregar(true);
+    }, 45000);
     return () => clearInterval(interval);
   }, [carregar]);
 

@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = ['gru1'];
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const municipioId = searchParams.get('municipioId');
+    const incluirAtletas = searchParams.get('incluirAtletas') !== '0';
+    const noCache = searchParams.get('nocache') === '1';
     const where = municipioId && municipioId !== 'ALL' ? { municipioId } : {};
 
     const [noticias, cronograma, partidas, artilharia, medalhas, avisos, inscricoes] = await Promise.all([
@@ -34,37 +37,39 @@ export async function GET(request: Request) {
         where,
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.inscricao.findMany({
-        where,
-        select: {
-          atletaId: true,
-          categoria: true,
-          sexo: true,
-          prova: true,
-          atleta: {
+      incluirAtletas
+        ? prisma.inscricao.findMany({
+            where,
             select: {
-              id: true,
-              nomeCompleto: true,
-              fotoUrl: true,
+              atletaId: true,
               categoria: true,
               sexo: true,
+              prova: true,
+              atleta: {
+                select: {
+                  id: true,
+                  nomeCompleto: true,
+                  fotoUrl: true,
+                  categoria: true,
+                  sexo: true,
+                },
+              },
+              escola: {
+                select: {
+                  id: true,
+                  nome: true,
+                  sigla: true,
+                },
+              },
+              modalidade: {
+                select: {
+                  codigo: true,
+                  nome: true,
+                },
+              },
             },
-          },
-          escola: {
-            select: {
-              id: true,
-              nome: true,
-              sigla: true,
-            },
-          },
-          modalidade: {
-            select: {
-              codigo: true,
-              nome: true,
-            },
-          },
-        },
-      }),
+          })
+        : Promise.resolve([]),
     ]);
 
     // Monta quadro público de atletas participantes (LGPD-safe: sem CPF/RG/telefone)
@@ -130,19 +135,29 @@ export async function GET(request: Request) {
       }))
       .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'));
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        noticias,
-        cronograma,
-        partidas,
-        artilharia,
-        medalhas,
-        avisos,
-        atletasParticipantes,
-        updatedAt: new Date().toISOString(),
+    const headers: HeadersInit = noCache
+      ? { 'Cache-Control': 'no-store' }
+      : {
+          'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=40',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=20, stale-while-revalidate=40',
+        };
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          noticias,
+          cronograma,
+          partidas,
+          artilharia,
+          medalhas,
+          avisos,
+          atletasParticipantes,
+          updatedAt: new Date().toISOString(),
+        },
       },
-    });
+      { headers }
+    );
   } catch (error: any) {
     console.error('[API /api/eventos GET]', error);
     return NextResponse.json(

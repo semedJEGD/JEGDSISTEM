@@ -122,7 +122,7 @@ export default function TelaoEventosPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const data = await EventosApi.carregar(municipioId);
+      const data = await EventosApi.carregar(municipioId, { incluirAtletas: false });
       setBundle(data);
     } catch (err) {
       console.error('Erro ao atualizar telão:', err);
@@ -131,7 +131,10 @@ export default function TelaoEventosPage() {
 
   useEffect(() => {
     carregar();
-    const id = setInterval(carregar, 15000);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      carregar();
+    }, 30000);
     return () => clearInterval(id);
   }, [carregar]);
 

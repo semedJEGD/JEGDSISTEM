@@ -296,9 +296,19 @@ export function formatarDataBR(dataIso: string): string {
  * Cliente HTTP unificado para /api/eventos
  */
 export const EventosApi = {
-  async carregar(municipioId?: string): Promise<EventosBundle> {
-    const qs = municipioId ? `?municipioId=${encodeURIComponent(municipioId)}` : '';
-    const res = await fetch(`/api/eventos${qs}`, { cache: 'no-store' });
+  async carregar(
+    municipioId?: string,
+    opts?: { incluirAtletas?: boolean; nocache?: boolean }
+  ): Promise<EventosBundle> {
+    const params = new URLSearchParams();
+    if (municipioId) params.set('municipioId', municipioId);
+    if (opts?.incluirAtletas === false) params.set('incluirAtletas', '0');
+    if (opts?.nocache) params.set('nocache', '1');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(
+      `/api/eventos${qs}`,
+      opts?.nocache ? { cache: 'no-store' } : undefined
+    );
     if (!res.ok) throw new Error('Falha ao carregar eventos');
     const json = await res.json();
     return json.data as EventosBundle;

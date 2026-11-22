@@ -128,7 +128,7 @@ export function AbaEventosCompeticao({
   const carregarDados = useCallback(async () => {
     try {
       setCarregando(true);
-      const data = await EventosApi.carregar(municipioId);
+      const data = await EventosApi.carregar(municipioId, { incluirAtletas: false, nocache: true });
       setBundle(data);
     } catch (err) {
       console.error('Erro ao carregar eventos:', err);

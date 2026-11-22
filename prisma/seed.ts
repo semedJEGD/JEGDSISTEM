@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const databaseUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_65jIhrWDkPaU@ep-late-sea-acmakuqs-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL não definida. Configure a variável de ambiente antes de rodar o seed.');
+}
 const prisma = new PrismaClient({
   datasources: {
     db: {
