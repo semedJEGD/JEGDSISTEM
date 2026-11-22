@@ -270,7 +270,7 @@ export class CrachaDobravelService {
 
     const originUrl = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
-      : 'https://jegdsistem-five.vercel.app';
+      : 'https://jegdsistem-delta.vercel.app';
     const payloadValidacao = `${originUrl}/validar?token=${encodeURIComponent(tokenCracha)}`;
 
     try {
