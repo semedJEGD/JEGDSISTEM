@@ -304,6 +304,13 @@ export default function AdminDashboardPage() {
     aprovarInscricoesEAtletas([insc], insc.atletaIds);
   };
 
+  const handleAprovarLoteEquipes = (inscs: InscricaoEquipe[]) => {
+    const pendentes = inscs.filter((i) => i.status !== 'VALIDADA');
+    if (pendentes.length === 0) return;
+    const idsUnicos = Array.from(new Set(pendentes.flatMap((i) => i.atletaIds)));
+    aprovarInscricoesEAtletas(pendentes, idsUnicos);
+  };
+
   const abrirModalObsAtleta = (atleta: Atleta) => {
     setAtletaObs(atleta);
     setObsTexto(atleta.observacaoCoordenador || '');
@@ -1024,11 +1031,11 @@ export default function AdminDashboardPage() {
             title="Ver inscrições e atletas homologados"
           >
             <CheckCheck className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'text-white' : 'text-teal-600'}`} />
-            <span>Homologados:</span>
+            <span>Homologadas:</span>
             <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
               abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'bg-white/20 text-white' : 'bg-teal-100/70 text-teal-900'
             }`}>
-              {atletas.filter(a => a.conferidoPeloCoordenador).length}
+              {inscricoes.filter(i => i.status === 'VALIDADA').length}/{inscricoes.length}
             </span>
           </button>
         </div>
@@ -1208,6 +1215,7 @@ export default function AdminDashboardPage() {
           setSubAbaHomologacao={setSubAbaHomologacao}
           abrirModalAnalise={abrirModalAnalise}
           onAprovarEquipeDireto={handleAprovarEquipeDireto}
+          onAprovarLoteEquipes={handleAprovarLoteEquipes}
         />
       )}
 
