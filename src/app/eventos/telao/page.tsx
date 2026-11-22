@@ -59,6 +59,7 @@ export default function TelaoEventosPage() {
   const [municipioId, setMunicipioId] = useState<string | undefined>(undefined);
   const [siglaEvento, setSiglaEvento] = useState('JEGDS 2026');
   const [nomeEvento, setNomeEvento] = useState('Jogos Escolares de Gonçalves Dias');
+  const [nomeCidade, setNomeCidade] = useState('GONÇALVES DIAS');
   const [logoUrl, setLogoUrl] = useState('/logo-jegd.png');
 
   const [bundle, setBundle] = useState<EventosBundle>({
@@ -100,6 +101,7 @@ export default function TelaoEventosPage() {
       setMunicipioId(mun.id);
       setSiglaEvento(mun.siglaEvento || 'JEGDS 2026');
       setNomeEvento(mun.nomeEvento || 'Jogos Escolares de Gonçalves Dias');
+      if (mun.nome) setNomeCidade(mun.nome.toUpperCase());
       if (mun.logoUrl || mun.brasaoUrl) setLogoUrl(mun.logoUrl || mun.brasaoUrl || '/logo-jegd.png');
     }
 
@@ -513,64 +515,207 @@ export default function TelaoEventosPage() {
         </div>
       )}
 
-      {/* BARRA SUPERIOR BROADCAST */}
-      <header
-        className={`relative px-6 sm:px-10 py-2.5 border-b flex items-center justify-between gap-4 shrink-0 ${temaEscuro ? 'bg-[#111B18] border-white/10' : 'bg-white border-[#E2EAE5]'
-          }`}
-      >
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 p-1 shadow-xs shrink-0">
-            <img src={logoUrl} alt={siglaEvento} className="w-full h-full object-contain" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-md bg-[#8B1D2C] text-white text-[11px] font-black uppercase tracking-wider">
-                {slideAtual?.tag}
-              </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#00A878]">
-                {siglaEvento} • SEMED
-              </span>
-            </div>
-            <h1 className="text-lg sm:text-2xl font-black tracking-tight truncate mt-0.5">
-              {slideAtual?.titulo}
-            </h1>
-          </div>
-        </div>
+      {/* BARRA SUPERIOR BROADCAST ESPORTIVO (INSPIRADA NA IDENTIDADE JEGDS + SEMED) */}
+      {(() => {
+        const partesSigla = siglaEvento.trim().split(/\s+/);
+        const siglaBase = partesSigla[0] || 'JEGDS';
+        const siglaAno = partesSigla.slice(1).join(' ') || '2026';
+        return (
+          <header
+            className={`relative overflow-hidden px-6 sm:px-10 py-2.5 flex items-center justify-between gap-4 shrink-0 ${
+              temaEscuro
+                ? 'bg-gradient-to-r from-[#0F1A16] via-[#13221D] to-[#0F1A16]'
+                : 'bg-gradient-to-r from-white via-[#F9FBFA] to-[#F3F6F4]'
+            }`}
+          >
+            {/* Faixas Aerodinâmicas Canto Superior Esquerdo (Verde + Carmim) */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 260 110"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute top-0 left-0 h-full w-44 sm:w-60 select-none"
+            >
+              <defs>
+                <pattern id="jegdsDotsLeft" width="8" height="8" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="1.3" fill={temaEscuro ? 'rgba(255,255,255,0.08)' : 'rgba(11,107,58,0.12)'} />
+                </pattern>
+              </defs>
+              <rect x="0" y="36" width="110" height="74" fill="url(#jegdsDotsLeft)" />
+              <path d="M0,0 L165,0 C105,12 52,44 0,88 Z" fill="#0B6B3A" />
+              <path d="M0,78 C54,36 112,10 182,0 L198,0 C122,14 60,46 0,98 Z" fill="#FFFFFF" opacity={temaEscuro ? '0.18' : '0.95'} />
+              <path d="M0,88 C60,44 124,14 205,0 L224,0 C138,18 68,54 0,108 Z" fill="#C1121F" />
+            </svg>
 
-        <div className="flex items-center gap-5 shrink-0">
-          <div className="hidden md:flex items-center gap-1.5">
-            {slides.map((s, idx) => (
-              <button
-                key={s.id}
-                type="button"
-                title={s.titulo}
-                onClick={() => irParaSlideComWhoosh(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${idx === (slideIdx % slides.length) ? 'w-8 bg-[#00A878]' : temaEscuro ? 'w-2 bg-white/25' : 'w-2 bg-slate-300'
-                  }`}
+            {/* Faixas Aerodinâmicas Canto Inferior Direito (Verde + Carmim) */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 320 110"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute bottom-0 right-0 h-full w-56 sm:w-80 select-none"
+            >
+              <defs>
+                <pattern id="jegdsDotsRight" width="8" height="8" patternUnits="userSpaceOnUse">
+                  <circle cx="2" cy="2" r="1.3" fill={temaEscuro ? 'rgba(255,255,255,0.08)' : 'rgba(11,107,58,0.12)'} />
+                </pattern>
+              </defs>
+              <rect x="220" y="0" width="100" height="70" fill="url(#jegdsDotsRight)" />
+              <path d="M320,40 C268,72 195,90 92,110 L170,110 C245,94 290,74 320,56 Z" fill="#0B6B3A" />
+              <path d="M320,56 C284,78 232,96 155,110 L320,110 Z" fill="#C1121F" />
+            </svg>
+
+            {/* BLOCO ESQUERDO: LOGO JEGDS + TIPOGRAFIA ESPORTIVA + TAG DO SLIDE */}
+            <div className="relative z-10 flex items-center gap-4 sm:gap-5 min-w-0 pl-8 sm:pl-14">
+              {/* Marca Oficial JEGDS 2026 */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <img
+                  src={logoUrl}
+                  alt={siglaEvento}
+                  className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-xs shrink-0"
+                />
+                <div className="leading-none select-none">
+                  <div
+                    className={`text-2xl sm:text-3xl font-black italic tracking-tight leading-[0.9] ${
+                      temaEscuro ? 'text-emerald-400' : 'text-[#0B6B3A]'
+                    }`}
+                  >
+                    {siglaBase}
+                  </div>
+                  <div
+                    className={`text-xl sm:text-2xl font-black italic tracking-tight leading-[0.95] ${
+                      temaEscuro ? 'text-rose-400' : 'text-[#C1121F]'
+                    }`}
+                  >
+                    {siglaAno}
+                  </div>
+                </div>
+              </div>
+
+              {/* Divisor Inclinado Esportivo */}
+              <div
+                className={`hidden sm:block w-[2px] h-10 -skew-x-12 shrink-0 ${
+                  temaEscuro ? 'bg-emerald-400/50' : 'bg-[#0B6B3A]/70'
+                }`}
               />
-            ))}
-          </div>
 
-          <div className="text-right">
-            <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none text-[#00A878]">
-              {relogio}
+              {/* Contexto do Slide Atual (Pill Verde Inclinada + Subtítulo) */}
+              <div className="min-w-0 flex flex-col justify-center gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block -skew-x-12 px-3.5 py-0.5 rounded-sm bg-[#0B6B3A] shadow-xs">
+                    <span className="inline-block skew-x-12 text-white text-[11px] sm:text-xs font-black italic uppercase tracking-wider whitespace-nowrap">
+                      {slideAtual?.tag}
+                    </span>
+                  </span>
+                </div>
+                <h1
+                  className={`text-sm sm:text-lg font-extrabold tracking-tight truncate leading-tight ${
+                    temaEscuro ? 'text-emerald-100' : 'text-[#0D4A2C]'
+                  }`}
+                >
+                  {slideAtual?.titulo || `${siglaEvento} • SEMED`}
+                </h1>
+              </div>
             </div>
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${temaEscuro ? 'text-slate-400' : 'text-slate-500'}`}>
-              Slide {(slideIdx % slides.length) + 1} / {slides.length}
-            </span>
-          </div>
-        </div>
 
-        {!pausado && slides.length > 1 && slideAtual?.tipo !== 'VIDEO_VINHETA' && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-transparent overflow-hidden">
-            <div
-              key={progressoKey}
-              className="h-full bg-gradient-to-r from-[#8B1D2C] via-[#D97706] to-[#00A878]"
-              style={{ animation: `jegdsProgressBar ${segundosPorSlide}s linear forwards` }}
-            />
-          </div>
-        )}
-      </header>
+            {/* BLOCO DIREITO: SEMED + DIVISOR + RELÓGIO + SLIDE */}
+            <div className="relative z-10 flex items-center gap-4 sm:gap-5 shrink-0 pr-1 sm:pr-2">
+              {/* Pontinhos Clicáveis de Navegação (discretos no desktop) */}
+              <div className="hidden xl:flex items-center gap-1.5 mr-1">
+                {slides.map((s, idx) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    title={s.titulo}
+                    onClick={() => irParaSlideComWhoosh(idx)}
+                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                      idx === slideIdx % slides.length
+                        ? 'w-7 bg-[#0B6B3A]'
+                        : temaEscuro
+                        ? 'w-2 bg-white/25 hover:bg-white/50'
+                        : 'w-2 bg-slate-300 hover:bg-slate-400'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Emblema Institucional SEMED */}
+              <div className="hidden md:flex items-center gap-2 shrink-0">
+                <svg
+                  viewBox="0 0 48 44"
+                  className={`w-9 h-9 shrink-0 ${temaEscuro ? 'text-emerald-400' : 'text-[#0B6B3A]'}`}
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  {/* Capelo (Chapéu de Formatura) */}
+                  <path d="M24 3L4 12.5L24 22L44 12.5L24 3Z" />
+                  <path d="M12 18.2V25.5C12 28.2 17.4 30.5 24 30.5C30.6 30.5 36 28.2 36 25.5V18.2L24 24L12 18.2Z" opacity="0.85" />
+                  {/* Livro Aberto */}
+                  <path d="M5 24.5C9.5 24.5 16.5 26.5 22.5 31.5V40C16.5 35.2 9.5 33.4 5 33.4V24.5Z" />
+                  <path d="M43 24.5C38.5 24.5 31.5 26.5 25.5 31.5V40C31.5 35.2 38.5 33.4 43 33.4V24.5Z" />
+                </svg>
+                <div className="leading-none">
+                  <div
+                    className={`text-lg sm:text-xl font-black tracking-tight border-b pb-0.5 ${
+                      temaEscuro
+                        ? 'text-emerald-400 border-emerald-400/40'
+                        : 'text-[#0B6B3A] border-[#0B6B3A]/40'
+                    }`}
+                  >
+                    SEMED
+                  </div>
+                  <div
+                    className={`text-[9px] font-extrabold tracking-widest uppercase pt-0.5 ${
+                      temaEscuro ? 'text-slate-300' : 'text-[#174D32]'
+                    }`}
+                  >
+                    {nomeCidade}
+                  </div>
+                </div>
+              </div>
+
+              {/* Divisor Vertical Fino */}
+              <div
+                className={`hidden md:block w-px h-10 shrink-0 ${
+                  temaEscuro ? 'bg-white/20' : 'bg-[#0B6B3A]/40'
+                }`}
+              />
+
+              {/* Relógio Digital + Contador de Slide */}
+              <div className="text-center min-w-[116px]">
+                <div
+                  className={`text-2xl sm:text-3xl font-black font-mono tabular-nums tracking-tight leading-none ${
+                    temaEscuro ? 'text-emerald-400' : 'text-[#0B6B3A]'
+                  }`}
+                >
+                  {relogio}
+                </div>
+                <span
+                  className={`block text-[11px] font-extrabold uppercase tracking-wider mt-0.5 ${
+                    temaEscuro ? 'text-slate-300' : 'text-slate-500'
+                  }`}
+                >
+                  SLIDE {(slideIdx % slides.length) + 1} / {slides.length}
+                </span>
+              </div>
+            </div>
+
+            {/* LINHA INFERIOR BICOLOR (VERDE À ESQUERDA -> VERMELHO À DIREITA) + PROGRESSO */}
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] flex">
+              <div className="w-2/5 h-full bg-[#0B6B3A]" />
+              <div className="w-3/5 h-full bg-[#C1121F]" />
+            </div>
+
+            {!pausado && slides.length > 1 && slideAtual?.tipo !== 'VIDEO_VINHETA' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-transparent overflow-hidden z-20">
+                <div
+                  key={progressoKey}
+                  className="h-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"
+                  style={{ animation: `jegdsProgressBar ${segundosPorSlide}s linear forwards` }}
+                />
+              </div>
+            )}
+          </header>
+        );
+      })()}
 
       {/* PALCO PRINCIPAL (100% CONTIDO — NUNCA CORTA TOPO OU BASE EM 720p/1080p) */}
       <main key={slideAtual?.id} className="flex-1 min-h-0 overflow-hidden px-6 sm:px-10 py-4 sm:py-5 flex items-center justify-center anim-slide-enter">
