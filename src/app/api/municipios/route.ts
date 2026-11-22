@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const preferredRegion = ['gru1'];
+
 export async function GET() {
   try {
     const municipios = await prisma.municipio.findMany({
@@ -16,7 +18,15 @@ export async function GET() {
       },
       orderBy: { nome: 'asc' },
     });
-    return NextResponse.json({ success: true, data: municipios });
+    return NextResponse.json(
+      { success: true, data: municipios },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao buscar municípios' },

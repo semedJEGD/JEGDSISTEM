@@ -170,10 +170,11 @@ export default function AdminDashboardPage() {
 
     window.addEventListener('jegd-data-synced', handleDataSynced);
 
-    // Polling ativo a cada 60 segundos com o banco de dados online
+    // Polling econômico a cada 3 minutos (pausa automaticamente se a aba estiver em segundo plano)
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       JegdStorage.sincronizarComNuvem().catch(() => { });
-    }, 60000);
+    }, 180000);
 
     return () => {
       window.removeEventListener('jegd-data-synced', handleDataSynced);

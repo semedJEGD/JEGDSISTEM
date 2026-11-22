@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const preferredRegion = ['gru1'];
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,7 +13,15 @@ export async function GET(request: Request) {
       where,
       orderBy: { nome: 'asc' },
     });
-    return NextResponse.json({ success: true, data: escolas });
+    return NextResponse.json(
+      { success: true, data: escolas },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao buscar escolas' },

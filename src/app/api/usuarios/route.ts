@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+export const preferredRegion = ['gru1'];
 import bcrypt from 'bcryptjs';
 
 export async function GET(request: Request) {

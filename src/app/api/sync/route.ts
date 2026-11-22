@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const preferredRegion = ['gru1'];
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -25,7 +27,6 @@ export async function GET(request: Request) {
             { NOT: { id: { contains: 'teste' } } }
           ]
         },
-        include: { escola: true },
         orderBy: { nomeCompleto: 'asc' }
       }),
       prisma.modalidade.findMany({ orderBy: { nome: 'asc' } }),
@@ -39,24 +40,49 @@ export async function GET(request: Request) {
       }),
       prisma.inscricao.findMany({
         where: whereMunicipio,
-        include: { atleta: true, modalidade: true, escola: true },
+        select: {
+          id: true,
+          municipioId: true,
+          escolaId: true,
+          atletaId: true,
+          modalidadeId: true,
+          categoria: true,
+          sexo: true,
+          equipe: true,
+          prova: true,
+          status: true,
+          motivoRejeicao: true,
+          dataInscricao: true,
+          updatedAt: true,
+          modalidade: { select: { codigo: true, nome: true } },
+        },
         orderBy: { dataInscricao: 'desc' }
       }),
       prisma.usuario.findMany({
         where: whereMunicipio,
-        include: { escola: true },
         orderBy: { nome: 'asc' }
       })
     ]);
 
+    // Índices O(1) em memória para evitar N+1 / joins redundantes e loops O(N×M)
+    const escolaPorId = new Map(escolas.map(e => [e.id, e]));
+    const inscricoesPorAtleta = new Map<string, typeof inscricoes>();
+    for (const i of inscricoes) {
+      if (!inscricoesPorAtleta.has(i.atletaId)) {
+        inscricoesPorAtleta.set(i.atletaId, []);
+      }
+      inscricoesPorAtleta.get(i.atletaId)!.push(i);
+    }
+
     // Normalizar atletas para o formato esperado pelo frontend
     const atletasFormatados = atletas.map(a => {
+      const escolaAtleta = escolaPorId.get(a.escolaId);
       const dataNascStr = a.dataNascimento instanceof Date 
         ? a.dataNascimento.toISOString().split('T')[0] 
         : String(a.dataNascimento).split('T')[0];
 
       // Vincular modalidades em que o atleta está inscrito (deduplicando por modalidade e preservando provas preenchidas)
-      const inscricoesDoAtleta = inscricoes.filter(i => i.atletaId === a.id);
+      const inscricoesDoAtleta = inscricoesPorAtleta.get(a.id) || [];
       const modsPorCodigo = new Map<string, {
         modalidadeCodigo: string;
         modalidadeNome: string;
@@ -86,7 +112,7 @@ export async function GET(request: Request) {
         
       return {
         id: a.id,
-        municipioId: a.municipioId || a.escola?.municipioId || undefined,
+        municipioId: a.municipioId || escolaAtleta?.municipioId || undefined,
         escolaId: a.escolaId,
         nomeCompleto: a.nomeCompleto,
         dataNascimento: dataNascStr,
@@ -98,7 +124,7 @@ export async function GET(request: Request) {
         serieTurma: a.turma || '',
         turma: a.turma || '',
         nomeMae: (a as any).nomeMae || '',
-        telefoneContato: (a as any).telefoneContato || a.escola?.responsavelTelefone || '',
+        telefoneContato: (a as any).telefoneContato || escolaAtleta?.responsavelTelefone || '',
         tipoSanguineo: a.tipoSanguineo || 'O+',
         consentimentoResponsavel: a.consentimentoResponsavel ?? true,
         categoriaCalculada: a.categoria,
@@ -127,7 +153,7 @@ export async function GET(request: Request) {
       if (!inscricoesMap.has(equipeKey)) {
         inscricoesMap.set(equipeKey, {
           id: equipeKey,
-          municipioId: insc.municipioId || insc.escola?.municipioId || undefined,
+          municipioId: insc.municipioId || escolaPorId.get(insc.escolaId)?.municipioId || undefined,
           escolaId: insc.escolaId,
           modalidadeCodigo: modCodigo,
           modalidadeNome: modNome,
@@ -154,37 +180,48 @@ export async function GET(request: Request) {
     }
     const inscricoesFormatadas = Array.from(inscricoesMap.values());
 
-    const usuariosFormatados = usuarios.map(u => ({
-      id: u.id,
-      municipioId: u.municipioId,
-      nome: u.nome,
-      email: u.email,
-      cpf: u.cpf,
-      senhaHash: u.senhaHash,
-      papel: u.papel === 'COMITE' ? 'COORDENADOR' : (u.papel === 'SUPERADMIN' ? 'SUPERADMIN' : 'PROFESSOR'),
-      escolaId: u.escolaId,
-      escola: u.escola ? {
-        id: u.escola.id,
-        nome: u.escola.nome,
-        sigla: u.escola.sigla,
-        loginEmail: u.escola.loginEmail
-      } : undefined,
-      createdAt: u.createdAt ? u.createdAt.toISOString() : new Date().toISOString()
-    }));
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        municipios,
-        escolas,
-        atletas: atletasFormatados,
-        modalidades,
-        registros,
-        comunicados,
-        inscricoes: inscricoesFormatadas,
-        usuarios: usuariosFormatados
-      }
+    const usuariosFormatados = usuarios.map(u => {
+      const escolaUsuario = u.escolaId ? escolaPorId.get(u.escolaId) : undefined;
+      return {
+        id: u.id,
+        municipioId: u.municipioId,
+        nome: u.nome,
+        email: u.email,
+        cpf: u.cpf,
+        senhaHash: u.senhaHash,
+        papel: u.papel === 'COMITE' ? 'COORDENADOR' : (u.papel === 'SUPERADMIN' ? 'SUPERADMIN' : 'PROFESSOR'),
+        escolaId: u.escolaId,
+        escola: escolaUsuario ? {
+          id: escolaUsuario.id,
+          nome: escolaUsuario.nome,
+          sigla: escolaUsuario.sigla,
+          loginEmail: escolaUsuario.loginEmail
+        } : undefined,
+        createdAt: u.createdAt ? u.createdAt.toISOString() : new Date().toISOString()
+      };
     });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          municipios,
+          escolas,
+          atletas: atletasFormatados,
+          modalidades,
+          registros,
+          comunicados,
+          inscricoes: inscricoesFormatadas,
+          usuarios: usuariosFormatados
+        }
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao sincronizar dados com PostgreSQL' },
