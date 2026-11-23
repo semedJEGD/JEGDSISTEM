@@ -20,8 +20,10 @@ import {
   Users,
   Clock,
   MapPin,
+  GitBranch,
 } from 'lucide-react';
-import { Atleta, Escola } from '@/types/jegd';
+import { Atleta, Escola, InscricaoEquipe, ModalidadeConfig } from '@/types/jegd';
+import { PainelChaveamentoOficial } from './PainelChaveamentoOficial';
 import {
   EventosBundle,
   PartidaEventoItem,
@@ -42,16 +44,20 @@ interface AbaEventosCompeticaoProps {
   municipioId?: string;
   escolas: Escola[];
   atletas: Atleta[];
+  inscricoes?: InscricaoEquipe[];
+  modalidades?: ModalidadeConfig[];
 }
 
-type SubAba = 'NOTICIAS' | 'CRONOGRAMA' | 'JOGOS' | 'ARTILHARIA' | 'MEDALHAS';
+type SubAba = 'CHAVEAMENTO' | 'JOGOS' | 'NOTICIAS' | 'CRONOGRAMA' | 'ARTILHARIA' | 'MEDALHAS';
 
 export function AbaEventosCompeticao({
   municipioId,
   escolas,
   atletas,
+  inscricoes = [],
+  modalidades = [],
 }: AbaEventosCompeticaoProps) {
-  const [subAba, setSubAba] = useState<SubAba>('JOGOS');
+  const [subAba, setSubAba] = useState<SubAba>('CHAVEAMENTO');
   const [bundle, setBundle] = useState<EventosBundle>({
     noticias: [],
     cronograma: [],
@@ -59,6 +65,7 @@ export function AbaEventosCompeticao({
     artilharia: [],
     medalhas: [],
     avisos: [],
+    chaveamentos: [],
     updatedAt: '',
   });
   const [carregando, setCarregando] = useState(true);
@@ -580,6 +587,7 @@ export function AbaEventosCompeticao({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
         {(
           [
+            { id: 'CHAVEAMENTO', label: `Chaveamento & Auditoria (${bundle.chaveamentos?.length || 0})`, icon: GitBranch },
             { id: 'JOGOS', label: `Jogos & Placares (${bundle.partidas.length})`, icon: Trophy },
             { id: 'NOTICIAS', label: `Notícias & Destaques (${bundle.noticias.length})`, icon: Newspaper },
             { id: 'CRONOGRAMA', label: `Cronograma (${bundle.cronograma.length})`, icon: CalendarClock },
@@ -606,6 +614,22 @@ export function AbaEventosCompeticao({
           );
         })}
       </div>
+
+      {/* ============================================================ */}
+      {/* SUB-ABA 0: AUDITORIA & CHAVEAMENTO OFICIAL (CBDE/JEBs/CBAt/FIDE) */}
+      {/* ============================================================ */}
+      {subAba === 'CHAVEAMENTO' && (
+        <PainelChaveamentoOficial
+          municipioId={municipioId}
+          escolas={escolas}
+          atletas={atletas}
+          inscricoes={inscricoes}
+          modalidades={modalidades}
+          partidas={bundle.partidas}
+          chaveamentos={bundle.chaveamentos || []}
+          onAtualizado={carregarDados}
+        />
+      )}
 
       {/* ============================================================ */}
       {/* SUB-ABA 1: JOGOS, PLACARES AO VIVO & CHAVEAMENTO */}

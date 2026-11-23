@@ -119,6 +119,7 @@ export function calcularClassificacaoPorChave(partidas: PartidaEventoItem[]): {
       sexo: string;
       grupo: string;
       escolas: Map<string, LinhaClassificacao>;
+      partidasEncerradas: PartidaEventoItem[];
     }
   >();
 
@@ -136,6 +137,7 @@ export function calcularClassificacaoPorChave(partidas: PartidaEventoItem[]): {
         sexo: p.sexo,
         grupo: grupoNome,
         escolas: new Map(),
+        partidasEncerradas: [],
       });
     }
 
@@ -163,6 +165,7 @@ export function calcularClassificacaoPorChave(partidas: PartidaEventoItem[]): {
     const rowB = garantirEscola(p.escolaBId, p.escolaBNome, p.escolaBSigla);
 
     if (p.status !== 'ENCERRADO' && p.status !== 'WO') return;
+    g.partidasEncerradas.push(p);
 
     rowA.jogos += 1;
     rowB.jogos += 1;
@@ -202,21 +205,45 @@ export function calcularClassificacaoPorChave(partidas: PartidaEventoItem[]): {
     rowB.saldo = rowB.pro - rowB.contra;
   });
 
-  return Array.from(gruposMap.entries()).map(([chave, g]) => ({
-    chave,
-    modalidadeNome: g.modalidadeNome,
-    modalidadeCodigo: g.modalidadeCodigo,
-    categoria: g.categoria,
-    sexo: g.sexo,
-    grupo: g.grupo,
-    linhas: Array.from(g.escolas.values()).sort((a, b) => {
-      if (b.pontos !== a.pontos) return b.pontos - a.pontos;
-      if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
-      if (b.saldo !== a.saldo) return b.saldo - a.saldo;
-      if (b.pro !== a.pro) return b.pro - a.pro;
-      return a.escolaNome.localeCompare(b.escolaNome, 'pt-BR');
-    }),
-  }));
+  return Array.from(gruposMap.entries()).map(([chave, g]) => {
+    const linhasBase = Array.from(g.escolas.values());
+    const contagemPorPontos = new Map<number, number>();
+    linhasBase.forEach((l) => contagemPorPontos.set(l.pontos, (contagemPorPontos.get(l.pontos) || 0) + 1));
+
+    const confrontoDireto = (idA: string, idB: string): number => {
+      const jogo = g.partidasEncerradas.find(
+        (p) => (p.escolaAId === idA && p.escolaBId === idB) || (p.escolaAId === idB && p.escolaBId === idA)
+      );
+      if (!jogo) return 0;
+      const golsA = jogo.escolaAId === idA ? jogo.placarA : jogo.placarB;
+      const golsB = jogo.escolaAId === idA ? jogo.placarB : jogo.placarA;
+      if (golsA > golsB) return -1;
+      if (golsB > golsA) return 1;
+      return 0;
+    };
+
+    return {
+      chave,
+      modalidadeNome: g.modalidadeNome,
+      modalidadeCodigo: g.modalidadeCodigo,
+      categoria: g.categoria,
+      sexo: g.sexo,
+      grupo: g.grupo,
+      linhas: linhasBase.sort((a, b) => {
+        if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+        // Critério Oficial CBFS/CBF/JEBs: Confronto direto quando exatamente 2 equipes estão empatadas em pontos
+        if (contagemPorPontos.get(a.pontos) === 2) {
+          const cd = confrontoDireto(a.escolaId, b.escolaId);
+          if (cd !== 0) return cd;
+        }
+        if (b.vitorias !== a.vitorias) return b.vitorias - a.vitorias;
+        if (b.saldo !== a.saldo) return b.saldo - a.saldo;
+        if (b.pro !== a.pro) return b.pro - a.pro;
+        if (a.contra !== b.contra) return a.contra - b.contra;
+        return a.escolaNome.localeCompare(b.escolaNome, 'pt-BR');
+      }),
+    };
+  });
 }
 
 /**
@@ -336,8 +363,9 @@ export const EventosApi = {
     return json.data;
   },
 
-  async excluir(entidade: string, id: string): Promise<void> {
-    const res = await fetch(`/api/eventos?entidade=${encodeURIComponent(entidade)}&id=${encodeURIComponent(id)}`, {
+  async excluir(entidade: string, id: string, extraParams?: Record<string, string>): Promise<void> {
+    const params = new URLSearchParams({ entidade, id, ...(extraParams || {}) });
+    const res = await fetch(`/api/eventos?${params.toString()}`, {
       method: 'DELETE',
     });
     const json = await res.json();

@@ -131,7 +131,36 @@ export interface EventosBundle {
   artilharia: ArtilhariaEventoItem[];
   medalhas: MedalhaEventoItem[];
   avisos: AvisoTelaoItem[];
+  chaveamentos?: ChaveamentoEventoItem[];
   atletasParticipantes?: AtletaEventoPublico[];
+  updatedAt: string;
+}
+
+export type FormatoChaveamento =
+  | 'GRUPOS_MATA_MATA'
+  | 'MATA_MATA'
+  | 'BERGER_UNICO'
+  | 'FINAL_DIRETA'
+  | 'BALIZAMENTO_ATLETISMO'
+  | 'SUICO_XADREZ'
+  | 'GRUPOS_TENIS_MESA';
+
+export interface ChaveamentoEventoItem {
+  id: string;
+  municipioId?: string | null;
+  modalidadeCodigo: string;
+  modalidadeNome: string;
+  categoria: string;
+  sexo: string;
+  prova?: string | null;
+  formato: FormatoChaveamento | string;
+  seed: string;
+  status: 'RASCUNHO' | 'CONGELADO' | string;
+  criadoPor: string;
+  congeladoEm?: string | null;
+  auditoriaJson?: string | null;
+  estruturaJson?: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 

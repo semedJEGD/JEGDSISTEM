@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const noCache = searchParams.get('nocache') === '1';
     const where = municipioId && municipioId !== 'ALL' ? { municipioId } : {};
 
-    const [noticias, cronograma, partidas, artilharia, medalhas, avisos, inscricoes] = await Promise.all([
+    const [noticias, cronograma, partidas, artilharia, medalhas, avisos, chaveamentos, inscricoes] = await Promise.all([
       prisma.noticiaEvento.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -34,6 +34,10 @@ export async function GET(request: Request) {
         orderBy: { createdAt: 'desc' },
       }),
       prisma.avisoTelao.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.chaveamentoEvento.findMany({
         where,
         orderBy: { createdAt: 'desc' },
       }),
@@ -152,6 +156,7 @@ export async function GET(request: Request) {
           artilharia,
           medalhas,
           avisos,
+          chaveamentos,
           atletasParticipantes,
           updatedAt: new Date().toISOString(),
         },
@@ -343,6 +348,59 @@ export async function POST(request: Request) {
         });
         break;
 
+      case 'chaveamento': {
+        const chaveamento = await prisma.chaveamentoEvento.create({
+          data: {
+            municipioId: dados.municipioId || null,
+            modalidadeCodigo: dados.modalidadeCodigo,
+            modalidadeNome: dados.modalidadeNome,
+            categoria: dados.categoria,
+            sexo: dados.sexo,
+            prova: dados.prova || null,
+            formato: dados.formato,
+            seed: dados.seed,
+            status: dados.status || 'RASCUNHO',
+            criadoPor: dados.criadoPor || 'Coordenação SEMED',
+            congeladoEm: dados.status === 'CONGELADO' ? new Date() : null,
+            auditoriaJson: dados.auditoriaJson || null,
+            estruturaJson: dados.estruturaJson || null,
+          },
+        });
+
+        let partidasCriadas = 0;
+        if (Array.isArray(dados.partidas) && dados.partidas.length > 0) {
+          const batch = await prisma.partidaEvento.createMany({
+            data: dados.partidas.map((p: any) => ({
+              municipioId: dados.municipioId || null,
+              numeroJogo: p.numeroJogo ? Number(p.numeroJogo) : null,
+              modalidadeCodigo: p.modalidadeCodigo,
+              modalidadeNome: p.modalidadeNome,
+              categoria: p.categoria,
+              sexo: p.sexo,
+              fase: p.fase || 'GRUPOS',
+              grupo: p.grupo || null,
+              dataEvento: p.dataEvento,
+              horario: p.horario,
+              local: p.local || null,
+              escolaAId: p.escolaAId,
+              escolaANome: p.escolaANome,
+              escolaASigla: p.escolaASigla || null,
+              escolaBId: p.escolaBId,
+              escolaBNome: p.escolaBNome,
+              escolaBSigla: p.escolaBSigla || null,
+              placarA: 0,
+              placarB: 0,
+              status: 'AGENDADO',
+              observacao: p.observacao || null,
+            })),
+          });
+          partidasCriadas = batch.count;
+        }
+
+        result = { chaveamento, partidasCriadas };
+        break;
+      }
+
       default:
         return NextResponse.json({ success: false, error: `Entidade desconhecida: ${entidade}` }, { status: 400 });
     }
@@ -384,6 +442,26 @@ export async function PATCH(request: Request) {
       case 'aviso':
         result = await prisma.avisoTelao.update({ where: { id }, data: dados });
         break;
+      case 'chaveamento': {
+        const updateData: Record<string, any> = { ...dados };
+        if (updateData.status === 'CONGELADO' && !updateData.congeladoEm) {
+          updateData.congeladoEm = new Date();
+        }
+        result = await prisma.chaveamentoEvento.update({ where: { id }, data: updateData });
+        break;
+      }
+      case 'partidas_atualizar_lote': {
+        const itens: { id: string; dados: Record<string, any> }[] = Array.isArray(dados.itens) ? dados.itens : [];
+        result = await Promise.all(
+          itens.map((item) =>
+            prisma.partidaEvento.update({
+              where: { id: item.id },
+              data: item.dados,
+            })
+          )
+        );
+        break;
+      }
       default:
         return NextResponse.json({ success: false, error: `Entidade não atualizável: ${entidade}` }, { status: 400 });
     }
@@ -427,6 +505,22 @@ export async function DELETE(request: Request) {
       case 'aviso':
         await prisma.avisoTelao.delete({ where: { id } });
         break;
+      case 'chaveamento': {
+        const excluirPartidas = searchParams.get('excluirPartidas') === '1';
+        const ch = await prisma.chaveamentoEvento.findUnique({ where: { id } });
+        if (ch && excluirPartidas) {
+          await prisma.partidaEvento.deleteMany({
+            where: {
+              municipioId: ch.municipioId,
+              modalidadeCodigo: ch.modalidadeCodigo,
+              categoria: ch.categoria,
+              sexo: ch.sexo,
+            },
+          });
+        }
+        await prisma.chaveamentoEvento.delete({ where: { id } });
+        break;
+      }
       default:
         return NextResponse.json({ success: false, error: `Entidade desconhecida: ${entidade}` }, { status: 400 });
     }

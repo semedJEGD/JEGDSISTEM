@@ -34,6 +34,11 @@ import {
   agruparArtilhariaPorModalidade,
   formatarDataBR,
 } from '@/lib/eventos-service';
+import {
+  calcularClassificacaoXadrez,
+  EstruturaXadrez,
+  ProvaAtletismoBalizamento,
+} from '@/lib/chaveamento-service';
 
 type AbaPublica = 'COBERTURA' | 'ATLETAS_DIA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
 
@@ -1030,7 +1035,7 @@ export default function EventosDoDiaPage() {
       {/* ============================================================ */}
       {aba === 'TABELAS' && (
         <div className="space-y-8">
-          {classificacoes.length === 0 && mataMata.length === 0 ? (
+          {classificacoes.length === 0 && mataMata.length === 0 && (!bundle.chaveamentos || bundle.chaveamentos.length === 0) ? (
             <div className="bg-white border border-[#E2EAE5] rounded-2xl p-10 text-center text-sm text-slate-500">
               As tabelas de classificação e chaveamentos aparecem automaticamente conforme os jogos são cadastrados.
             </div>
@@ -1108,6 +1113,107 @@ export default function EventosDoDiaPage() {
                   </div>
                 </div>
               )}
+
+              {/* Balizamento de Atletismo e Torneios de Xadrez publicados */}
+              {(bundle.chaveamentos || [])
+                .filter((c) => c.formato === 'BALIZAMENTO_ATLETISMO' || c.formato === 'SUICO_XADREZ')
+                .map((ch) => {
+                  let est: any = null;
+                  try {
+                    est = ch.estruturaJson ? JSON.parse(ch.estruturaJson) : null;
+                  } catch {
+                    est = null;
+                  }
+                  if (!est) return null;
+
+                  if (ch.formato === 'BALIZAMENTO_ATLETISMO' && Array.isArray(est.provas)) {
+                    return (
+                      <div key={ch.id} className="space-y-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h3 className="text-base font-black text-[#17221D]">
+                            Balizamento Oficial • {ch.modalidadeNome} ({ch.categoria} • {ch.sexo})
+                          </h3>
+                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] font-bold">
+                            {ch.status} • Seed {ch.seed}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {(est.provas as ProvaAtletismoBalizamento[]).map((pr) => (
+                            <div key={pr.prova} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
+                              <div className="px-4 py-2.5 bg-[#F7F9F8] border-b border-[#E2EAE5] font-bold text-xs text-[#087A5B] uppercase">
+                                {pr.prova}
+                              </div>
+                              <div className="p-3 space-y-2.5">
+                                {pr.series.map((s) => (
+                                  <div key={s.numero} className="space-y-1">
+                                    <p className="text-[11px] font-bold text-slate-500">{s.nome}</p>
+                                    {s.raias.map((r) => (
+                                      <div key={r.raia} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                                        <span>
+                                          <strong className="text-[#087A5B] mr-1.5">R{r.raia}</strong>
+                                          <span className="font-semibold text-[#17221D]">{r.atletaNome}</span>{' '}
+                                          <span className="text-slate-400">({r.escolaSigla})</span>
+                                        </span>
+                                        <span className="font-mono font-bold text-slate-700">
+                                          {r.posicao ? `${r.posicao}º ` : ''}
+                                          {r.marca || '-'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (ch.formato === 'SUICO_XADREZ' && est.rodadas) {
+                    const classifXadrez = calcularClassificacaoXadrez(est as EstruturaXadrez);
+                    return (
+                      <div key={ch.id} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
+                        <div className="px-5 py-3.5 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between flex-wrap gap-2">
+                          <h3 className="text-sm font-bold text-[#17221D]">
+                            Xadrez ({est.sistema}) • {ch.categoria} ({ch.sexo === 'FEMININO' ? 'F' : 'M'})
+                          </h3>
+                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] font-bold">
+                            {est.rodadas.length}/{est.totalRodadasPrevistas} rodadas • Critério Buchholz
+                          </span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
+                              <tr>
+                                <th className="py-2.5 px-3">#</th>
+                                <th className="py-2.5 px-3">Enxadrista</th>
+                                <th className="py-2.5 px-3">Escola</th>
+                                <th className="py-2.5 px-2 text-center">J</th>
+                                <th className="py-2.5 px-2 text-center text-[#087A5B]">PTS</th>
+                                <th className="py-2.5 px-3 text-center">Buchholz</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {classifXadrez.map((c, idx) => (
+                                <tr key={c.id} className={idx < 3 ? 'bg-emerald-50/30' : ''}>
+                                  <td className="py-2 px-3 font-bold text-slate-500">{idx + 1}º</td>
+                                  <td className="py-2 px-3 font-bold text-[#17221D]">{c.nome}</td>
+                                  <td className="py-2 px-3 text-slate-600">{c.sigla}</td>
+                                  <td className="py-2 px-2 text-center">{c.jogos}</td>
+                                  <td className="py-2 px-2 text-center font-black text-[#087A5B]">{c.pontos.toFixed(1)}</td>
+                                  <td className="py-2 px-3 text-center font-mono text-slate-600">{c.buchholz.toFixed(1)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
             </>
           )}
         </div>

@@ -347,3 +347,25 @@ model AvisoTelao {
 
   @@index([municipioId])
 }
+
+model ChaveamentoEvento {
+  id               String   @id @default(uuid())
+  municipioId      String?
+  modalidadeCodigo String
+  modalidadeNome   String
+  categoria        String   // MIRIM | INFANTIL | INFANTO | JUNIOR
+  sexo             String   // MASCULINO | FEMININO
+  prova            String?  // Opcional: usado no Atletismo (ex: "100m Rasos")
+  formato          String   // GRUPOS_MATA_MATA | MATA_MATA | BERGER_UNICO | FINAL_DIRETA | BALIZAMENTO_ATLETISMO | SUICO_XADREZ | GRUPOS_TENIS_MESA
+  seed             String
+  status           String   @default("RASCUNHO") // RASCUNHO | CONGELADO
+  criadoPor        String   @default("Coordenação SEMED")
+  congeladoEm      DateTime?
+  auditoriaJson    String?  // Snapshot JSON da auditoria pré-chaveamento
+  estruturaJson    String?  // JSON de grupos, séries de atletismo ou rodadas suíças
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([municipioId])
+  @@index([modalidadeCodigo, categoria, sexo])
+}

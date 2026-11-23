@@ -1270,6 +1270,8 @@ export default function AdminDashboardPage() {
           municipioId={municipioAtual?.id}
           escolas={escolas}
           atletas={atletas}
+          inscricoes={inscricoes}
+          modalidades={modalidades}
         />
       )}
 
