@@ -79,13 +79,33 @@ export async function POST(request: Request) {
       });
     }
 
-    // Criar ou atualizar as inscrições dos atletas nesta modalidade
+    // Criar ou atualizar as inscrições dos atletas nesta modalidade (lote para evitar N+1 round-trips)
     const criados = [];
     const equipeChave = id || `insc-${escolaId}-${modalidade.codigo}-${categoria}-${sexo}`;
 
+    const [atletasExistentes, inscricoesExistentes] = await Promise.all([
+      prisma.atleta.findMany({
+        where: { id: { in: atletaIds } },
+        select: { id: true, municipioId: true },
+      }),
+      prisma.inscricao.findMany({
+        where: {
+          atletaId: { in: atletaIds },
+          modalidadeId: modalidade.id,
+        },
+        orderBy: { dataInscricao: 'desc' },
+      }),
+    ]);
+
+    const atletaPorId = new Map(atletasExistentes.map((a) => [a.id, a]));
+    const inscsPorAtleta = new Map<string, typeof inscricoesExistentes>();
+    for (const e of inscricoesExistentes) {
+      if (!inscsPorAtleta.has(e.atletaId)) inscsPorAtleta.set(e.atletaId, []);
+      inscsPorAtleta.get(e.atletaId)!.push(e);
+    }
+
     for (const atletaId of atletaIds) {
-      // Garante que o atleta existe no banco de dados para evitar erro de chave estrangeira
-      const atletaExiste = await prisma.atleta.findUnique({ where: { id: atletaId } });
+      const atletaExiste = atletaPorId.get(atletaId);
       if (!atletaExiste) {
         console.warn(`Atleta ${atletaId} não encontrado no banco para inscrição na modalidade ${modalidade.codigo}`);
         continue;
@@ -94,14 +114,7 @@ export async function POST(request: Request) {
       const provas = provasPorAtleta?.[atletaId];
       const provaStr = Array.isArray(provas) && provas.length > 0 ? provas.filter(Boolean).join(',') : '';
 
-      // Atualiza a inscrição existente da mesma modalidade in-place (sem duplicar nem apagar provas já salvas!)
-      const existentes = await prisma.inscricao.findMany({
-        where: {
-          atletaId,
-          modalidadeId: modalidade.id,
-        },
-        orderBy: { dataInscricao: 'desc' },
-      });
+      const existentes = inscsPorAtleta.get(atletaId) || [];
 
       let insc;
       if (existentes.length > 0) {

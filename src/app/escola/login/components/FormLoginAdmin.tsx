@@ -14,6 +14,7 @@ interface FormLoginAdminProps {
   setMostrarSenhaAdmin: (val: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   nomeMunicipio?: string;
+  carregando?: boolean;
 }
 
 export function FormLoginAdmin({
@@ -25,7 +26,8 @@ export function FormLoginAdmin({
   mostrarSenhaAdmin,
   setMostrarSenhaAdmin,
   onSubmit,
-  nomeMunicipio
+  nomeMunicipio,
+  carregando = false
 }: FormLoginAdminProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-3.5">
@@ -76,11 +78,12 @@ export function FormLoginAdmin({
 
       <button
         type="submit"
-        className="w-full py-3 px-5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] text-white font-black text-xs sm:text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
+        disabled={carregando}
+        className="w-full py-3 px-5 rounded-xl bg-[#087A5B] hover:bg-[#00A878] disabled:opacity-60 disabled:cursor-wait text-white font-black text-xs sm:text-sm shadow-md shadow-[#087A5B]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-3"
       >
         <Shield className="w-4 h-4" />
-        <span>Acessar Painel da Coordenação</span>
-        <ArrowRight className="w-4 h-4" />
+        <span>{carregando ? 'Validando credenciais...' : 'Acessar Painel da Coordenação'}</span>
+        {!carregando && <ArrowRight className="w-4 h-4" />}
       </button>
     </form>
   );

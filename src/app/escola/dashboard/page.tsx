@@ -157,7 +157,7 @@ export default function EscolaDashboardPage() {
   const handleForcarSincronizacao = async () => {
     if (!escola) return;
     setSincronizandoOnline(true);
-    await JegdStorage.sincronizarComNuvem();
+    await JegdStorage.sincronizarComNuvem(true);
     carregarDados(escola.id);
     setUltimaSincronizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     setTimeout(() => setSincronizandoOnline(false), 500);

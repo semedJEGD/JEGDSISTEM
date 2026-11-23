@@ -140,6 +140,8 @@ export interface Atleta {
   conferidoPeloCoordenador?: boolean;
   observacaoCoordenador?: string;
   documentos: DocumentosAluno;
+  fotoUrl?: string;
+  documentoUrl?: string;
   ativo: boolean;
   createdAt: string;
 }

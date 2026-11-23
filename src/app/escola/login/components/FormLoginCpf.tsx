@@ -13,6 +13,7 @@ interface FormLoginCpfProps {
   onSubmit: (e: React.FormEvent) => void;
   onAlternarModoCadastro: () => void;
   placeholderEmail?: string;
+  carregando?: boolean;
 }
 
 export function FormLoginCpf({
@@ -24,7 +25,8 @@ export function FormLoginCpf({
   setMostrarSenhaLogin,
   onSubmit,
   onAlternarModoCadastro,
-  placeholderEmail
+  placeholderEmail,
+  carregando = false
 }: FormLoginCpfProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-3 sm:space-y-3.5">
@@ -76,10 +78,11 @@ export function FormLoginCpf({
 
       <button
         type="submit"
-        className="w-full py-3 px-5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
+        disabled={carregando}
+        className="w-full py-3 px-5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] disabled:opacity-60 disabled:cursor-wait text-white font-black text-xs sm:text-sm shadow-md shadow-[#00A878]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 mt-4"
       >
-        <span>Entrar no Painel da Escola</span>
-        <ArrowRight className="w-4 h-4" />
+        <span>{carregando ? 'Validando acesso...' : 'Entrar no Painel da Escola'}</span>
+        {!carregando && <ArrowRight className="w-4 h-4" />}
       </button>
 
       <div className="text-center pt-2">

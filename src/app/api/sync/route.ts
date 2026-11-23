@@ -17,6 +17,20 @@ export async function GET(request: Request) {
       prisma.municipio.findMany({ orderBy: { nome: 'asc' } }),
       prisma.escola.findMany({
         where: whereMunicipio,
+        select: {
+          id: true,
+          municipioId: true,
+          nome: true,
+          sigla: true,
+          inep: true,
+          endereco: true,
+          bairro: true,
+          responsavelNome: true,
+          responsavelTelefone: true,
+          loginEmail: true,
+          createdAt: true,
+          updatedAt: true,
+        },
         orderBy: { nome: 'asc' }
       }),
       prisma.atleta.findMany({
@@ -60,6 +74,16 @@ export async function GET(request: Request) {
       }),
       prisma.usuario.findMany({
         where: whereMunicipio,
+        select: {
+          id: true,
+          municipioId: true,
+          nome: true,
+          email: true,
+          cpf: true,
+          papel: true,
+          escolaId: true,
+          createdAt: true,
+        },
         orderBy: { nome: 'asc' }
       })
     ]);
@@ -132,10 +156,6 @@ export async function GET(request: Request) {
         crachaToken: a.crachaToken || a.matricula || a.id,
         conferidoPeloCoordenador: todosValidados ? true : undefined,
         modalidadesInscritas: modalidadesDoAtleta,
-        documentos: {
-          foto3x4: a.fotoUrl || undefined,
-          documentoIdentidade: a.documentoUrl || undefined
-        },
         fotoUrl: a.fotoUrl || undefined,
         documentoUrl: a.documentoUrl || undefined,
         ativo: true,
@@ -188,7 +208,6 @@ export async function GET(request: Request) {
         nome: u.nome,
         email: u.email,
         cpf: u.cpf,
-        senhaHash: u.senhaHash,
         papel: u.papel === 'COMITE' ? 'COORDENADOR' : (u.papel === 'SUPERADMIN' ? 'SUPERADMIN' : 'PROFESSOR'),
         escolaId: u.escolaId,
         escola: escolaUsuario ? {

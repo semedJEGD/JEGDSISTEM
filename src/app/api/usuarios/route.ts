@@ -4,6 +4,35 @@ import { prisma } from '@/lib/prisma';
 export const preferredRegion = ['gru1'];
 import bcrypt from 'bcryptjs';
 
+function formatCPF(digits: string): string {
+  const d = digits.replace(/\D/g, '').slice(0, 11);
+  if (d.length !== 11) return digits;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+const usuarioSafeSelect = {
+  id: true,
+  municipioId: true,
+  nome: true,
+  email: true,
+  cpf: true,
+  papel: true,
+  escolaId: true,
+  createdAt: true,
+  updatedAt: true,
+  escola: {
+    select: {
+      id: true,
+      municipioId: true,
+      nome: true,
+      sigla: true,
+      loginEmail: true,
+      responsavelNome: true,
+      responsavelTelefone: true,
+    },
+  },
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -13,12 +42,12 @@ export async function GET(request: Request) {
 
     if (cpfParam) {
       const cleanCpf = cpfParam.replace(/\D/g, '');
-      const usuarios = await prisma.usuario.findMany({
-        include: { escola: true }
-      });
-      const usuario = usuarios.find(u => {
-        const uCpf = (u.cpf || '').replace(/\D/g, '');
-        return uCpf === cleanCpf;
+      const formattedCpf = formatCPF(cleanCpf);
+      const usuario = await prisma.usuario.findFirst({
+        where: {
+          OR: [{ cpf: cleanCpf }, { cpf: formattedCpf }],
+        },
+        select: usuarioSafeSelect,
       });
 
       if (!usuario) {
@@ -31,7 +60,7 @@ export async function GET(request: Request) {
     if (emailParam) {
       const usuario = await prisma.usuario.findUnique({
         where: { email: emailParam.toLowerCase() },
-        include: { escola: true }
+        select: usuarioSafeSelect,
       });
       if (!usuario) {
         return NextResponse.json({ success: false, error: 'Usuário não encontrado' }, { status: 404 });
@@ -46,7 +75,7 @@ export async function GET(request: Request) {
 
     const usuarios = await prisma.usuario.findMany({
       where,
-      include: { escola: true },
+      select: usuarioSafeSelect,
       orderBy: { nome: 'asc' }
     });
 
@@ -69,11 +98,13 @@ export async function POST(request: Request) {
     const cleanCpf = cpf ? cpf.replace(/\D/g, '') : null;
     const cleanEmail = email ? email.toLowerCase().trim() : (cleanCpf ? `prof.${cleanCpf}@semed.gd.gov.br` : `usuario.${Date.now()}@semed.gd.gov.br`);
 
-    // Procura se já existe por CPF ou por Email
+    // Procura se já existe por CPF ou por Email (consulta direta no banco, sem full-table scan)
     let usuarioExistente = null;
     if (cleanCpf) {
-      const allUsers = await prisma.usuario.findMany();
-      usuarioExistente = allUsers.find(u => (u.cpf || '').replace(/\D/g, '') === cleanCpf);
+      const formattedCpf = formatCPF(cleanCpf);
+      usuarioExistente = await prisma.usuario.findFirst({
+        where: { OR: [{ cpf: cleanCpf }, { cpf: formattedCpf }] }
+      });
     }
     if (!usuarioExistente && cleanEmail) {
       usuarioExistente = await prisma.usuario.findUnique({

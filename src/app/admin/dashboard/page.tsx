@@ -184,7 +184,7 @@ export default function AdminDashboardPage() {
 
   const handleForcarSincronizacao = async () => {
     setSincronizandoOnline(true);
-    await JegdStorage.sincronizarComNuvem();
+    await JegdStorage.sincronizarComNuvem(true);
     const curMun = JegdStorage.getCurrentMunicipio();
     carregarTodosDados(curMun?.id);
     setUltimaSincronizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));

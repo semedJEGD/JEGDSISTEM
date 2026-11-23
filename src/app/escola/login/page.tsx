@@ -25,16 +25,16 @@ import { ModalConfirmacaoEscola } from './components/ModalConfirmacaoEscola';
 import { gerarSugestaoSenhaEscola } from '@/lib/auth-helpers';
 
 function formatIdentificador(val: string): string {
-  // Se contiver letras ou @, permite texto livre de e-mail ou sigla da escola
-  if (/[a-zA-Z@]/.test(val)) {
-    return val.trim();
+  // Se contiver letras, @ ou espaços, permite texto livre de e-mail, nome ou sigla da escola
+  if (/[a-zA-Z@\s]/.test(val)) {
+    return val;
   }
   // Se forem apenas números, formata como CPF para conveniência
   const digits = val.replace(/\D/g, '');
   if (digits.length <= 11 && digits.length > 0) {
     return formatCPF(val);
   }
-  return val.trim();
+  return val;
 }
 
 function formatCPF(val: string): string {
@@ -88,39 +88,54 @@ function LoginContent() {
   const [mostrarSenhaAdmin, setMostrarSenhaAdmin] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
   // Inicialização e Carga dos Municípios
   useEffect(() => {
     JegdStorage.init();
-    const munList = JegdStorage.getMunicipios();
-    setMunicipios(munList);
 
-    const domainRes = JegdStorage.getDomainResolution();
-    setIsDominioTravado(domainRes.isDomainLocked);
+    const syncLocalLists = () => {
+      const munList = JegdStorage.getMunicipios();
+      setMunicipios(munList);
 
-    // Prioridade 1: Parâmetro explícito na URL (?m=slug ou ?municipio=slug)
-    const mParam = searchParams.get('m') || searchParams.get('municipio');
-    let targetMun: Municipio | null = null;
-    if (mParam) {
-      const found = munList.find(m => m.slug === mParam || m.id === mParam);
-      if (found) targetMun = found;
-    }
+      const domainRes = JegdStorage.getDomainResolution();
+      setIsDominioTravado(domainRes.isDomainLocked);
 
-    // Prioridade 2: Domínio travado específico
-    if (!targetMun && domainRes.isDomainLocked && domainRes.municipio) {
-      targetMun = domainRes.municipio;
-    }
+      const mParam = searchParams.get('m') || searchParams.get('municipio');
+      let targetMun: Municipio | null = null;
+      if (mParam) {
+        const found = munList.find(m => m.slug === mParam || m.id === mParam);
+        if (found) targetMun = found;
+      }
 
-    // Prioridade 3: Município atualmente selecionado no Storage ou primeiro da lista
-    if (!targetMun) {
-      targetMun = JegdStorage.getCurrentMunicipio() || munList[0];
-    }
+      if (!targetMun && domainRes.isDomainLocked && domainRes.municipio) {
+        targetMun = domainRes.municipio;
+      }
 
-    if (targetMun) {
-      setMunicipioSelecionadoId(targetMun.id);
-      JegdStorage.setCurrentMunicipio(targetMun);
-      carregarDadosMunicipio(targetMun.id);
-    }
+      if (!targetMun) {
+        targetMun = JegdStorage.getCurrentMunicipio() || munList[0];
+      }
+
+      if (targetMun) {
+        setMunicipioSelecionadoId(prev => prev || targetMun!.id);
+        JegdStorage.setCurrentMunicipio(targetMun);
+        carregarDadosMunicipio(targetMun.id);
+      }
+    };
+
+    syncLocalLists();
+
+    const handleSynced = () => {
+      const munList = JegdStorage.getMunicipios();
+      setMunicipios(munList);
+      const cur = JegdStorage.getCurrentMunicipio();
+      if (cur?.id) {
+        carregarDadosMunicipio(cur.id);
+      }
+    };
+
+    window.addEventListener('jegd-data-synced', handleSynced);
+    return () => window.removeEventListener('jegd-data-synced', handleSynced);
   }, [searchParams]);
 
   const carregarDadosMunicipio = (munId: string) => {
@@ -163,7 +178,7 @@ function LoginContent() {
     }
   };
 
-  // LOGIN DO PROFESSOR COM CPF OU IDENTIFICAÇÃO DA ESCOLA
+  // LOGIN DO PROFESSOR COM CPF OU IDENTIFICAÇÃO DA ESCOLA (VALIDADO NO SERVIDOR COM BCRYPT)
   const handleLoginCpf = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
@@ -171,93 +186,89 @@ function LoginContent() {
 
     const rawInput = loginCpf.trim();
     const cpfLimpo = rawInput.replace(/\D/g, '');
-    const senhaTratada = loginSenha.trim().toLowerCase();
+    const senhaRaw = loginSenha.trim();
+    const senhaTratada = senhaRaw.toLowerCase();
+
+    if (!rawInput) {
+      setErro('Por favor, informe o e-mail da escola, sigla ou CPF.');
+      return;
+    }
 
     if (!senhaTratada) {
       setErro('Por favor, digite a sua senha de acesso.');
       return;
     }
 
-    // Caso 1: Entrada como CPF (11 dígitos)
-    if (cpfLimpo.length === 11) {
-      // 1. Busca primeiro se o CPF existe no armazenamento local
-      let usuarioGlobal = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
+    setCarregando(true);
+    try {
+      // 1. Validação oficial no servidor (suporta bcrypt, CPF, e-mail de professor, e-mail/sigla/nome de escola)
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'ESCOLA',
+          identificador: rawInput,
+          senha: senhaRaw,
+          municipioId: municipioSelecionadoId || undefined,
+        }),
+      });
 
-      // 2. Se não estiver localmente, busca em tempo real no banco de dados Neon
-      if (!usuarioGlobal) {
-        try {
-          const cloudUser = await JegdCloudSync.buscarUsuarioPorCpf(cpfLimpo);
-          if (cloudUser) {
-            usuarioGlobal = cloudUser;
-            JegdStorage.saveUsuario(cloudUser);
-          }
-        } catch {}
-      }
+      const json = await res.json().catch(() => null);
 
-      // 3. Se ainda não encontrado, mas a senha corresponde a uma escola do município:
-      // Auto-provisionar o professor com essa escola
-      if (!usuarioGlobal) {
-        const escolaPelaSenha = escolas.find(esc => {
-          const sEscola = esc.senhaHash?.toLowerCase();
-          const siglaSenha = `${esc.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
-          const sugestaoPadrao = gerarSugestaoSenhaEscola(esc);
-          return senhaTratada === sEscola || senhaTratada === siglaSenha || senhaTratada === sugestaoPadrao;
-        });
+      if (res.ok && json?.success && json.data?.escola) {
+        const escolaAuth: Escola = json.data.escola;
+        const userAuth: Usuario | null = json.data.usuario || null;
 
-        if (escolaPelaSenha) {
-          const novoUser: Usuario = {
-            id: `prof-${cpfLimpo}`,
-            municipioId: municipioSelecionadoId,
-            nome: `Professor (${escolaPelaSenha.sigla})`,
-            cpf: formatCPF(cpfLimpo),
-            email: `prof.${cpfLimpo}@semed.gd.gov.br`,
-            telefone: escolaPelaSenha.responsavelTelefone || '(99) 98801-0000',
-            senhaHash: senhaTratada,
-            papel: 'PROFESSOR',
-            escolaId: escolaPelaSenha.id,
-            createdAt: new Date().toISOString()
-          };
-          JegdStorage.saveUsuario(novoUser);
-          await JegdCloudSync.syncUsuario(novoUser);
-          usuarioGlobal = novoUser;
+        const setEscolaOk = JegdStorage.setCurrentEscola(escolaAuth);
+        if (!setEscolaOk) {
+          setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
+          return;
         }
+        if (userAuth) {
+          JegdStorage.setCurrentUser(userAuth);
+        }
+        router.push('/escola/dashboard');
+        return;
       }
 
+      // Se o servidor respondeu com erro explícito (400/401/403/404), exibe imediatamente
+      if (json?.error && res.status >= 400 && res.status < 500) {
+        setErro(json.error);
+        return;
+      }
+    } catch {
+      // Sem conexão com a API: continua para fallback local offline abaixo
+    } finally {
+      setCarregando(false);
+    }
+
+    // Fallback local (apenas se a API estiver indisponível/offline)
+    if (cpfLimpo.length === 11 && !/[a-zA-Z@]/.test(rawInput)) {
+      const usuarioGlobal = JegdStorage.findUsuarioInAnyMunicipio(cpfLimpo);
       if (!usuarioGlobal) {
         setErro(`CPF não encontrado no sistema. Se este é o seu primeiro acesso em ${municipioAtual?.nome || 'nossa cidade'}, clique na aba "Primeiro Acesso / Cadastrar" abaixo.`);
         return;
       }
-
-      // BLOQUEIO ESTRITO DE CROSS-TENANT / CROSS-DOMAIN:
       if (usuarioGlobal.municipioId && usuarioGlobal.municipioId !== municipioSelecionadoId) {
         const munOrigem = municipios.find(m => m.id === usuarioGlobal.municipioId);
-        setErro(`Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'} (${munOrigem?.siglaEvento || ''}). Você está tentando acessar o portal oficial de ${municipioAtual?.nome || 'outro município'}. O acesso cruzado entre municípios é expressamente proibido.`);
+        setErro(`Acesso Bloqueado: Este CPF está cadastrado no município de ${munOrigem?.nome || 'outro município'}.`);
         return;
       }
-
       const escola = JegdStorage.getEscolaById(usuarioGlobal.escolaId || '') || escolas.find(e => e.id === usuarioGlobal?.escolaId);
       if (!escola) {
         setErro('Escola vinculada a este professor não foi encontrada. Entre em contato com a SEMED.');
         return;
       }
-
-      // Validação se a escola pertence ao município selecionado
-      if (escola.municipioId && escola.municipioId !== municipioSelecionadoId) {
-        const munEscola = municipios.find(m => m.id === escola.municipioId);
-        setErro(`Acesso Bloqueado: A escola deste professor pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
-        return;
-      }
-
       const senhaUsuario = usuarioGlobal.senhaHash?.toLowerCase();
       const senhaEscola = escola.senhaHash?.toLowerCase();
       const siglaSenha = `${escola.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
       const sugestaoPadrao = gerarSugestaoSenhaEscola(escola);
 
-      const senhaValida = 
+      const senhaValida =
         senhaTratada === 'semed2026' ||
         senhaTratada === '123456' ||
-        senhaTratada === senhaUsuario ||
-        senhaTratada === senhaEscola ||
+        (senhaUsuario && !senhaUsuario.startsWith('$2') && senhaTratada === senhaUsuario) ||
+        (senhaEscola && !senhaEscola.startsWith('$2') && senhaTratada === senhaEscola) ||
         senhaTratada === siglaSenha ||
         senhaTratada === sugestaoPadrao;
 
@@ -266,8 +277,7 @@ function LoginContent() {
         return;
       }
 
-      const setEscolaOk = JegdStorage.setCurrentEscola(escola);
-      if (!setEscolaOk) {
+      if (!JegdStorage.setCurrentEscola(escola)) {
         setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
         return;
       }
@@ -276,8 +286,7 @@ function LoginContent() {
       return;
     }
 
-    // Caso 2: Login por E-mail institucional ou Sigla da Escola
-    const escolaEncontrada = JegdStorage.findEscolaInAnyMunicipio(rawInput) || escolas.find(e => 
+    const escolaEncontrada = JegdStorage.findEscolaInAnyMunicipio(rawInput) || escolas.find(e =>
       e.loginEmail?.toLowerCase() === rawInput.toLowerCase() ||
       e.nome.toLowerCase() === rawInput.toLowerCase() ||
       (e.sigla && e.sigla.toLowerCase() === rawInput.toLowerCase())
@@ -286,7 +295,7 @@ function LoginContent() {
     if (escolaEncontrada) {
       if (escolaEncontrada.municipioId && escolaEncontrada.municipioId !== municipioSelecionadoId) {
         const munEscola = municipios.find(m => m.id === escolaEncontrada.municipioId);
-        setErro(`Acesso Bloqueado: A escola pertence ao município de ${munEscola?.nome || 'outro município'}. O login neste domínio não é permitido.`);
+        setErro(`Acesso Bloqueado: A escola pertence ao município de ${munEscola?.nome || 'outro município'}.`);
         return;
       }
 
@@ -294,10 +303,10 @@ function LoginContent() {
       const siglaSenha = `${escolaEncontrada.sigla?.toLowerCase().replace(/[^a-z0-9]/g, '')}2026`;
       const sugestaoPadrao = gerarSugestaoSenhaEscola(escolaEncontrada);
 
-      const senhaValida = 
+      const senhaValida =
         senhaTratada === 'semed2026' ||
         senhaTratada === '123456' ||
-        senhaTratada === senhaEscola ||
+        (senhaEscola && !senhaEscola.startsWith('$2') && senhaTratada === senhaEscola) ||
         senhaTratada === siglaSenha ||
         senhaTratada === sugestaoPadrao;
 
@@ -306,8 +315,7 @@ function LoginContent() {
         return;
       }
 
-      const setEscolaOk = JegdStorage.setCurrentEscola(escolaEncontrada);
-      if (!setEscolaOk) {
+      if (!JegdStorage.setCurrentEscola(escolaEncontrada)) {
         setErro('Falha de segurança: Tentativa de login fora do domínio autorizado.');
         return;
       }
@@ -411,15 +419,73 @@ function LoginContent() {
     router.push('/escola/dashboard');
   };
 
-  // LOGIN DA COORDENAÇÃO SEMED
-  const handleLoginAdmin = (e: React.FormEvent) => {
+  // LOGIN DA COORDENAÇÃO SEMED (VALIDADO NO SERVIDOR COM BCRYPT)
+  const handleLoginAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
 
-    const senhaTratada = adminSenha.trim().toLowerCase();
+    const senhaRaw = adminSenha.trim();
+    const senhaTratada = senhaRaw.toLowerCase();
     const coordSelecionado = coordenadores.find(c => c.id === coordenadorSelecionadoId);
 
-    // Se for o SuperAdmin
+    if (!senhaTratada) {
+      setErro('Por favor, digite a senha institucional.');
+      return;
+    }
+
+    setCarregando(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'ADMIN',
+          coordenadorId: coordenadorSelecionadoId || undefined,
+          senha: senhaRaw,
+          municipioId: municipioSelecionadoId || undefined,
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (res.ok && json?.success) {
+        if (json.data?.papel === 'SUPERADMIN') {
+          JegdStorage.setSuperAdminAuth(true);
+          JegdStorage.setComiteAuth(true, json.data?.usuario || coordSelecionado);
+          router.push('/admin/super');
+          return;
+        }
+
+        const coordUser: Usuario = json.data?.usuario || coordSelecionado || {
+          id: `coord-${municipioSelecionadoId}`,
+          municipioId: municipioSelecionadoId,
+          nome: `Coordenação SEMED (${municipioAtual?.nome || 'Municipal'})`,
+          email: `semed@${municipioAtual?.slug || 'municipal'}.gov.br`,
+          telefone: '(99) 98801-1000',
+          papel: 'COORDENADOR',
+          createdAt: new Date().toISOString()
+        };
+
+        const setAdminOk = JegdStorage.setComiteAuth(true, coordUser);
+        if (!setAdminOk) {
+          setErro('Acesso não autorizado para o domínio atual.');
+          return;
+        }
+        router.push('/admin/dashboard');
+        return;
+      }
+
+      if (json?.error && res.status >= 400 && res.status < 500) {
+        setErro(json.error);
+        return;
+      }
+    } catch {
+      // Sem conexão com a API: fallback local abaixo
+    } finally {
+      setCarregando(false);
+    }
+
+    // Fallback offline
     if (coordSelecionado?.papel === 'SUPERADMIN' || senhaTratada === 'superadmin2026') {
       if (senhaTratada === 'superadmin2026' || senhaTratada === 'semed2026') {
         JegdStorage.setSuperAdminAuth(true);
@@ -434,7 +500,10 @@ function LoginContent() {
       return;
     }
 
-    if (senhaTratada === 'semed2026' || (coordSelecionado?.senhaHash && senhaTratada === coordSelecionado.senhaHash.toLowerCase())) {
+    if (
+      senhaTratada === 'semed2026' ||
+      (coordSelecionado?.senhaHash && !coordSelecionado.senhaHash.startsWith('$2') && senhaTratada === coordSelecionado.senhaHash.toLowerCase())
+    ) {
       const coordUser: Usuario = coordSelecionado || {
         id: `coord-${municipioSelecionadoId}`,
         municipioId: municipioSelecionadoId,
@@ -469,6 +538,7 @@ function LoginContent() {
           loop
           muted
           playsInline
+          preload="none"
           poster="/banner-jegd.png"
           className="w-full h-full object-cover object-center scale-105"
         >
@@ -605,6 +675,7 @@ function LoginContent() {
                   onSubmit={handleLoginCpf}
                   onAlternarModoCadastro={() => { setModoEscola('CADASTRO'); setErro(''); }}
                   placeholderEmail={escolas.length > 0 && escolas[0].loginEmail ? `ex: ${escolas[0].loginEmail}` : `ex: escola@semed.${municipioAtual?.slug || 'gov'}.br`}
+                  carregando={carregando}
                 />
               )}
 
@@ -642,6 +713,7 @@ function LoginContent() {
               setMostrarSenhaAdmin={setMostrarSenhaAdmin}
               onSubmit={handleLoginAdmin}
               nomeMunicipio={municipioAtual?.nome}
+              carregando={carregando}
             />
           )}
 

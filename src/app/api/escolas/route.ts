@@ -11,6 +11,20 @@ export async function GET(request: Request) {
 
     const escolas = await prisma.escola.findMany({
       where,
+      select: {
+        id: true,
+        municipioId: true,
+        nome: true,
+        sigla: true,
+        inep: true,
+        endereco: true,
+        bairro: true,
+        responsavelNome: true,
+        responsavelTelefone: true,
+        loginEmail: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       orderBy: { nome: 'asc' },
     });
     return NextResponse.json(

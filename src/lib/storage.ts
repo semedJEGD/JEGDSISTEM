@@ -59,13 +59,63 @@ const STORAGE_KEYS = {
 
 export class JegdStorage {
   private static isInitializing = false;
+  private static hasInitialized = false;
+  private static lastSyncTimestamp = 0;
+  private static readonly SYNC_COOLDOWN_MS = 25000;
 
   private static isClient(): boolean {
     return typeof window !== 'undefined';
   }
 
+  /**
+   * Escrita segura no localStorage com proteção contra QuotaExceededError.
+   * Se o armazenamento atingir 5MB por excesso de fotos base64 em cache, libera espaço
+   * removendo apenas imagens em cache de atletas para nunca impedir login ou salvamentos.
+   */
+  private static safeSetItem(key: string, value: string): boolean {
+    if (!this.isClient()) return false;
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      try {
+        const rawAtletas = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+        if (rawAtletas && key !== STORAGE_KEYS.ATLETAS) {
+          const parsed: Atleta[] = JSON.parse(rawAtletas);
+          const compacted = parsed.map((a) => ({
+            ...a,
+            fotoUrl: a.fotoUrl && a.fotoUrl.length > 500 ? undefined : a.fotoUrl,
+            documentoUrl: a.documentoUrl && a.documentoUrl.length > 500 ? undefined : a.documentoUrl,
+            documentos: a.documentos
+              ? {
+                  ...a.documentos,
+                  foto3x4: a.documentos.foto3x4 && a.documentos.foto3x4.length > 500 ? undefined : a.documentos.foto3x4,
+                  documentoIdentidade:
+                    a.documentos.documentoIdentidade && a.documentos.documentoIdentidade.length > 500
+                      ? undefined
+                      : a.documentos.documentoIdentidade,
+                }
+              : undefined,
+          }));
+          localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(compacted));
+        }
+        localStorage.setItem(key, value);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
   public static init(): void {
     if (!this.isClient() || this.isInitializing) return;
+    if (
+      this.hasInitialized &&
+      localStorage.getItem(STORAGE_KEYS.MUNICIPIOS) &&
+      localStorage.getItem(STORAGE_KEYS.ESCOLAS)
+    ) {
+      return;
+    }
     this.isInitializing = true;
     try {
 
@@ -214,8 +264,10 @@ export class JegdStorage {
       this.sanitizarExcessoEquipes();
     } catch {}
 
-    // Sincronização em tempo real com o banco de dados central
-    this.sincronizarComNuvem().catch(() => {});
+    this.hasInitialized = true;
+
+    // Sincronização em tempo real com o banco de dados central (apenas 1x na inicialização)
+    this.sincronizarComNuvem(false).catch(() => {});
     } finally {
       this.isInitializing = false;
     }
@@ -225,19 +277,36 @@ export class JegdStorage {
    * Sincronização ativa e periódica com o banco de dados online (PostgreSQL / Neon)
    * Dispara evento para atualização instantânea em tempo real nos dashboards de professores e coordenadores.
    */
-  public static async sincronizarComNuvem(): Promise<boolean> {
+  public static async sincronizarComNuvem(force = false): Promise<boolean> {
     if (!this.isClient()) return false;
+    const now = Date.now();
+    if (!force && this.lastSyncTimestamp > 0 && now - this.lastSyncTimestamp < this.SYNC_COOLDOWN_MS) {
+      return false;
+    }
+    this.lastSyncTimestamp = now;
     try {
       const data = await JegdCloudSync.carregarDadosCloud();
       if (!data) return false;
 
       let changed = false;
       if (data.municipios && Array.isArray(data.municipios) && data.municipios.length > 0) {
-        localStorage.setItem(STORAGE_KEYS.MUNICIPIOS, JSON.stringify(data.municipios));
+        const mergedMunicipios = data.municipios.map((m: Municipio) => {
+          const initial = MUNICIPIOS_INICIAIS.find(im => im.id === m.id || im.slug === m.slug);
+          return initial
+            ? {
+                ...initial,
+                ...m,
+                subdominio: m.subdominio || initial.subdominio,
+                dominio: m.dominio || initial.dominio,
+                dominiosAdicionais: m.dominiosAdicionais || initial.dominiosAdicionais,
+              }
+            : m;
+        });
+        this.safeSetItem(STORAGE_KEYS.MUNICIPIOS, JSON.stringify(mergedMunicipios));
         changed = true;
       }
       if (data.escolas && Array.isArray(data.escolas) && data.escolas.length > 0) {
-        localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(data.escolas));
+        this.safeSetItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(data.escolas));
         changed = true;
       }
       if (data.atletas && Array.isArray(data.atletas)) {
@@ -246,23 +315,31 @@ export class JegdStorage {
         const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
         const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
 
-        // Filtra da nuvem qualquer atleta que foi excluído ou que seja de teste
-        const cloudValidos = data.atletas.filter((a: Atleta) => {
-          const isDeleted = deletedIds.includes(a.id) ||
-            (a.matricula && deletedIds.includes(a.matricula)) ||
-            (a.crachaToken && deletedIds.includes(a.crachaToken)) ||
-            (a.documentoNumero && a.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(a.documentoNumero));
+        // Filtra da nuvem qualquer atleta que foi excluído ou que seja de teste e reconstrói documentos em memória
+        const cloudValidos = data.atletas
+          .filter((a: Atleta) => {
+            const isDeleted = deletedIds.includes(a.id) ||
+              (a.matricula && deletedIds.includes(a.matricula)) ||
+              (a.crachaToken && deletedIds.includes(a.crachaToken)) ||
+              (a.documentoNumero && a.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(a.documentoNumero));
 
-          if (isDeleted) {
-            JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
-            return false;
-          }
-          if (a.nomeCompleto?.toUpperCase().includes('TESTE') || a.id?.includes('teste') || a.documentoNumero?.includes('TESTE')) {
-            JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
-            return false;
-          }
-          return true;
-        });
+            if (isDeleted) {
+              JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
+              return false;
+            }
+            if (a.nomeCompleto?.toUpperCase().includes('TESTE') || a.id?.includes('teste') || a.documentoNumero?.includes('TESTE')) {
+              JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
+              return false;
+            }
+            return true;
+          })
+          .map((a: Atleta) => ({
+            ...a,
+            documentos: a.documentos || {
+              foto3x4: a.fotoUrl || undefined,
+              documentoIdentidade: a.documentoUrl || undefined,
+            },
+          }));
 
         const mergedAtletas: Atleta[] = [...cloudValidos];
 
@@ -301,7 +378,7 @@ export class JegdStorage {
             JegdCloudSync.syncAtleta(localAtl).catch(() => {});
           }
         }
-        localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(mergedAtletas));
+        this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(mergedAtletas));
         changed = true;
       }
       if (data.inscricoes && Array.isArray(data.inscricoes)) {
@@ -541,7 +618,7 @@ export class JegdStorage {
         return false;
       }
 
-      localStorage.setItem(STORAGE_KEYS.CURRENT_AUTH_ESCOLA, JSON.stringify(escola));
+      this.safeSetItem(STORAGE_KEYS.CURRENT_AUTH_ESCOLA, JSON.stringify(escola));
       if (escola.municipioId && !resolution.isDomainLocked) {
         const mun = this.getMunicipioById(escola.municipioId);
         if (mun) this.setCurrentMunicipio(mun);
@@ -579,7 +656,7 @@ export class JegdStorage {
         return false;
       }
 
-      localStorage.setItem(STORAGE_KEYS.COMITE_AUTH, 'true');
+      this.safeSetItem(STORAGE_KEYS.COMITE_AUTH, 'true');
       if (usuario) {
         this.setCurrentUser(usuario);
         if (usuario.municipioId && !resolution.isDomainLocked) {
@@ -1486,7 +1563,7 @@ export class JegdStorage {
 
   public static setCurrentUser(user: any | null): void {
     if (!this.isClient()) return;
-    if (user) localStorage.setItem(STORAGE_KEYS.CURRENT_AUTH_USER, JSON.stringify(user));
+    if (user) this.safeSetItem(STORAGE_KEYS.CURRENT_AUTH_USER, JSON.stringify(user));
     else localStorage.removeItem(STORAGE_KEYS.CURRENT_AUTH_USER);
   }
 
