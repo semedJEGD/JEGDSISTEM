@@ -67,6 +67,24 @@ export class JegdStorage {
     return typeof window !== 'undefined';
   }
 
+  private static compactAtletasList(parsed: Atleta[]): Atleta[] {
+    return parsed.map((a) => ({
+      ...a,
+      fotoUrl: a.fotoUrl && a.fotoUrl.length > 500 ? undefined : a.fotoUrl,
+      documentoUrl: a.documentoUrl && a.documentoUrl.length > 500 ? undefined : a.documentoUrl,
+      documentos: a.documentos
+        ? {
+            ...a.documentos,
+            foto3x4: a.documentos.foto3x4 && a.documentos.foto3x4.length > 500 ? undefined : a.documentos.foto3x4,
+            documentoIdentidade:
+              a.documentos.documentoIdentidade && a.documentos.documentoIdentidade.length > 500
+                ? undefined
+                : a.documentos.documentoIdentidade,
+          }
+        : {},
+    }));
+  }
+
   /**
    * Escrita segura no localStorage com proteção contra QuotaExceededError.
    * Se o armazenamento atingir 5MB por excesso de fotos base64 em cache, libera espaço
@@ -79,25 +97,15 @@ export class JegdStorage {
       return true;
     } catch {
       try {
+        if (key === STORAGE_KEYS.ATLETAS) {
+          const parsed: Atleta[] = JSON.parse(value);
+          localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(this.compactAtletasList(parsed)));
+          return true;
+        }
         const rawAtletas = localStorage.getItem(STORAGE_KEYS.ATLETAS);
-        if (rawAtletas && key !== STORAGE_KEYS.ATLETAS) {
+        if (rawAtletas) {
           const parsed: Atleta[] = JSON.parse(rawAtletas);
-          const compacted = parsed.map((a) => ({
-            ...a,
-            fotoUrl: a.fotoUrl && a.fotoUrl.length > 500 ? undefined : a.fotoUrl,
-            documentoUrl: a.documentoUrl && a.documentoUrl.length > 500 ? undefined : a.documentoUrl,
-            documentos: a.documentos
-              ? {
-                  ...a.documentos,
-                  foto3x4: a.documentos.foto3x4 && a.documentos.foto3x4.length > 500 ? undefined : a.documentos.foto3x4,
-                  documentoIdentidade:
-                    a.documentos.documentoIdentidade && a.documentos.documentoIdentidade.length > 500
-                      ? undefined
-                      : a.documentos.documentoIdentidade,
-                }
-              : undefined,
-          }));
-          localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(compacted));
+          localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(this.compactAtletasList(parsed)));
         }
         localStorage.setItem(key, value);
         return true;
@@ -327,10 +335,6 @@ export class JegdStorage {
               JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
               return false;
             }
-            if (a.nomeCompleto?.toUpperCase().includes('TESTE') || a.id?.includes('teste') || a.documentoNumero?.includes('TESTE')) {
-              JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
-              return false;
-            }
             return true;
           })
           .map((a: Atleta) => ({
@@ -350,12 +354,7 @@ export class JegdStorage {
             (localAtl.crachaToken && deletedIds.includes(localAtl.crachaToken)) ||
             (localAtl.documentoNumero && localAtl.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(localAtl.documentoNumero));
 
-          if (
-            isLocalDeleted ||
-            localAtl.nomeCompleto?.toUpperCase().includes('TESTE') ||
-            localAtl.id?.includes('teste') ||
-            localAtl.documentoNumero?.includes('TESTE')
-          ) {
+          if (isLocalDeleted) {
             continue;
           }
 
@@ -809,8 +808,8 @@ export class JegdStorage {
     return `${siglaEvento}-${formattedNum}`;
   }
 
-  public static saveAtleta(atleta: Atleta): void {
-    if (!this.isClient()) return;
+  public static async saveAtleta(atleta: Atleta): Promise<{ ok: boolean; atleta: Atleta; error?: string }> {
+    if (!this.isClient()) return { ok: false, atleta, error: 'Ambiente sem navegador' };
     const curMun = this.getCurrentMunicipio();
 
     // Código de Inscrição Único Sequencial
@@ -823,19 +822,43 @@ export class JegdStorage {
       ? atleta.crachaToken
       : codigoInscricao;
 
-    const atletaToSave: Atleta = {
+    let atletaToSave: Atleta = {
       ...atleta,
       municipioId: atleta.municipioId || curMun.id,
       matricula: codigoInscricao,
       crachaToken
     };
+
     const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
     const list: Atleta[] = data ? JSON.parse(data) : [];
     const idx = list.findIndex(a => a.id === atletaToSave.id);
     if (idx >= 0) list[idx] = atletaToSave;
     else list.unshift(atletaToSave);
-    localStorage.setItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
-    JegdCloudSync.syncAtleta(atletaToSave).catch(() => {});
+    this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
+
+    const cloudRes = await JegdCloudSync.syncAtleta(atletaToSave);
+    if (cloudRes.ok && cloudRes.data) {
+      // Atualiza código/crachá caso o servidor tenha resolvido colisão de crachaToken
+      const matriculaServidor = cloudRes.data.matricula || atletaToSave.matricula;
+      const crachaServidor = cloudRes.data.crachaToken || atletaToSave.crachaToken;
+      if (matriculaServidor !== atletaToSave.matricula || crachaServidor !== atletaToSave.crachaToken) {
+        atletaToSave = {
+          ...atletaToSave,
+          matricula: matriculaServidor,
+          crachaToken: crachaServidor,
+        };
+        const latestRaw = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+        const latestList: Atleta[] = latestRaw ? JSON.parse(latestRaw) : [];
+        const latestIdx = latestList.findIndex(a => a.id === atletaToSave.id);
+        if (latestIdx >= 0) {
+          latestList[latestIdx] = atletaToSave;
+          this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(latestList));
+        }
+      }
+      return { ok: true, atleta: atletaToSave };
+    }
+
+    return { ok: false, atleta: atletaToSave, error: cloudRes.error };
   }
 
   public static verificarDuplicidadeAtleta(params: {
@@ -1438,7 +1461,7 @@ export class JegdStorage {
     });
 
     todasInscricoes = todasInscricoes.filter(i => i.atletaIds.length > 0);
-    localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
+    this.safeSetItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
 
     // Sincroniza em tempo real as equipes da escola atualizadas com o banco de dados
     const equipesParaSincronizar = todasInscricoes.filter(i => i.escolaId === escolaId);

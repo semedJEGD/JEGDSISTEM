@@ -70,6 +70,21 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const nomeCompleto = typeof body.nomeCompleto === 'string' ? body.nomeCompleto.trim().toUpperCase() : '';
+    if (!nomeCompleto) {
+      return NextResponse.json(
+        { success: false, error: 'Nome completo do aluno é obrigatório.' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.escolaId) {
+      return NextResponse.json(
+        { success: false, error: 'Escola do aluno não informada.' },
+        { status: 400 }
+      );
+    }
+
     const dataNascimento = body.dataNascimento
       ? new Date(body.dataNascimento)
       : new Date('2010-01-01');
@@ -84,17 +99,54 @@ export async function POST(request: Request) {
     const docTipoFinal = isSemDoc ? 'SEM_DOCUMENTO' : (body.documentoTipo || 'RG');
     const docNumeroFinal = isSemDoc ? (body.documentoNumero || 'SEM DOCUMENTO') : (body.documentoNumero || 'SEM DOCUMENTO');
 
+    const atletaId = body.id || `atl-${Date.now()}`;
+    let crachaTokenFinal: string | undefined = body.crachaToken || body.matricula || undefined;
+    let matriculaFinal: string | undefined = body.matricula || body.crachaToken || undefined;
+
+    // Evita falha HTTP 500 por colisão de crachaToken (@unique) quando dois navegadores
+    // geram o mesmo código sequencial offline/concorrentemente.
+    if (crachaTokenFinal) {
+      const conflito = await prisma.atleta.findFirst({
+        where: {
+          crachaToken: crachaTokenFinal,
+          NOT: { id: atletaId },
+        },
+        select: { id: true },
+      });
+
+      if (conflito) {
+        const prefixo = crachaTokenFinal.replace(/-\d+$/, '') || 'JEGDS-2026';
+        const existentes = await prisma.atleta.findMany({
+          where: { crachaToken: { startsWith: `${prefixo}-` } },
+          select: { crachaToken: true },
+        });
+        let maxSeq = 0;
+        for (const row of existentes) {
+          const m = row.crachaToken?.match(/(\d{4,})$/);
+          if (m) {
+            const n = parseInt(m[1], 10);
+            if (!isNaN(n) && n > maxSeq) maxSeq = n;
+          }
+        }
+        const novoCodigo = `${prefixo}-${String(maxSeq + 1).padStart(4, '0')}`;
+        crachaTokenFinal = novoCodigo;
+        if (!matriculaFinal || matriculaFinal === body.crachaToken) {
+          matriculaFinal = novoCodigo;
+        }
+      }
+    }
+
     const atleta = await prisma.atleta.upsert({
-      where: { id: body.id || `atl-${Date.now()}` },
+      where: { id: atletaId },
       update: {
-        nomeCompleto: body.nomeCompleto,
+        nomeCompleto,
         dataNascimento,
         sexo: body.sexo,
         semDocumento: isSemDoc,
         documentoTipo: docTipoFinal,
         documentoNumero: docNumeroFinal,
-        crachaToken: body.crachaToken,
-        matricula: body.matricula,
+        crachaToken: crachaTokenFinal,
+        matricula: matriculaFinal,
         turma: body.serieTurma || body.turma,
         tipoSanguineo: body.tipoSanguineo,
         fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
@@ -105,15 +157,15 @@ export async function POST(request: Request) {
         consentimentoResponsavel: body.consentimentoResponsavel ?? true,
       },
       create: {
-        id: body.id,
-        nomeCompleto: body.nomeCompleto,
+        id: atletaId,
+        nomeCompleto,
         dataNascimento,
         sexo: body.sexo,
         semDocumento: isSemDoc,
         documentoTipo: docTipoFinal,
         documentoNumero: docNumeroFinal,
-        crachaToken: body.crachaToken,
-        matricula: body.matricula,
+        crachaToken: crachaTokenFinal,
+        matricula: matriculaFinal,
         turma: body.serieTurma || body.turma,
         tipoSanguineo: body.tipoSanguineo,
         fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,

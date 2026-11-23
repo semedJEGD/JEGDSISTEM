@@ -123,6 +123,9 @@ export default function AdminDashboardPage() {
   // Modal de Inscrição / Cadastro de Aluno pela Coordenação
   const [modalCadastroAtletaAberto, setModalCadastroAtletaAberto] = useState(false);
   const [atletaEditando, setAtletaEditando] = useState<Atleta | null>(null);
+  const [salvandoAtleta, setSalvandoAtleta] = useState(false);
+  const [erroSalvarAtleta, setErroSalvarAtleta] = useState<string | null>(null);
+  const [ultimoAtletaSalvo, setUltimoAtletaSalvo] = useState<{ nome: string; codigo: string } | null>(null);
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [dataNascimento, setDataNascimento] = useState('2013-05-10');
   const [sexo, setSexo] = useState<Genero>('MASCULINO');
@@ -691,10 +694,12 @@ export default function AdminDashboardPage() {
     });
   }, [atletaEditando, escolaSelecionada, nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento]);
 
-  const handleAbrirModalNovoAtleta = (esc?: Escola) => {
+  const handleAbrirModalNovoAtleta = (esc?: Escola, manterFeedback = false) => {
     const targetEsc = esc || escolaSelecionada;
     if (targetEsc) setEscolaSelecionadaId(targetEsc.id);
     setAtletaEditando(null);
+    setErroSalvarAtleta(null);
+    if (manterFeedback !== true) setUltimoAtletaSalvo(null);
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
@@ -705,6 +710,7 @@ export default function AdminDashboardPage() {
     setMatricula(proximoCodigo);
     setSerieTurma('7º Ano (Fundamental)');
     setFotoBase64(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setModalidadesEscolhidas([]);
     setProvasAtletismo([]);
     setModalCadastroAtletaAberto(true);
@@ -714,6 +720,8 @@ export default function AdminDashboardPage() {
     const targetEsc = esc || escolaSelecionada;
     if (targetEsc) setEscolaSelecionadaId(targetEsc.id);
     setAtletaEditando(atleta);
+    setErroSalvarAtleta(null);
+    setUltimoAtletaSalvo(null);
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
@@ -731,7 +739,8 @@ export default function AdminDashboardPage() {
     setModalCadastroAtletaAberto(true);
   };
 
-  const handleSalvarAtletaCoord = (continuar: boolean = false) => {
+  const handleSalvarAtletaCoord = async (continuar: boolean = false) => {
+    if (salvandoAtleta) return;
     const targetEsc = escolaSelecionada;
     if (!targetEsc) {
       alert('Selecione uma escola para vincular o estudante.');
@@ -781,7 +790,7 @@ export default function AdminDashboardPage() {
       id: atletaId,
       escolaId: targetEsc.id,
       municipioId: targetEsc.municipioId || municipioAtual?.id,
-      nomeCompleto: nomeCompleto.toUpperCase(),
+      nomeCompleto: nomeCompleto.trim().toUpperCase(),
       dataNascimento,
       sexo,
       semDocumento,
@@ -805,23 +814,36 @@ export default function AdminDashboardPage() {
       createdAt: atletaEditando ? atletaEditando.createdAt : new Date().toISOString()
     };
 
-    // 1. Salva o Atleta
-    JegdStorage.saveAtleta(atleta);
-
-    // 2. Sincroniza e monta automaticamente as equipes correspondentes da escola
-    JegdStorage.syncAtletaComEquipes(targetEsc.id, atleta);
-
-    // 3. Atualiza dados na tela
-    carregarTodosDados(municipioAtual?.id);
-
+    setSalvandoAtleta(true);
+    setErroSalvarAtleta(null);
     try {
-      confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-    } catch { }
+      // 1. Salva o Atleta (aguarda confirmação do servidor)
+      const res = await JegdStorage.saveAtleta(atleta);
 
-    if (continuar) {
-      handleAbrirModalNovoAtleta(targetEsc);
-    } else {
-      setModalCadastroAtletaAberto(false);
+      // 2. Sincroniza e monta automaticamente as equipes correspondentes da escola
+      JegdStorage.syncAtletaComEquipes(targetEsc.id, res.atleta);
+
+      // 3. Atualiza dados na tela
+      carregarTodosDados(municipioAtual?.id);
+
+      if (!res.ok) {
+        setErroSalvarAtleta(res.error || 'Falha ao confirmar salvamento no servidor. Tente novamente.');
+        return;
+      }
+
+      try {
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      } catch { }
+
+      if (continuar) {
+        setUltimoAtletaSalvo({ nome: res.atleta.nomeCompleto, codigo: res.atleta.matricula });
+        handleAbrirModalNovoAtleta(targetEsc, true);
+      } else {
+        setUltimoAtletaSalvo(null);
+        setModalCadastroAtletaAberto(false);
+      }
+    } finally {
+      setSalvandoAtleta(false);
     }
   };
 
@@ -1441,6 +1463,9 @@ export default function AdminDashboardPage() {
           handleSalvarAtleta={handleSalvarAtletaCoord}
           escolaId={escolaSelecionada.id}
           diagnosticoDuplicidade={diagnosticoDuplicidade}
+          salvando={salvandoAtleta}
+          erroSalvar={erroSalvarAtleta}
+          ultimoSalvo={ultimoAtletaSalvo}
           onCarregarAtletaDuplicado={(atl) => handleAbrirModalEditarAtleta(atl, escolaSelecionada)}
         />
       )}

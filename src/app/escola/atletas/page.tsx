@@ -54,6 +54,9 @@ export default function EscolaAtletasPage() {
   // Modal de Cadastro Rápido e Fluido
   const [modalAberto, setModalAberto] = useState(false);
   const [atletaEditando, setAtletaEditando] = useState<Atleta | null>(null);
+  const [salvandoAtleta, setSalvandoAtleta] = useState(false);
+  const [erroSalvarAtleta, setErroSalvarAtleta] = useState<string | null>(null);
+  const [ultimoAtletaSalvo, setUltimoAtletaSalvo] = useState<{ nome: string; codigo: string } | null>(null);
 
   // Form State - Etapa 1 (Dados do Aluno)
   const [nomeCompleto, setNomeCompleto] = useState('');
@@ -63,7 +66,7 @@ export default function EscolaAtletasPage() {
   const [documentoNumero, setDocumentoNumero] = useState('');
   const [semDocumento, setSemDocumento] = useState<boolean>(false);
   const [matricula, setMatricula] = useState('');
-  const [serieTurma, setSerieTurma] = useState('7º Ano A');
+  const [serieTurma, setSerieTurma] = useState('7º Ano (Fundamental)');
   const [nomeMae, setNomeMae] = useState('');
   const [telefoneContato, setTelefoneContato] = useState('(99) 98888-0000');
   const [tipoSanguineo, setTipoSanguineo] = useState('O+');
@@ -158,8 +161,10 @@ export default function EscolaAtletasPage() {
     };
   }, []);
 
-  const handleAbrirModalNovo = () => {
+  const handleAbrirModalNovo = (manterFeedback: boolean | React.MouseEvent = false) => {
     setAtletaEditando(null);
+    setErroSalvarAtleta(null);
+    if (manterFeedback !== true) setUltimoAtletaSalvo(null);
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
@@ -174,6 +179,7 @@ export default function EscolaAtletasPage() {
     setTipoSanguineo('O+');
     setConsentimentoResponsavel(true);
     setFotoBase64(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setModalidadesEscolhidas([]);
     setProvasAtletismo([]);
     setModalAberto(true);
@@ -181,6 +187,8 @@ export default function EscolaAtletasPage() {
 
   const handleAbrirModalEditar = (atleta: Atleta) => {
     setAtletaEditando(atleta);
+    setErroSalvarAtleta(null);
+    setUltimoAtletaSalvo(null);
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
@@ -277,8 +285,8 @@ export default function EscolaAtletasPage() {
     }
   };
 
-  const handleSalvarAtleta = (cadastrarProximo: boolean = false) => {
-    if (!escola) return;
+  const handleSalvarAtleta = async (cadastrarProximo: boolean = false) => {
+    if (!escola || salvandoAtleta) return;
 
     if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
       alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque a opção "Aluno sem documentos").');
@@ -329,7 +337,7 @@ export default function EscolaAtletasPage() {
       id: atletaId,
       escolaId: escola.id,
       municipioId: escola.municipioId,
-      nomeCompleto: nomeCompleto.toUpperCase(),
+      nomeCompleto: nomeCompleto.trim().toUpperCase(),
       dataNascimento,
       sexo,
       semDocumento,
@@ -355,23 +363,36 @@ export default function EscolaAtletasPage() {
       createdAt: atletaEditando ? atletaEditando.createdAt : new Date().toISOString()
     };
 
-    // 1. Salva o Atleta
-    JegdStorage.saveAtleta(atleta);
-
-    // 2. Sincroniza e monta automaticamente as equipes correspondentes da escola
-    JegdStorage.syncAtletaComEquipes(escola.id, atleta);
-
-    // 3. Atualiza estado
-    setAtletas(JegdStorage.getAtletas(escola.id));
-
+    setSalvandoAtleta(true);
+    setErroSalvarAtleta(null);
     try {
-      confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-    } catch { }
+      // 1. Salva o Atleta (aguarda confirmação do servidor)
+      const res = await JegdStorage.saveAtleta(atleta);
 
-    if (cadastrarProximo) {
-      handleAbrirModalNovo();
-    } else {
-      setModalAberto(false);
+      // 2. Sincroniza e monta automaticamente as equipes correspondentes da escola
+      JegdStorage.syncAtletaComEquipes(escola.id, res.atleta);
+
+      // 3. Atualiza estado
+      setAtletas(JegdStorage.getAtletas(escola.id));
+
+      if (!res.ok) {
+        setErroSalvarAtleta(res.error || 'Falha ao confirmar salvamento no servidor. Tente novamente.');
+        return;
+      }
+
+      try {
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      } catch { }
+
+      if (cadastrarProximo) {
+        setUltimoAtletaSalvo({ nome: res.atleta.nomeCompleto, codigo: res.atleta.matricula });
+        handleAbrirModalNovo(true);
+      } else {
+        setUltimoAtletaSalvo(null);
+        setModalAberto(false);
+      }
+    } finally {
+      setSalvandoAtleta(false);
     }
   };
 
@@ -727,6 +748,9 @@ export default function EscolaAtletasPage() {
         handleSalvarAtleta={handleSalvarAtleta}
         escolaId={escola?.id || ''}
         diagnosticoDuplicidade={diagnosticoDuplicidade}
+        salvando={salvandoAtleta}
+        erroSalvar={erroSalvarAtleta}
+        ultimoSalvo={ultimoAtletaSalvo}
         onCarregarAtletaDuplicado={(atl) => {
           handleAbrirModalEditar(atl);
         }}

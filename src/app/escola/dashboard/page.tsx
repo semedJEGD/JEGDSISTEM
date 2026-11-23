@@ -89,6 +89,9 @@ export default function EscolaDashboardPage() {
   // Modal Cadastro/Edição de Aluno
   const [modalAtletaAberto, setModalAtletaAberto] = useState(false);
   const [atletaEditando, setAtletaEditando] = useState<Atleta | null>(null);
+  const [salvandoAtleta, setSalvandoAtleta] = useState(false);
+  const [erroSalvarAtleta, setErroSalvarAtleta] = useState<string | null>(null);
+  const [ultimoAtletaSalvo, setUltimoAtletaSalvo] = useState<{ nome: string; codigo: string } | null>(null);
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [dataNascimento, setDataNascimento] = useState('2013-05-10');
   const [sexo, setSexo] = useState<Genero>('MASCULINO');
@@ -96,7 +99,7 @@ export default function EscolaDashboardPage() {
   const [documentoNumero, setDocumentoNumero] = useState('');
   const [semDocumento, setSemDocumento] = useState(false);
   const [matricula, setMatricula] = useState('');
-  const [serieTurma, setSerieTurma] = useState('7º Ano A');
+  const [serieTurma, setSerieTurma] = useState('7º Ano (Fundamental)');
   const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
   const [modalidadesEscolhidas, setModalidadesEscolhidas] = useState<ModalidadeCodigo[]>([]);
   const [provasAtletismo, setProvasAtletismo] = useState<string[]>([]);
@@ -249,8 +252,10 @@ export default function EscolaDashboardPage() {
     });
   }, [atletaEditando, escola, nomeCompleto, dataNascimento, documentoNumero, matricula, semDocumento]);
 
-  const handleAbrirModalNovoAtleta = () => {
+  const handleAbrirModalNovoAtleta = (manterFeedback: boolean | React.MouseEvent = false) => {
     setAtletaEditando(null);
+    setErroSalvarAtleta(null);
+    if (manterFeedback !== true) setUltimoAtletaSalvo(null);
     setNomeCompleto('');
     setDataNascimento('2013-05-10');
     setSexo('MASCULINO');
@@ -259,8 +264,9 @@ export default function EscolaDashboardPage() {
     setDocumentoNumero('');
     const proximoCodigo = JegdStorage.gerarProximoCodigoInscricao(escola?.municipioId);
     setMatricula(proximoCodigo);
-    setSerieTurma('7º Ano A');
+    setSerieTurma('7º Ano (Fundamental)');
     setFotoBase64(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setModalidadesEscolhidas([]);
     setProvasAtletismo([]);
     setModalAtletaAberto(true);
@@ -268,6 +274,8 @@ export default function EscolaDashboardPage() {
 
   const handleAbrirModalEditarAtleta = (atleta: Atleta) => {
     setAtletaEditando(atleta);
+    setErroSalvarAtleta(null);
+    setUltimoAtletaSalvo(null);
     setNomeCompleto(atleta.nomeCompleto);
     setDataNascimento(atleta.dataNascimento);
     setSexo(atleta.sexo);
@@ -285,8 +293,8 @@ export default function EscolaDashboardPage() {
     setModalAtletaAberto(true);
   };
 
-  const handleSalvarAtleta = (continuar: boolean = false) => {
-    if (!escola) return;
+  const handleSalvarAtleta = async (continuar: boolean = false) => {
+    if (!escola || salvandoAtleta) return;
 
     if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
       alert('Por favor, preencha o Nome Completo, Data de Nascimento e Documento do estudante (ou marque a opção "Aluno sem documentos").');
@@ -327,7 +335,7 @@ export default function EscolaDashboardPage() {
       id: atletaId,
       escolaId: escola.id,
       municipioId: escola.municipioId,
-      nomeCompleto: nomeCompleto.toUpperCase(),
+      nomeCompleto: nomeCompleto.trim().toUpperCase(),
       dataNascimento,
       sexo,
       semDocumento,
@@ -335,7 +343,7 @@ export default function EscolaDashboardPage() {
       documentoNumero: semDocumento ? 'SEM DOCUMENTO' : documentoNumero.trim(),
       matricula: codigoFinal,
       crachaToken: atletaEditando?.crachaToken || codigoFinal,
-      serieTurma: serieTurma || '7º Ano A',
+      serieTurma: serieTurma || '7º Ano (Fundamental)',
       telefoneContato: escola.responsavelTelefone || '(99) 98801-0000',
       tipoSanguineo: 'O+',
       consentimentoResponsavel: true,
@@ -351,23 +359,36 @@ export default function EscolaDashboardPage() {
       createdAt: atletaEditando ? atletaEditando.createdAt : new Date().toISOString()
     };
 
-    // 1. Salva o Atleta
-    JegdStorage.saveAtleta(atleta);
-
-    // 2. Sincroniza e forma as equipes automaticamente
-    JegdStorage.syncAtletaComEquipes(escola.id, atleta);
-
-    // 3. Atualiza dados na tela
-    carregarDados(escola.id);
-
+    setSalvandoAtleta(true);
+    setErroSalvarAtleta(null);
     try {
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-    } catch { }
+      // 1. Salva o Atleta (aguarda confirmação do servidor antes de sincronizar equipes)
+      const res = await JegdStorage.saveAtleta(atleta);
 
-    if (continuar) {
-      handleAbrirModalNovoAtleta();
-    } else {
-      setModalAtletaAberto(false);
+      // 2. Sincroniza e forma as equipes automaticamente
+      JegdStorage.syncAtletaComEquipes(escola.id, res.atleta);
+
+      // 3. Atualiza dados na tela
+      carregarDados(escola.id);
+
+      if (!res.ok) {
+        setErroSalvarAtleta(res.error || 'Falha ao confirmar salvamento no servidor. Tente novamente.');
+        return;
+      }
+
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      } catch { }
+
+      if (continuar) {
+        setUltimoAtletaSalvo({ nome: res.atleta.nomeCompleto, codigo: res.atleta.matricula });
+        handleAbrirModalNovoAtleta(true);
+      } else {
+        setUltimoAtletaSalvo(null);
+        setModalAtletaAberto(false);
+      }
+    } finally {
+      setSalvandoAtleta(false);
     }
   };
 
@@ -1506,6 +1527,9 @@ export default function EscolaDashboardPage() {
         handleSalvarAtleta={handleSalvarAtleta}
         escolaId={escola.id}
         diagnosticoDuplicidade={diagnosticoDuplicidade}
+        salvando={salvandoAtleta}
+        erroSalvar={erroSalvarAtleta}
+        ultimoSalvo={ultimoAtletaSalvo}
       />
 
       {/* Modal Seletor de Perfil (Direção / Professores) */}

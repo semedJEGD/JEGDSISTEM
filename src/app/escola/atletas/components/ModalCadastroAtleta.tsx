@@ -61,10 +61,13 @@ interface ModalCadastroAtletaProps {
   provasPermitidas: string[];
   provasAtletismo: string[];
   toggleProva: (prova: string) => void;
-  handleSalvarAtleta: (continuar?: boolean) => void;
+  handleSalvarAtleta: (continuar?: boolean) => void | Promise<void>;
   escolaId: string;
   diagnosticoDuplicidade?: DiagnosticoDuplicidadeProps;
   onCarregarAtletaDuplicado?: (atleta: Atleta) => void;
+  salvando?: boolean;
+  erroSalvar?: string | null;
+  ultimoSalvo?: { nome: string; codigo: string } | null;
 }
 
 export function ModalCadastroAtleta({
@@ -99,7 +102,10 @@ export function ModalCadastroAtleta({
   handleSalvarAtleta,
   escolaId,
   diagnosticoDuplicidade,
-  onCarregarAtletaDuplicado
+  onCarregarAtletaDuplicado,
+  salvando = false,
+  erroSalvar = null,
+  ultimoSalvo = null
 }: ModalCadastroAtletaProps) {
   const [internalSemDoc, setInternalSemDoc] = React.useState(false);
   const semDocAtivo = semDocumento !== undefined ? semDocumento : internalSemDoc;
@@ -155,6 +161,36 @@ export function ModalCadastroAtleta({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Feedback de Aluno Salvo (modo Salvar & Próximo) */}
+        {ultimoSalvo && !atletaEditando && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-xs font-semibold text-emerald-900">
+                Aluno salvo com sucesso: {ultimoSalvo.nome}
+              </h4>
+              <p className="text-[11px] text-emerald-700 mt-0.5">
+                Código gerado: <strong className="font-mono">{ultimoSalvo.codigo}</strong>. O formulário foi limpo para você cadastrar o próximo aluno (ou clique em Cancelar/X para fechar).
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Erro ao salvar no servidor */}
+        {erroSalvar && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-xs font-semibold text-rose-900">
+                Atenção ao salvar aluno
+              </h4>
+              <p className="text-[11px] text-rose-700 mt-0.5">
+                {erroSalvar}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Alerta de Duplicidade - Mesma Escola */}
         {diagnosticoDuplicidade?.duplicado && diagnosticoDuplicidade.tipoConflito === 'MESMA_ESCOLA' && diagnosticoDuplicidade.atletaExistente && (
@@ -567,23 +603,23 @@ export function ModalCadastroAtleta({
               {!atletaEditando && (
                 <button
                   type="button"
-                  disabled={bloqueadoPorOutraEscola || !nomeCompleto.trim()}
+                  disabled={salvando || bloqueadoPorOutraEscola || !nomeCompleto.trim()}
                   onClick={() => handleSalvarAtleta(true)}
                   className="w-full sm:w-auto px-3.5 py-2 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100/70 text-emerald-800 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
                   title="Salva este aluno e limpa o formulário para o próximo"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  <span>Salvar & Próximo</span>
+                  <span>{salvando ? 'Salvando...' : 'Salvar & Próximo'}</span>
                 </button>
               )}
 
               <button
                 type="submit"
-                disabled={bloqueadoPorOutraEscola || !nomeCompleto.trim()}
+                disabled={salvando || bloqueadoPorOutraEscola || !nomeCompleto.trim()}
                 className="w-full sm:w-auto px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{atletaEditando ? 'Salvar Alterações' : 'Concluir Cadastro'}</span>
+                <span>{salvando ? 'Salvando...' : (atletaEditando ? 'Salvar Alterações' : 'Concluir Cadastro')}</span>
               </button>
             </div>
           </div>

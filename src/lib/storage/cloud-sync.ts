@@ -26,18 +26,23 @@ export class JegdCloudSync {
 
   /**
    * Sincroniza o cadastro ou atualização de um atleta com o PostgreSQL
+   * Retorna os dados persistidos (incluindo eventual novo crachaToken se houve colisão) ou o erro real.
    */
-  static async syncAtleta(atleta: any): Promise<boolean> {
+  static async syncAtleta(atleta: any): Promise<{ ok: boolean; data?: any; error?: string }> {
     try {
-      if (typeof window === 'undefined') return false;
+      if (typeof window === 'undefined') return { ok: false, error: 'Ambiente sem navegador' };
       const res = await fetch('/api/atletas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(atleta)
       });
-      return res.ok;
-    } catch {
-      return false;
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        return { ok: false, error: json?.error || `Erro HTTP ${res.status} ao salvar aluno` };
+      }
+      return { ok: true, data: json.data };
+    } catch (err: any) {
+      return { ok: false, error: err?.message || 'Falha de conexão ao salvar aluno' };
     }
   }
 
