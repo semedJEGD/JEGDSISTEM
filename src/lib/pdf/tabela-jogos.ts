@@ -4,6 +4,7 @@ import {
   GrupoChaveamento,
   ProvaAtletismoBalizamento,
   calcularClassificacaoXadrez,
+  formatarPlacarComPenaltis,
 } from '@/lib/chaveamento-service';
 import { FASES_LABEL, formatarDataBR } from '@/lib/eventos-service';
 import { criarDocumentoA4, abrirPdfNovaGuia } from './pdf-types';
@@ -281,7 +282,7 @@ export function gerarPdfChaveamentoOficial(
       doc.text((p.local || '-').slice(0, 14), margin + 148, y + 4.8);
       const placar =
         p.status === 'ENCERRADO' || p.status === 'WO'
-          ? `${p.placarA} × ${p.placarB}${p.status === 'WO' ? ' WO' : ''}`
+          ? `${formatarPlacarComPenaltis(p.placarA, p.placarB, p.detalhesPlacar)}${p.status === 'WO' ? ' WO' : ''}`
           : '___ × ___';
       doc.text(placar, margin + 169, y + 4.8);
       y += 7;

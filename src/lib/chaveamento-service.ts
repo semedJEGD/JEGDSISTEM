@@ -16,6 +16,110 @@ export function isModalidadeIndividual(codigo: string): boolean {
   return norm === 'atletismo' || norm === 'xadrez' || norm === 'tenis_mesa';
 }
 
+export function parsePenaltis(detalhesPlacar?: string | null): { penA: number; penB: number } | null {
+  if (!detalhesPlacar) return null;
+  const m = detalhesPlacar.match(/PEN:\s*(\d+)\s*[x×]\s*(\d+)/i);
+  if (!m) return null;
+  return { penA: parseInt(m[1], 10), penB: parseInt(m[2], 10) };
+}
+
+export function formatarDetalhesPenaltis(penA: number, penB: number): string {
+  return `PEN:${penA}x${penB}`;
+}
+
+export function formatarPlacarComPenaltis(
+  placarA: number,
+  placarB: number,
+  detalhesPlacar?: string | null
+): string {
+  const pen = parsePenaltis(detalhesPlacar);
+  if (pen) {
+    return `${placarA} (${pen.penA}) × ${placarB} (${pen.penB})`;
+  }
+  return `${placarA} × ${placarB}`;
+}
+
+export interface ConfigColunasModalidade {
+  permiteEmpate: boolean;
+  grupoEstatisticas: string; // Ex: "Gols", "Sets", "Pontos"
+  labelPro: string;
+  labelContra: string;
+  labelSaldo: string;
+  notaPontuacao: string;
+}
+
+export function obterConfigColunasModalidade(modalidadeCodigo: string): ConfigColunasModalidade {
+  const norm = normalizarCodigoModalidade(modalidadeCodigo);
+  if (norm.includes('volei')) {
+    return {
+      permiteEmpate: false,
+      grupoEstatisticas: 'Sets',
+      labelPro: 'SP',
+      labelContra: 'SC',
+      labelSaldo: 'SS',
+      notaPontuacao: 'Vitória 2×0: 3 pts · Vitória 2×1: 2 pts / 1 pt',
+    };
+  }
+  if (norm.includes('basquete')) {
+    return {
+      permiteEmpate: false,
+      grupoEstatisticas: 'Pontos',
+      labelPro: 'PM',
+      labelContra: 'PS',
+      labelSaldo: 'SP',
+      notaPontuacao: 'Pontuação oficial da modalidade',
+    };
+  }
+  if (norm === 'tenis_mesa') {
+    return {
+      permiteEmpate: false,
+      grupoEstatisticas: 'Sets',
+      labelPro: 'SP',
+      labelContra: 'SC',
+      labelSaldo: 'SS',
+      notaPontuacao: 'Vitória por sets conforme regulamento CBTM/JEGDS',
+    };
+  }
+  if (norm === 'queimada') {
+    return {
+      permiteEmpate: false,
+      grupoEstatisticas: 'Pontos',
+      labelPro: 'PP',
+      labelContra: 'PC',
+      labelSaldo: 'SP',
+      notaPontuacao: 'Vitória: 3 pts · Derrota: 0 pt',
+    };
+  }
+  if (norm.includes('handebol')) {
+    return {
+      permiteEmpate: true,
+      grupoEstatisticas: 'Gols',
+      labelPro: 'GP',
+      labelContra: 'GC',
+      labelSaldo: 'SG',
+      notaPontuacao: 'Vitória: 3 pts · Empate: 1 pt · Derrota: 0 pt',
+    };
+  }
+  // Futsal, Futebol de Campo, Beach Soccer
+  return {
+    permiteEmpate: true,
+    grupoEstatisticas: 'Gols',
+    labelPro: 'GP',
+    labelContra: 'GC',
+    labelSaldo: 'SG',
+    notaPontuacao: 'Vitória: 3 pts · Empate: 1 pt · Derrota: 0 pt',
+  };
+}
+
+export interface FinalizacaoCampeonato {
+  campeao?: { escolaId: string; nome: string; sigla: string } | null;
+  vice?: { escolaId: string; nome: string; sigla: string } | null;
+  terceiro?: { escolaId: string; nome: string; sigla: string } | null;
+  artilheiro?: { nome: string; escolaSigla?: string; gols?: number } | null;
+  observacao?: string | null;
+  finalizadoEm: string;
+}
+
 export function gerarSeedAuditavel(): string {
   const now = new Date();
   const data = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -65,6 +169,17 @@ function somarMinutosHorario(horaHHMM: string, minutos: number): string {
 // TIPOS DO MOTOR DE AUDITORIA E CHAVEAMENTO
 // ============================================================
 
+export interface AtletaResumoChaveamento {
+  id: string;
+  nomeCompleto: string;
+  dataNascimento: string;
+  documentoTipo: string;
+  documentoNumero: string;
+  semDocumento: boolean;
+  conferido: boolean;
+  fotoUrl?: string;
+}
+
 export interface ParticipanteChaveamento {
   id: string; // escolaId (coletivas) ou atletaId (individuais)
   nome: string; // Nome da escola ou nome do atleta
@@ -74,6 +189,7 @@ export interface ParticipanteChaveamento {
   escolaSigla: string;
   statusHomologacao: 'VALIDADA' | 'PENDENTE' | 'REJEITADA';
   totalAtletas?: number;
+  atletasDetalhes?: AtletaResumoChaveamento[];
   provas?: string[];
   alertas: string[];
 }
@@ -325,24 +441,54 @@ export function auditarCategoriaParaChaveamento(params: {
         escolaNome: escNome,
         escolaSigla: escSigla,
         statusHomologacao: status,
+        totalAtletas: 1,
+        atletasDetalhes: [
+          {
+            id: atl.id,
+            nomeCompleto: atl.nomeCompleto,
+            dataNascimento: atl.dataNascimento,
+            documentoTipo: atl.documentoTipo,
+            documentoNumero: atl.documentoNumero,
+            semDocumento: isSemDoc,
+            conferido: Boolean(atl.conferidoPeloCoordenador),
+            fotoUrl: atl.documentos?.foto3x4,
+          },
+        ],
         provas: modInfo?.provas || [],
         alertas: partAlertas,
       });
     }
   } else {
-    // Modalidades Coletivas: participantes são as EQUIPES (inscrições) ou escolas com atletas inscritos
+    // Modalidades Coletivas: cada inscrição de equipe tem seu próprio ID único
+    // para que seja possível remover apenas 1 equipe (ex: a que está abaixo do mínimo) sem afetar a outra!
     const inscsDaCat = inscricoes.filter(
       (i) => normalizarCodigoModalidade(i.modalidadeCodigo) === norm && i.categoria === categoria && i.sexo === sexo
     );
 
-    // Agrupa também atletas diretos caso alguma escola tenha atletas mas ainda não tenha objeto InscricaoEquipe
+    // Conta quantas inscrições cada escola possui nesta categoria para numerar automaticamente (Eq. 1, Eq. 2...)
+    const totalPorEscola = new Map<string, number>();
+    for (const insc of inscsDaCat) {
+      totalPorEscola.set(insc.escolaId, (totalPorEscola.get(insc.escolaId) || 0) + 1);
+    }
+    const indicePorEscola = new Map<string, number>();
     const escolasJaIncluidas = new Set<string>();
 
-    for (const insc of inscsDaCat) {
+    for (let idx = 0; idx < inscsDaCat.length; idx++) {
+      const insc = inscsDaCat[idx];
       const esc = escolaMap.get(insc.escolaId);
       const escNome = esc?.nome || insc.escolaId;
       const escSigla = esc?.sigla || escNome;
-      const numEq = insc.numeroEquipe && insc.numeroEquipe > 1 ? ` (Eq. ${insc.numeroEquipe})` : '';
+
+      const seqEscola = (indicePorEscola.get(insc.escolaId) || 0) + 1;
+      indicePorEscola.set(insc.escolaId, seqEscola);
+      const temMultiplas = (totalPorEscola.get(insc.escolaId) || 1) > 1;
+      const numEqLabel =
+        insc.numeroEquipe && insc.numeroEquipe > 1
+          ? ` (Eq. ${insc.numeroEquipe})`
+          : temMultiplas
+          ? ` (Eq. ${seqEscola})`
+          : '';
+
       const qtd = insc.atletaIds?.length || 0;
       const partAlertas: string[] = [];
 
@@ -363,25 +509,41 @@ export function auditarCategoriaParaChaveamento(params: {
         partAlertas.push(`${semDocEq} aluno(s) sem documento`);
       }
 
-      const status = insc.status === 'VALIDADA' ? 'VALIDADA' : insc.status === 'REJEITADA' ? 'REJEITADA' : 'PENDENTE';
+      const status: 'VALIDADA' | 'PENDENTE' | 'REJEITADA' =
+        insc.status === 'VALIDADA' ? 'VALIDADA' : insc.status === 'REJEITADA' ? 'REJEITADA' : 'PENDENTE';
       if (status === 'VALIDADA') validados++;
       else pendentes++;
       if (status !== 'VALIDADA') {
         partAlertas.push(`Homologação ${status}`);
       }
 
-      const participanteId = insc.numeroEquipe && insc.numeroEquipe > 1 ? `${insc.escolaId}__eq${insc.numeroEquipe}` : insc.escolaId;
+      // ID garantidamente único por inscrição (nunca colide mesmo com 2+ equipes da mesma escola)
+      const participanteId = insc.id ? `${insc.escolaId}__${insc.id}` : `${insc.escolaId}__eq${seqEscola}_${idx}`;
       escolasJaIncluidas.add(insc.escolaId);
 
       participantes.push({
         id: participanteId,
-        nome: `${escNome}${numEq}`,
-        sigla: `${escSigla}${numEq}`,
+        nome: `${escNome}${numEqLabel}`,
+        sigla: `${escSigla}${numEqLabel}`,
         escolaId: insc.escolaId,
         escolaNome: escNome,
         escolaSigla: escSigla,
         statusHomologacao: status,
         totalAtletas: qtd,
+        atletasDetalhes: [...atletasDaEquipe]
+          .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'))
+          .map((a) => ({
+            id: a.id,
+            nomeCompleto: a.nomeCompleto,
+            dataNascimento: a.dataNascimento,
+            documentoTipo: a.documentoTipo,
+            documentoNumero: a.documentoNumero,
+            semDocumento: Boolean(
+              a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO'
+            ),
+            conferido: Boolean(a.conferidoPeloCoordenador),
+            fotoUrl: a.documentos?.foto3x4,
+          })),
         alertas: partAlertas,
       });
     }
@@ -422,6 +584,20 @@ export function auditarCategoriaParaChaveamento(params: {
         escolaSigla: escSigla,
         statusHomologacao: 'PENDENTE',
         totalAtletas: lista.length,
+        atletasDetalhes: [...lista]
+          .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'))
+          .map((a) => ({
+            id: a.id,
+            nomeCompleto: a.nomeCompleto,
+            dataNascimento: a.dataNascimento,
+            documentoTipo: a.documentoTipo,
+            documentoNumero: a.documentoNumero,
+            semDocumento: Boolean(
+              a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO'
+            ),
+            conferido: Boolean(a.conferidoPeloCoordenador),
+            fotoUrl: a.documentos?.foto3x4,
+          })),
         alertas: partAlertas,
       });
     }
@@ -569,7 +745,12 @@ export function sortearGruposOficiais(
   }
 
   if (numGrupos === 1) {
-    return [{ nome: n === 2 ? 'Final Direta' : 'Grupo Único', participantes: embaralhados }];
+    return [
+      {
+        nome: opts.forcarGrupoUnico ? 'Tabela Geral' : n === 2 ? 'Final Direta' : 'Grupo Único',
+        participantes: embaralhados,
+      },
+    ];
   }
 
   const letras = ['Grupo A', 'Grupo B', 'Grupo C', 'Grupo D'];
@@ -601,6 +782,7 @@ export function sortearGruposOficiais(
 
 export function gerarChaveamentoColetivoOuTenisMesa(params: {
   participantes: ParticipanteChaveamento[];
+  gruposCustomizados?: GrupoChaveamento[];
   modalidadeCodigo: string;
   modalidadeNome: string;
   categoria: string;
@@ -619,6 +801,7 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
 } {
   const {
     participantes,
+    gruposCustomizados,
     modalidadeCodigo,
     modalidadeNome,
     categoria,
@@ -648,8 +831,8 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
     return { horario, local };
   };
 
-  // --- MODO A: FINAL DIRETA (2 participantes) ---
-  if (formato === 'FINAL_DIRETA' || participantes.length === 2) {
+  // --- MODO A: FINAL DIRETA (2 participantes, exceto quando Pontos Corridos explícito) ---
+  if (formato === 'FINAL_DIRETA' || (participantes.length === 2 && formato !== 'BERGER_UNICO')) {
     const emb = embaralharComSeed(participantes, seed);
     const { horario, local } = proximoSlot();
     partidas.push({
@@ -689,7 +872,8 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
     const cabecasComBye = emb.slice(0, totalByes);
     const jogamPrimeiraFase = emb.slice(totalByes);
 
-    const vencedoresSlots: { label: string; participante?: ParticipanteChaveamento }[] = [];
+    const vencedoresSlots: { id?: string; label: string; participante?: ParticipanteChaveamento }[] = [];
+    const jogosSemifinalInicial: number[] = [];
 
     // Cabeças que passaram direto por BYE
     cabecasComBye.forEach((p) => {
@@ -703,6 +887,7 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
       if (!a || !b) continue;
       const { horario, local } = proximoSlot();
       const jNum = numJogo++;
+      if (faseInicial === 'SEMIFINAL') jogosSemifinalInicial.push(jNum);
       partidas.push({
         numeroJogo: jNum,
         modalidadeCodigo,
@@ -722,7 +907,30 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
         escolaBSigla: b.sigla,
         observacao: `Eliminatória Direta — Jogo ${jNum}`,
       });
-      vencedoresSlots.push({ label: `Vencedor J${jNum}` });
+      vencedoresSlots.push({ id: `TBD_VENCEDOR_J${jNum}`, label: `Vencedor J${jNum}` });
+    }
+
+    if (faseInicial === 'SEMIFINAL' && incluirTerceiroLugar && jogosSemifinalInicial.length === 2) {
+      const { horario, local } = proximoSlot();
+      partidas.push({
+        numeroJogo: numJogo++,
+        modalidadeCodigo,
+        modalidadeNome,
+        categoria,
+        sexo,
+        fase: 'TERCEIRO_LUGAR',
+        grupo: null,
+        dataEvento,
+        horario,
+        local,
+        escolaAId: `TBD_PERDEDOR_J${jogosSemifinalInicial[0]}`,
+        escolaANome: `Perdedor J${jogosSemifinalInicial[0]}`,
+        escolaASigla: `Perd. J${jogosSemifinalInicial[0]}`,
+        escolaBId: `TBD_PERDEDOR_J${jogosSemifinalInicial[1]}`,
+        escolaBNome: `Perdedor J${jogosSemifinalInicial[1]}`,
+        escolaBSigla: `Perd. J${jogosSemifinalInicial[1]}`,
+        observacao: 'Disputa de 3º Lugar',
+      });
     }
 
     // Fases subsequentes até a Final
@@ -737,7 +945,7 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
     let slotsAtuais = vencedoresSlots;
 
     while (faseAtual && slotsAtuais.length >= 2) {
-      const proximosSlots: { label: string; participante?: ParticipanteChaveamento }[] = [];
+      const proximosSlots: { id?: string; label: string; participante?: ParticipanteChaveamento }[] = [];
       const jogosSemifinal: number[] = [];
 
       for (let i = 0; i < slotsAtuais.length; i += 2) {
@@ -760,15 +968,15 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
           dataEvento,
           horario,
           local,
-          escolaAId: sA.participante ? sA.participante.id : `TBD_${sA.label}`,
+          escolaAId: sA.participante ? sA.participante.id : sA.id || `TBD_${sA.label}`,
           escolaANome: sA.participante ? sA.participante.nome : sA.label,
           escolaASigla: sA.participante ? sA.participante.sigla : sA.label,
-          escolaBId: sB.participante ? sB.participante.id : `TBD_${sB.label}`,
+          escolaBId: sB.participante ? sB.participante.id : sB.id || `TBD_${sB.label}`,
           escolaBNome: sB.participante ? sB.participante.nome : sB.label,
           escolaBSigla: sB.participante ? sB.participante.sigla : sB.label,
           observacao: `${faseAtual} — ${sA.label} × ${sB.label}`,
         });
-        proximosSlots.push({ label: `Vencedor J${jNum}` });
+        proximosSlots.push({ id: `TBD_VENCEDOR_J${jNum}`, label: `Vencedor J${jNum}` });
       }
 
       // Disputa de 3º lugar antes da Final
@@ -807,7 +1015,10 @@ export function gerarChaveamentoColetivoOuTenisMesa(params: {
 
   // --- MODO C: GRUPOS (BERGER) + MATA-MATA OFICIAL ---
   const forcarGrupoUnico = formato === 'BERGER_UNICO' || participantes.length <= 5;
-  const grupos = sortearGruposOficiais(participantes, { seed, forcarGrupoUnico });
+  const grupos =
+    gruposCustomizados && gruposCustomizados.length > 0
+      ? gruposCustomizados
+      : sortearGruposOficiais(participantes, { seed, forcarGrupoUnico });
 
   // Gera rodadas de Berger intercalando grupos (Grupo A Rodada 1, Grupo B Rodada 1, ...)
   // para garantir descanso entre partidas de cada escola!
@@ -1097,10 +1308,10 @@ export function calcularAtualizacoesAvancoMataMata(
       };
     }
 
-    // TBD_VENCEDOR_J12 ou TBD_PERDEDOR_J12
-    const mJogo = tbdId.match(/^TBD_(VENCEDOR|PERDEDOR)_J(\d+)$/);
+    // TBD_VENCEDOR_J12, TBD_PERDEDOR_J12 ou legado "TBD_Vencedor J12"
+    const mJogo = tbdId.match(/^TBD_(VENCEDOR|PERDEDOR)[_\s]J(\d+)$/i);
     if (mJogo) {
-      const tipo = mJogo[1];
+      const tipo = mJogo[1].toUpperCase();
       const num = parseInt(mJogo[2], 10);
       const jogo = porNumero.get(num);
       if (jogo && (jogo.status === 'ENCERRADO' || jogo.status === 'WO')) {

@@ -349,6 +349,27 @@ export async function POST(request: Request) {
         break;
 
       case 'chaveamento': {
+        if (dados.substituirExistenteId) {
+          const antigo = await prisma.chaveamentoEvento.findUnique({
+            where: { id: dados.substituirExistenteId },
+          });
+          if (antigo) {
+            const codNorm = antigo.modalidadeCodigo;
+            const variantes = Array.from(
+              new Set([codNorm, codNorm.replace(/_/g, '-'), codNorm.replace(/-/g, '_')])
+            );
+            await prisma.partidaEvento.deleteMany({
+              where: {
+                municipioId: antigo.municipioId,
+                modalidadeCodigo: { in: variantes },
+                categoria: antigo.categoria,
+                sexo: antigo.sexo,
+              },
+            });
+            await prisma.chaveamentoEvento.delete({ where: { id: antigo.id } });
+          }
+        }
+
         const chaveamento = await prisma.chaveamentoEvento.create({
           data: {
             municipioId: dados.municipioId || null,
@@ -509,16 +530,23 @@ export async function DELETE(request: Request) {
         const excluirPartidas = searchParams.get('excluirPartidas') === '1';
         const ch = await prisma.chaveamentoEvento.findUnique({ where: { id } });
         if (ch && excluirPartidas) {
+          const variantes = Array.from(
+            new Set([
+              ch.modalidadeCodigo,
+              ch.modalidadeCodigo.replace(/_/g, '-'),
+              ch.modalidadeCodigo.replace(/-/g, '_'),
+            ])
+          );
           await prisma.partidaEvento.deleteMany({
             where: {
-              municipioId: ch.municipioId,
-              modalidadeCodigo: ch.modalidadeCodigo,
+              ...(ch.municipioId ? { municipioId: ch.municipioId } : { municipioId: null }),
+              modalidadeCodigo: { in: variantes },
               categoria: ch.categoria,
               sexo: ch.sexo,
             },
           });
         }
-        await prisma.chaveamentoEvento.delete({ where: { id } });
+        await prisma.chaveamentoEvento.deleteMany({ where: { id } });
         break;
       }
       default:

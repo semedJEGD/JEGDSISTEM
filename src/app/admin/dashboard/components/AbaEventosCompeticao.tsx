@@ -39,6 +39,10 @@ import {
   agruparArtilhariaPorModalidade,
   formatarDataBR,
 } from '@/lib/eventos-service';
+import {
+  calcularAtualizacoesAvancoMataMata,
+  normalizarCodigoModalidade,
+} from '@/lib/chaveamento-service';
 
 interface AbaEventosCompeticaoProps {
   municipioId?: string;
@@ -107,8 +111,6 @@ export function AbaEventosCompeticao({
   const [jogoLocal, setJogoLocal] = useState('Quadra Principal');
   const [jogoEscolaAId, setJogoEscolaAId] = useState('');
   const [jogoEscolaBId, setJogoEscolaBId] = useState('');
-  const [modoGeradorGrupo, setModoGeradorGrupo] = useState(false);
-  const [escolasSelecionadasGrupo, setEscolasSelecionadasGrupo] = useState<string[]>([]);
 
   // ---- Estado Form: Artilharia ----
   const [artModCodigo, setArtModCodigo] = useState('futsal');
@@ -302,7 +304,7 @@ export function AbaEventosCompeticao({
       await EventosApi.criar('partida', {
         municipioId,
         numeroJogo: bundle.partidas.length + 1,
-        modalidadeCodigo: modObj.codigo,
+        modalidadeCodigo: normalizarCodigoModalidade(modObj.codigo),
         modalidadeNome: modObj.nome,
         categoria: jogoCat,
         sexo: jogoSexo,
@@ -323,57 +325,6 @@ export function AbaEventosCompeticao({
       await carregarDados();
     } catch (err: any) {
       alert(err.message || 'Erro ao criar partida');
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  const handleGerarTodosContraTodos = async () => {
-    if (escolasSelecionadasGrupo.length < 2) {
-      alert('Selecione pelo menos 2 escolas para gerar os confrontos do grupo.');
-      return;
-    }
-    const modObj = MODALIDADES_EVENTOS_OPCOES.find((m) => m.codigo === jogoModCodigo) || {
-      codigo: jogoModCodigo,
-      nome: jogoModCodigo,
-    };
-    const selecionadas = escolasSelecionadasGrupo
-      .map((id) => escolas.find((e) => e.id === id))
-      .filter(Boolean) as Escola[];
-
-    const partidasGeradas: any[] = [];
-    let num = bundle.partidas.length + 1;
-    for (let i = 0; i < selecionadas.length; i++) {
-      for (let j = i + 1; j < selecionadas.length; j++) {
-        partidasGeradas.push({
-          numeroJogo: num++,
-          modalidadeCodigo: modObj.codigo,
-          modalidadeNome: modObj.nome,
-          categoria: jogoCat,
-          sexo: jogoSexo,
-          fase: 'GRUPOS',
-          grupo: jogoGrupo || 'Grupo A',
-          dataEvento: jogoData,
-          horario: jogoHora,
-          local: jogoLocal.trim() || null,
-          escolaAId: selecionadas[i].id,
-          escolaANome: selecionadas[i].nome,
-          escolaASigla: selecionadas[i].sigla || selecionadas[i].nome,
-          escolaBId: selecionadas[j].id,
-          escolaBNome: selecionadas[j].nome,
-          escolaBSigla: selecionadas[j].sigla || selecionadas[j].nome,
-        });
-      }
-    }
-
-    try {
-      setSalvando(true);
-      await EventosApi.criar('partidas_lote', { municipioId, partidas: partidasGeradas });
-      setEscolasSelecionadasGrupo([]);
-      setModoGeradorGrupo(false);
-      await carregarDados();
-    } catch (err: any) {
-      alert(err.message || 'Erro ao gerar confrontos');
     } finally {
       setSalvando(false);
     }
@@ -414,6 +365,24 @@ export function AbaEventosCompeticao({
         };
       }
       await EventosApi.atualizar('partida', partida.id, dados);
+
+      // Avança automaticamente classificados/vencedores no mata-mata desta categoria
+      if (status === 'ENCERRADO' || status === 'WO') {
+        const modNorm = normalizarCodigoModalidade(partida.modalidadeCodigo);
+        const partidasCat = bundle.partidas
+          .filter(
+            (p) =>
+              normalizarCodigoModalidade(p.modalidadeCodigo) === modNorm &&
+              p.categoria === partida.categoria &&
+              p.sexo === partida.sexo
+          )
+          .map((p) => (p.id === partida.id ? { ...p, ...dados } : p));
+        const updates = calcularAtualizacoesAvancoMataMata(partidasCat);
+        if (updates.length > 0) {
+          await EventosApi.atualizar('partidas_atualizar_lote', partida.id, { itens: updates });
+        }
+      }
+
       await carregarDados();
     } catch (err: any) {
       alert(err.message || 'Erro ao atualizar status da partida');
@@ -627,6 +596,7 @@ export function AbaEventosCompeticao({
           modalidades={modalidades}
           partidas={bundle.partidas}
           chaveamentos={bundle.chaveamentos || []}
+          artilharia={bundle.artilharia}
           onAtualizado={carregarDados}
         />
       )}
@@ -639,15 +609,15 @@ export function AbaEventosCompeticao({
           <div className="bg-white border border-[#E2EAE5] rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <h3 className="text-sm font-black text-[#17221D]">
-                {modoGeradorGrupo ? 'Gerador Automático — Todos Contra Todos do Grupo' : 'Cadastrar Nova Partida / Confronto'}
+                Cadastrar Jogo Avulso / Confronto Manual
               </h3>
               <button
                 type="button"
-                onClick={() => setModoGeradorGrupo((v) => !v)}
+                onClick={() => setSubAba('CHAVEAMENTO')}
                 className="px-3 py-1.5 rounded-lg bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <Users className="w-3.5 h-3.5" />
-                <span>{modoGeradorGrupo ? 'Voltar para Jogo Individual' : 'Gerar Confrontos do Grupo'}</span>
+                <GitBranch className="w-3.5 h-3.5" />
+                <span>Montar Grupos / Chaveamento →</span>
               </button>
             </div>
 
@@ -692,7 +662,6 @@ export function AbaEventosCompeticao({
                 <select
                   value={jogoFase}
                   onChange={(e) => setJogoFase(e.target.value)}
-                  disabled={modoGeradorGrupo}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                 >
                   {Object.entries(FASES_LABEL).map(([k, v]) => (
@@ -740,83 +709,44 @@ export function AbaEventosCompeticao({
               </div>
             </div>
 
-            {modoGeradorGrupo ? (
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <p className="text-xs font-bold text-slate-600">
-                  Marque as escolas do grupo (mínimo 2):
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {escolasOrdenadas.map((esc) => {
-                    const marcado = escolasSelecionadasGrupo.includes(esc.id);
-                    return (
-                      <button
-                        key={esc.id}
-                        type="button"
-                        onClick={() =>
-                          setEscolasSelecionadasGrupo((prev) =>
-                            marcado ? prev.filter((x) => x !== esc.id) : [...prev, esc.id]
-                          )
-                        }
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer transition-colors ${
-                          marcado
-                            ? 'bg-[#00A878] text-white border-[#00A878]'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        {esc.sigla || esc.nome}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGerarTodosContraTodos}
-                  disabled={salvando || escolasSelecionadasGrupo.length < 2}
-                  className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black disabled:opacity-50 cursor-pointer"
+            <form onSubmit={handleCriarPartida} className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 items-end">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 block mb-1">Equipe A (Escola)</label>
+                <select
+                  value={jogoEscolaAId}
+                  onChange={(e) => setJogoEscolaAId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                 >
-                  {salvando ? 'Gerando...' : `Gerar Confrontos (${(escolasSelecionadasGrupo.length * (escolasSelecionadasGrupo.length - 1)) / 2} jogos)`}
-                </button>
+                  <option value="">Selecione a Escola A...</option>
+                  {escolasOrdenadas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <form onSubmit={handleCriarPartida} className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 items-end">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Equipe A (Escola)</label>
-                  <select
-                    value={jogoEscolaAId}
-                    onChange={(e) => setJogoEscolaAId(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
-                  >
-                    <option value="">Selecione a Escola A...</option>
-                    {escolasOrdenadas.map((e) => (
-                      <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Equipe B (Escola)</label>
-                  <select
-                    value={jogoEscolaBId}
-                    onChange={(e) => setJogoEscolaBId(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
-                  >
-                    <option value="">Selecione a Escola B...</option>
-                    {escolasOrdenadas.map((e) => (
-                      <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 block mb-1">Equipe B (Escola)</label>
+                <select
+                  value={jogoEscolaBId}
+                  onChange={(e) => setJogoEscolaBId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>{salvando ? 'Salvando...' : 'Adicionar Partida'}</span>
-                </button>
-              </form>
-            )}
+                  <option value="">Selecione a Escola B...</option>
+                  {escolasOrdenadas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={salvando}
+                className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{salvando ? 'Salvando...' : 'Adicionar Partida'}</span>
+              </button>
+            </form>
           </div>
 
           {/* LISTA DE PARTIDAS COM CONTROLE DE PLACAR AO VIVO */}

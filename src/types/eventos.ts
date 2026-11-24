@@ -1,5 +1,5 @@
 export type StatusCronograma = 'PREVISTO' | 'EM_ANDAMENTO' | 'CONCLUIDO';
-export type StatusPartida = 'AGENDADO' | 'AO_VIVO' | 'ENCERRADO' | 'WO';
+export type StatusPartida = 'AGENDADO' | 'AO_VIVO' | 'ENCERRADO' | 'ADIADO' | 'CANCELADO' | 'WO';
 export type FasePartida = 'GRUPOS' | 'OITAVAS' | 'QUARTAS' | 'SEMIFINAL' | 'TERCEIRO_LUGAR' | 'FINAL';
 export type TipoMedalha = 'OURO' | 'PRATA' | 'BRONZE';
 export type TipoAvisoTelao = 'CHAMADA' | 'INFORMATIVO' | 'URGENTE';
