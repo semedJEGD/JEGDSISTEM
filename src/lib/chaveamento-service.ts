@@ -460,12 +460,20 @@ export function auditarCategoriaParaChaveamento(params: {
     }
   } else {
     // Modalidades Coletivas: cada inscrição de equipe tem seu próprio ID único
-    // para que seja possível remover apenas 1 equipe (ex: a que está abaixo do mínimo) sem afetar a outra!
-    const inscsDaCat = inscricoes.filter(
-      (i) => normalizarCodigoModalidade(i.modalidadeCodigo) === norm && i.categoria === categoria && i.sexo === sexo
-    );
+    // Ordena por escola e, dentro da mesma escola, coloca a equipe com mais atletas / validada primeiro (Equipe A, B, C...)
+    const inscsDaCat = inscricoes
+      .filter(
+        (i) => normalizarCodigoModalidade(i.modalidadeCodigo) === norm && i.categoria === categoria && i.sexo === sexo
+      )
+      .sort((a, b) => {
+        if (a.escolaId !== b.escolaId) return a.escolaId.localeCompare(b.escolaId);
+        const aVal = a.status === 'VALIDADA' ? 0 : 1;
+        const bVal = b.status === 'VALIDADA' ? 0 : 1;
+        if (aVal !== bVal) return aVal - bVal;
+        return (b.atletaIds?.length || 0) - (a.atletaIds?.length || 0);
+      });
 
-    // Conta quantas inscrições cada escola possui nesta categoria para numerar automaticamente (Eq. 1, Eq. 2...)
+    // Conta quantas inscrições cada escola possui nesta categoria para nomear sequencialmente (Equipe A, B, C...)
     const totalPorEscola = new Map<string, number>();
     for (const insc of inscsDaCat) {
       totalPorEscola.set(insc.escolaId, (totalPorEscola.get(insc.escolaId) || 0) + 1);
@@ -482,16 +490,8 @@ export function auditarCategoriaParaChaveamento(params: {
       const seqEscola = (indicePorEscola.get(insc.escolaId) || 0) + 1;
       indicePorEscola.set(insc.escolaId, seqEscola);
       const temMultiplas = (totalPorEscola.get(insc.escolaId) || 1) > 1;
-      const letraEquipe =
-        insc.numeroEquipe === 2 || /(-B|-eq2|__eq2)$/i.test(insc.id || '')
-          ? 'B'
-          : seqEscola === 2
-          ? 'B'
-          : seqEscola === 1
-          ? 'A'
-          : String.fromCharCode(64 + seqEscola);
-      const numEqLabel =
-        temMultiplas || insc.numeroEquipe === 2 ? ` (Equipe ${letraEquipe})` : '';
+      const letraEquipe = String.fromCharCode(64 + seqEscola); // 1 -> A, 2 -> B, 3 -> C...
+      const numEqLabel = temMultiplas ? ` (Equipe ${letraEquipe})` : '';
 
       const qtd = insc.atletaIds?.length || 0;
       const partAlertas: string[] = [];
