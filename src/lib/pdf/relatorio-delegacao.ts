@@ -507,4 +507,255 @@ export class RelatorioDelegacaoService {
 
     abrirPdfNovaGuia(doc, `Relatorio_Geral_Alunos_JEGDS_2026.pdf`);
   }
+
+  /**
+   * Gera Relatório Executivo Geral Consolidado com TODAS as Escolas,
+   * distribuição por Categoria/Naipe, Pendências e Resumo por Modalidade.
+   */
+  public static async gerarRelatorioGeralTodasEscolas(
+    escolas: Escola[],
+    atletas: Atleta[],
+    inscricoes: InscricaoEquipe[]
+  ): Promise<void> {
+    const doc = criarDocumentoA4('portrait');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    const contentWidth = pageWidth - margin * 2;
+
+    const logoBase64 = await this.getLogoBase64();
+    const brasaoBase64 = await this.getBrasaoBase64();
+
+    const escolasOrd = [...escolas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    const isSemDoc = (a: Atleta) =>
+      Boolean(a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO');
+
+    const linhasEscolas = escolasOrd.map((esc) => {
+      const atls = atletas.filter((a) => a.escolaId === esc.id);
+      const inscs = inscricoes.filter((i) => i.escolaId === esc.id);
+      return {
+        escola: esc,
+        total: atls.length,
+        masc: atls.filter((a) => a.sexo === 'MASCULINO').length,
+        fem: atls.filter((a) => a.sexo === 'FEMININO').length,
+        mirim: atls.filter((a) => a.categoriaCalculada === 'MIRIM').length,
+        infantil: atls.filter((a) => a.categoriaCalculada === 'INFANTIL').length,
+        infanto: atls.filter((a) => a.categoriaCalculada === 'INFANTO').length,
+        junior: atls.filter((a) => a.categoriaCalculada === 'JUNIOR').length,
+        equipes: inscs.length,
+        conferidos: atls.filter((a) => a.conferidoPeloCoordenador).length,
+        semDoc: atls.filter(isSemDoc).length,
+      };
+    });
+
+    const totais = {
+      escolasAtivas: linhasEscolas.filter((l) => l.total > 0).length,
+      total: atletas.length,
+      masc: atletas.filter((a) => a.sexo === 'MASCULINO').length,
+      fem: atletas.filter((a) => a.sexo === 'FEMININO').length,
+      mirim: atletas.filter((a) => a.categoriaCalculada === 'MIRIM').length,
+      infantil: atletas.filter((a) => a.categoriaCalculada === 'INFANTIL').length,
+      infanto: atletas.filter((a) => a.categoriaCalculada === 'INFANTO').length,
+      junior: atletas.filter((a) => a.categoriaCalculada === 'JUNIOR').length,
+      equipes: inscricoes.length,
+      conferidos: atletas.filter((a) => a.conferidoPeloCoordenador).length,
+      semDoc: atletas.filter(isSemDoc).length,
+    };
+
+    // Cabeçalho oficial
+    doc.setFillColor(...CORES_JEGD.primaria);
+    doc.rect(margin, 10, contentWidth, 24, 'F');
+    doc.setFillColor(...CORES_JEGD.destaqueOuro);
+    doc.rect(margin, 33.3, contentWidth, 0.7, 'F');
+
+    if (logoBase64) {
+      try { doc.addImage(logoBase64, 'PNG', margin + 3, 11, 21, 21); } catch {}
+    }
+    if (brasaoBase64) {
+      try { doc.addImage(brasaoBase64, 'PNG', pageWidth - margin - 24, 11, 21, 21); } catch {}
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('SECRETARIA MUNICIPAL DE EDUCAÇÃO • COMITÊ GERAL JEGDS 2026', pageWidth / 2, 16, { align: 'center' });
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('RELATÓRIO EXECUTIVO CONSOLIDADO — TODAS AS ESCOLAS PARTICIPANTES', pageWidth / 2, 22, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text(
+      `Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+      pageWidth / 2,
+      28.5,
+      { align: 'center' }
+    );
+
+    let y = 37;
+
+    // Resumo Executivo (4 blocos)
+    const boxW = (contentWidth - 6) / 4;
+    const kpis = [
+      { label: 'ESCOLAS ATIVAS', val: `${totais.escolasAtivas}/${escolas.length}` },
+      { label: 'TOTAL DE ALUNOS', val: `${totais.total} (${totais.masc}M/${totais.fem}F)` },
+      { label: 'EQUIPES FORMADAS', val: `${totais.equipes}` },
+      { label: 'CONFERIDOS / SEM DOC', val: `${totais.conferidos} / ${totais.semDoc}` },
+    ];
+    kpis.forEach((k, idx) => {
+      const x = margin + idx * (boxW + 2);
+      doc.setFillColor(...CORES_JEGD.fundoCinza);
+      doc.setDrawColor(...CORES_JEGD.borda);
+      doc.roundedRect(x, y, boxW, 14, 1.5, 1.5, 'FD');
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...CORES_JEGD.textoMuted);
+      doc.text(k.label, x + boxW / 2, y + 4.8, { align: 'center' });
+      doc.setFontSize(8.5);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.text(k.val, x + boxW / 2, y + 11, { align: 'center' });
+    });
+    y += 18;
+
+    // Tabela 1: Resumo por Escola
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('1. QUADRO COMPARATIVO POR ESCOLA', margin, y + 3);
+    y += 5.5;
+
+    const drawHeaderEscolas = () => {
+      doc.setFillColor(...CORES_JEGD.escuro);
+      doc.rect(margin, y, contentWidth, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ESCOLA', margin + 2, y + 4.1);
+      doc.text('ALUNOS', margin + 72, y + 4.1, { align: 'center' });
+      doc.text('M / F', margin + 88, y + 4.1, { align: 'center' });
+      doc.text('MIR', margin + 102, y + 4.1, { align: 'center' });
+      doc.text('INF', margin + 113, y + 4.1, { align: 'center' });
+      doc.text('INFT', margin + 125, y + 4.1, { align: 'center' });
+      doc.text('JUN', margin + 137, y + 4.1, { align: 'center' });
+      doc.text('EQ.', margin + 149, y + 4.1, { align: 'center' });
+      doc.text('CONF.', margin + 162, y + 4.1, { align: 'center' });
+      doc.text('S/DOC', margin + 177, y + 4.1, { align: 'center' });
+      y += 6;
+    };
+
+    drawHeaderEscolas();
+
+    linhasEscolas.forEach((l, idx) => {
+      if (y > pageHeight - 25) {
+        doc.addPage();
+        y = 15;
+        drawHeaderEscolas();
+      }
+      if (idx % 2 === 0) {
+        doc.setFillColor(...CORES_JEGD.fundoZebra);
+        doc.rect(margin, y, contentWidth, 5.8, 'F');
+      }
+      doc.setDrawColor(...CORES_JEGD.bordaSuave);
+      doc.line(margin, y + 5.8, margin + contentWidth, y + 5.8);
+
+      doc.setFontSize(6.2);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.setFont('helvetica', 'bold');
+      doc.text((l.escola.sigla || l.escola.nome).toUpperCase().slice(0, 34), margin + 2, y + 4);
+      doc.text(String(l.total), margin + 72, y + 4, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${l.masc}/${l.fem}`, margin + 88, y + 4, { align: 'center' });
+      doc.text(String(l.mirim), margin + 102, y + 4, { align: 'center' });
+      doc.text(String(l.infantil), margin + 113, y + 4, { align: 'center' });
+      doc.text(String(l.infanto), margin + 125, y + 4, { align: 'center' });
+      doc.text(String(l.junior), margin + 137, y + 4, { align: 'center' });
+      doc.text(String(l.equipes), margin + 149, y + 4, { align: 'center' });
+      doc.setTextColor(...CORES_JEGD.secundariaEscura);
+      doc.text(String(l.conferidos), margin + 162, y + 4, { align: 'center' });
+      doc.setTextColor(l.semDoc > 0 ? 185 : 100, l.semDoc > 0 ? 28 : 116, l.semDoc > 0 ? 28 : 139);
+      doc.text(String(l.semDoc), margin + 177, y + 4, { align: 'center' });
+      y += 5.8;
+    });
+
+    // Linha TOTAL GERAL
+    doc.setFillColor(226, 232, 240);
+    doc.rect(margin, y, contentWidth, 6.5, 'F');
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('TOTAL GERAL DO MUNICÍPIO', margin + 2, y + 4.4);
+    doc.text(String(totais.total), margin + 72, y + 4.4, { align: 'center' });
+    doc.text(`${totais.masc}/${totais.fem}`, margin + 88, y + 4.4, { align: 'center' });
+    doc.text(String(totais.mirim), margin + 102, y + 4.4, { align: 'center' });
+    doc.text(String(totais.infantil), margin + 113, y + 4.4, { align: 'center' });
+    doc.text(String(totais.infanto), margin + 125, y + 4.4, { align: 'center' });
+    doc.text(String(totais.junior), margin + 137, y + 4.4, { align: 'center' });
+    doc.text(String(totais.equipes), margin + 149, y + 4.4, { align: 'center' });
+    doc.text(String(totais.conferidos), margin + 162, y + 4.4, { align: 'center' });
+    doc.text(String(totais.semDoc), margin + 177, y + 4.4, { align: 'center' });
+    y += 12;
+
+    // Tabela 2: Resumo por Modalidade
+    const modMap = new Map<string, { nome: string; alunos: Set<string>; escolas: Set<string>; equipes: number }>();
+    atletas.forEach((a) => {
+      (a.modalidadesInscritas || []).forEach((m) => {
+        const key = m.modalidadeCodigo || m.modalidadeNome;
+        if (!modMap.has(key)) {
+          modMap.set(key, { nome: m.modalidadeNome || key, alunos: new Set(), escolas: new Set(), equipes: 0 });
+        }
+        modMap.get(key)!.alunos.add(a.id);
+        modMap.get(key)!.escolas.add(a.escolaId);
+      });
+    });
+    inscricoes.forEach((i) => {
+      const key = i.modalidadeCodigo || i.modalidadeNome;
+      if (modMap.has(key)) modMap.get(key)!.equipes += 1;
+    });
+
+    const linhasMod = Array.from(modMap.values()).sort((a, b) => b.alunos.size - a.alunos.size);
+
+    if (y > pageHeight - 40) {
+      doc.addPage();
+      y = 15;
+    }
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.text('2. RESUMO POR MODALIDADE ESPORTIVA', margin, y + 3);
+    y += 5.5;
+
+    doc.setFillColor(...CORES_JEGD.escuro);
+    doc.rect(margin, y, contentWidth, 6, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6.2);
+    doc.text('MODALIDADE', margin + 3, y + 4.1);
+    doc.text('ESCOLAS PARTICIPANTES', margin + 95, y + 4.1, { align: 'center' });
+    doc.text('EQUIPES', margin + 135, y + 4.1, { align: 'center' });
+    doc.text('ATLETAS INSCRITOS', margin + 170, y + 4.1, { align: 'center' });
+    y += 6;
+
+    linhasMod.forEach((m, idx) => {
+      if (y > pageHeight - 20) {
+        doc.addPage();
+        y = 15;
+      }
+      if (idx % 2 === 0) {
+        doc.setFillColor(...CORES_JEGD.fundoZebra);
+        doc.rect(margin, y, contentWidth, 5.8, 'F');
+      }
+      doc.setDrawColor(...CORES_JEGD.bordaSuave);
+      doc.line(margin, y + 5.8, margin + contentWidth, y + 5.8);
+      doc.setFontSize(6.5);
+      doc.setTextColor(...CORES_JEGD.escuro);
+      doc.setFont('helvetica', 'bold');
+      doc.text(m.nome.toUpperCase(), margin + 3, y + 4);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(m.escolas.size), margin + 95, y + 4, { align: 'center' });
+      doc.text(String(m.equipes), margin + 135, y + 4, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(m.alunos.size), margin + 170, y + 4, { align: 'center' });
+      y += 5.8;
+    });
+
+    abrirPdfNovaGuia(doc, `Relatorio_Geral_Todas_Escolas_JEGDS_2026.pdf`);
+  }
 }

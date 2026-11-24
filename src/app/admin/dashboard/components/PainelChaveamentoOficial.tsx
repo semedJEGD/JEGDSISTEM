@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Shuffle,
-  Sparkles,
   Lock,
   Printer,
   Trash2,
-  CheckCircle2,
   Plus,
   ChevronDown,
   ChevronUp,
@@ -18,6 +16,7 @@ import {
   Users,
   X,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 import { Atleta, Escola, InscricaoEquipe, ModalidadeConfig } from '@/types/jegd';
 import {
@@ -25,7 +24,7 @@ import {
   ChaveamentoEventoItem,
   PartidaEventoItem,
 } from '@/types/eventos';
-import { EventosApi, CATEGORIAS_EVENTOS, FASES_LABEL } from '@/lib/eventos-service';
+import { EventosApi, CATEGORIAS_EVENTOS } from '@/lib/eventos-service';
 import {
   auditarCategoriaParaChaveamento,
   gerarSeedAuditavel,
@@ -35,8 +34,6 @@ import {
   gerarProximaRodadaSuica,
   calcularClassificacaoXadrez,
   normalizarCodigoModalidade,
-  GrupoChaveamento,
-  PartidaGeradaPayload,
   ParticipanteChaveamento,
   ProvaAtletismoBalizamento,
   EstruturaXadrez,
@@ -59,7 +56,7 @@ const MODALIDADES_OFICIAIS = [
 
 const MODALIDADES_PONTOS_CORRIDOS = ['futsal', 'futebol_campo'];
 
-type TipoCriacao = 'CHAVEAMENTO' | 'TABELA';
+type ModeloEscolha = 'MATA_MATA' | 'BERGER_UNICO' | 'GRUPOS_MATA_MATA';
 
 interface PainelChaveamentoOficialProps {
   municipioId?: string;
@@ -86,17 +83,21 @@ export function PainelChaveamentoOficial({
 }: PainelChaveamentoOficialProps) {
   const hojeIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const [mostrarMontador, setMostrarMontador] = useState(chaveamentos.length === 0);
-  const [tipoCriacao, setTipoCriacao] = useState<TipoCriacao>('CHAVEAMENTO');
-  const [mostrarAvancado, setMostrarAvancado] = useState(false);
+  // Filtro simples dos chaveamentos criados
+  const [filtroModLista, setFiltroModLista] = useState<string>('TODAS');
+  const [chaveamentoExpandidoId, setChaveamentoExpandidoId] = useState<string | null>(
+    chaveamentos[0]?.id || null
+  );
+
+  // Modal compacto "+ Novo Chaveamento"
+  const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  const [mostrarAgenda, setMostrarAgenda] = useState(false);
 
   const [modCodigo, setModCodigo] = useState('futsal');
   const [categoria, setCategoria] = useState('INFANTIL');
   const [sexo, setSexo] = useState('MASCULINO');
-
-  const [modoChaveamento, setModoChaveamento] = useState<'MATA_MATA' | 'GRUPOS_MATA_MATA'>('MATA_MATA');
+  const [modelo, setModelo] = useState<ModeloEscolha>('MATA_MATA');
   const [incluirTerceiroLugar, setIncluirTerceiroLugar] = useState(true);
-  const [seed, setSeed] = useState(() => gerarSeedAuditavel());
   const [dataEvento, setDataEvento] = useState(hojeIso);
   const [horaInicio, setHoraInicio] = useState('08:30');
   const [intervaloMinutos, setIntervaloMinutos] = useState(30);
@@ -104,80 +105,23 @@ export function PainelChaveamentoOficial({
   const [rodadasXadrez, setRodadasXadrez] = useState(5);
   const [excluidosIds, setExcluidosIds] = useState<string[]>([]);
 
-  const [previa, setPrevia] = useState<{
-    formato: string;
-    grupos?: GrupoChaveamento[];
-    partidas?: PartidaGeradaPayload[];
-    provasAtletismo?: ProvaAtletismoBalizamento[];
-    xadrez?: EstruturaXadrez;
-  } | null>(null);
-
   const [salvando, setSalvando] = useState(false);
   const [confirmandoExclusaoId, setConfirmandoExclusaoId] = useState<string | null>(null);
   const [participanteInspecionado, setParticipanteInspecionado] = useState<ParticipanteChaveamento | null>(null);
-  const [chaveamentoExpandidoId, setChaveamentoExpandidoId] = useState<string | null>(
-    chaveamentos[0]?.id || null
-  );
-
-  const modalidadesDisponiveis = useMemo(
-    () =>
-      tipoCriacao === 'TABELA'
-        ? MODALIDADES_OFICIAIS.filter((m) => MODALIDADES_PONTOS_CORRIDOS.includes(m.codigo))
-        : MODALIDADES_OFICIAIS,
-    [tipoCriacao]
-  );
 
   const modObj = useMemo(
-    () => modalidadesDisponiveis.find((m) => m.codigo === modCodigo) || modalidadesDisponiveis[0],
-    [modalidadesDisponiveis, modCodigo]
+    () => MODALIDADES_OFICIAIS.find((m) => m.codigo === modCodigo) || MODALIDADES_OFICIAIS[0],
+    [modCodigo]
   );
 
-  const categoriasAtivas = useMemo(() => {
-    const lista: {
-      chave: string;
-      modCodigo: string;
-      modNome: string;
-      categoria: string;
-      sexo: string;
-      total: number;
-      chaveamento?: ChaveamentoEventoItem;
-    }[] = [];
+  const permitePontosCorridos = MODALIDADES_PONTOS_CORRIDOS.includes(modObj.codigo);
 
-    for (const m of MODALIDADES_OFICIAIS) {
-      for (const cat of CATEGORIAS_EVENTOS) {
-        for (const sx of ['MASCULINO', 'FEMININO'] as const) {
-          const aud = auditarCategoriaParaChaveamento({
-            modalidadeCodigo: m.codigo,
-            modalidadeNome: m.nome,
-            categoria: cat,
-            sexo: sx,
-            escolas,
-            atletas,
-            inscricoes,
-            modalidades,
-          });
-          const chExistente = chaveamentos.find(
-            (c) =>
-              normalizarCodigoModalidade(c.modalidadeCodigo) === normalizarCodigoModalidade(m.codigo) &&
-              c.categoria === cat &&
-              c.sexo === sx
-          );
-          if (aud.resumo.totalParticipantes > 0 || chExistente) {
-            lista.push({
-              chave: `${m.codigo}__${cat}__${sx}`,
-              modCodigo: m.codigo,
-              modNome: m.nome,
-              categoria: cat,
-              sexo: sx,
-              total: aud.resumo.totalParticipantes,
-              chaveamento: chExistente,
-            });
-          }
-        }
-      }
+  // Se trocar para modalidade que não usa pontos corridos, volta para Mata-Mata
+  useEffect(() => {
+    if (!permitePontosCorridos && modelo === 'BERGER_UNICO') {
+      setModelo('MATA_MATA');
     }
-    return lista;
-  }, [escolas, atletas, inscricoes, modalidades, chaveamentos]);
+  }, [permitePontosCorridos, modelo]);
 
   const auditoria = useMemo(() => {
     return auditarCategoriaParaChaveamento({
@@ -192,6 +136,23 @@ export function PainelChaveamentoOficial({
     });
   }, [modObj, categoria, sexo, escolas, atletas, inscricoes, modalidades]);
 
+  // Auto-desmarca equipes com 0 atletas ou abaixo do mínimo ao trocar categoria
+  useEffect(() => {
+    const irregulares = auditoria.participantes
+      .filter(
+        (p) =>
+          (p.totalAtletas !== undefined && p.totalAtletas === 0) ||
+          p.alertas.some((al) => al.includes('Abaixo do mínimo'))
+      )
+      .map((p) => p.id);
+    setExcluidosIds(irregulares);
+  }, [modObj.codigo, categoria, sexo, auditoria.participantes.length]);
+
+  const participantesAtivos = useMemo(
+    () => auditoria.participantes.filter((p) => !excluidosIds.includes(p.id)),
+    [auditoria.participantes, excluidosIds]
+  );
+
   const chaveamentoDuplicado = useMemo(
     () =>
       chaveamentos.find(
@@ -203,83 +164,163 @@ export function PainelChaveamentoOficial({
     [chaveamentos, modObj.codigo, categoria, sexo]
   );
 
-  const participantesAtivos = useMemo(
-    () => auditoria.participantes.filter((p) => !excluidosIds.includes(p.id)),
-    [auditoria.participantes, excluidosIds]
-  );
-
-  const abrirMontadorComTipo = (tipo: TipoCriacao) => {
-    setTipoCriacao(tipo);
-    if (tipo === 'TABELA' && !MODALIDADES_PONTOS_CORRIDOS.includes(modCodigo)) {
-      setModCodigo('futsal');
-    }
-    setPrevia(null);
-    setMostrarMontador(true);
-  };
-
   const toggleParticipante = (id: string) => {
     setExcluidosIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-    setPrevia(null);
   };
 
-  const montarPreviaComParametros = (seedUsada: string, gruposCustomizados?: GrupoChaveamento[]) => {
+  // Modalidades que possuem chaveamentos criados (para o filtro limpo)
+  const modsNosChaveamentos = useMemo(() => {
+    const set = new Set<string>();
+    chaveamentos.forEach((c) => set.add(normalizarCodigoModalidade(c.modalidadeCodigo)));
+    return MODALIDADES_OFICIAIS.filter((m) => set.has(m.codigo));
+  }, [chaveamentos]);
+
+  const chaveamentosFiltrados = useMemo(() => {
+    if (filtroModLista === 'TODAS') return chaveamentos;
+    return chaveamentos.filter(
+      (c) => normalizarCodigoModalidade(c.modalidadeCodigo) === filtroModLista
+    );
+  }, [chaveamentos, filtroModLista]);
+
+  // 1 CLIQUE: Sortear & Criar Agora!
+  const handleSortearECriarAgora = async () => {
     const norm = normalizarCodigoModalidade(modObj.codigo);
+    const novaSeed = gerarSeedAuditavel();
+    const currentUser = JegdStorage.getCurrentUser();
+    const operador = currentUser?.nome || 'Coordenação SEMED';
+
+    let formatoFinal: string = modelo;
+    let estruturaPayload: any = {};
+    let partidasGeradas: any[] = [];
 
     if (norm === 'atletismo') {
       if (participantesAtivos.length === 0) {
         alert('Nenhum atleta inscrito em Atletismo para esta categoria/naipe.');
         return;
       }
-      const provas = gerarBalizamentoAtletismo({
+      formatoFinal = 'BALIZAMENTO_ATLETISMO';
+      estruturaPayload = {
+        provas: gerarBalizamentoAtletismo({
+          participantes: participantesAtivos,
+          seed: novaSeed,
+          maxRaiasPorSerie: 8,
+        }),
+      };
+    } else if (norm === 'xadrez') {
+      if (participantesAtivos.length < 2) {
+        alert('Selecione pelo menos 2 enxadristas.');
+        return;
+      }
+      formatoFinal = 'SUICO_XADREZ';
+      estruturaPayload = gerarTorneioXadrezInicial({
         participantes: participantesAtivos,
-        seed: seedUsada,
-        maxRaiasPorSerie: 8,
-      });
-      setPrevia({ formato: 'BALIZAMENTO_ATLETISMO', provasAtletismo: provas });
-      return;
-    }
-
-    if (participantesAtivos.length < 2) {
-      alert('Selecione pelo menos 2 participantes para montar a competição.');
-      return;
-    }
-
-    if (norm === 'xadrez') {
-      const xadrez = gerarTorneioXadrezInicial({
-        participantes: participantesAtivos,
-        seed: seedUsada,
+        seed: novaSeed,
         totalRodadas: rodadasXadrez,
       });
-      setPrevia({ formato: 'SUICO_XADREZ', xadrez });
+    } else {
+      if (participantesAtivos.length < 2) {
+        alert('Selecione pelo menos 2 equipes/participantes.');
+        return;
+      }
+
+      const formatoColetivo: 'GRUPOS_MATA_MATA' | 'MATA_MATA' | 'BERGER_UNICO' | 'FINAL_DIRETA' | 'GRUPOS_TENIS_MESA' =
+        modelo === 'BERGER_UNICO'
+          ? 'BERGER_UNICO'
+          : norm === 'tenis_mesa'
+          ? modelo === 'MATA_MATA'
+            ? 'MATA_MATA'
+            : 'GRUPOS_TENIS_MESA'
+          : participantesAtivos.length === 2
+          ? 'FINAL_DIRETA'
+          : modelo === 'MATA_MATA'
+          ? 'MATA_MATA'
+          : participantesAtivos.length <= 5
+          ? 'BERGER_UNICO'
+          : 'GRUPOS_MATA_MATA';
+
+      formatoFinal = formatoColetivo;
+      const maxNumExistente = partidas.reduce((max, p) => Math.max(max, p.numeroJogo || 0), 0);
+      const gerado = gerarChaveamentoColetivoOuTenisMesa({
+        participantes: participantesAtivos,
+        modalidadeCodigo: norm,
+        modalidadeNome: modObj.nome,
+        categoria,
+        sexo,
+        formato: formatoColetivo,
+        seed: novaSeed,
+        dataEvento,
+        horaInicio,
+        intervaloMinutos: Number(intervaloMinutos) || 30,
+        quadras: quadrasStr.split(','),
+        numeroJogoInicial: maxNumExistente + 1,
+        incluirTerceiroLugar,
+      });
+      estruturaPayload = { grupos: gerado.grupos };
+      partidasGeradas = gerado.partidas;
+    }
+
+    try {
+      setSalvando(true);
+      const res = await EventosApi.criar('chaveamento', {
+        municipioId,
+        substituirExistenteId: chaveamentoDuplicado?.id || null,
+        modalidadeCodigo: norm,
+        modalidadeNome: modObj.nome,
+        categoria,
+        sexo,
+        formato: formatoFinal,
+        seed: novaSeed,
+        status: 'RASCUNHO',
+        criadoPor: operador,
+        auditoriaJson: JSON.stringify({
+          semaforo: auditoria.semaforo,
+          resumo: auditoria.resumo,
+          geradoEm: new Date().toISOString(),
+        }),
+        estruturaJson: JSON.stringify(estruturaPayload),
+        partidas: partidasGeradas,
+      });
+      setModalNovoAberto(false);
+      await onAtualizado();
+      if (res?.chaveamento?.id) {
+        setChaveamentoExpandidoId(res.chaveamento.id);
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Erro ao criar chaveamento');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // Re-sortear em 1 clique um chaveamento que ainda não teve jogos iniciados
+  const handleResortearExistente = async (ch: ChaveamentoEventoItem) => {
+    const norm = normalizarCodigoModalidade(ch.modalidadeCodigo);
+    let estrutura: any = null;
+    try {
+      estrutura = ch.estruturaJson ? JSON.parse(ch.estruturaJson) : null;
+    } catch {
+      estrutura = null;
+    }
+    const participantesOriginais: ParticipanteChaveamento[] = Array.isArray(estrutura?.grupos)
+      ? estrutura.grupos.flatMap((g: any) => g.participantes || [])
+      : [];
+
+    if (participantesOriginais.length < 2) {
+      alert('Não foi possível identificar os participantes para re-sortear.');
       return;
     }
 
-    const formatoFinal =
-      tipoCriacao === 'TABELA'
-        ? 'BERGER_UNICO'
-        : norm === 'tenis_mesa'
-        ? modoChaveamento === 'MATA_MATA'
-          ? 'MATA_MATA'
-          : 'GRUPOS_TENIS_MESA'
-        : participantesAtivos.length === 2
-        ? 'FINAL_DIRETA'
-        : modoChaveamento === 'MATA_MATA'
-        ? 'MATA_MATA'
-        : participantesAtivos.length <= 5
-        ? 'BERGER_UNICO'
-        : 'GRUPOS_MATA_MATA';
-
+    const novaSeed = gerarSeedAuditavel();
     const maxNumExistente = partidas.reduce((max, p) => Math.max(max, p.numeroJogo || 0), 0);
-    const { grupos, partidas: partidasGeradas } = gerarChaveamentoColetivoOuTenisMesa({
-      participantes: participantesAtivos,
-      gruposCustomizados,
+    const gerado = gerarChaveamentoColetivoOuTenisMesa({
+      participantes: participantesOriginais,
       modalidadeCodigo: norm,
-      modalidadeNome: modObj.nome,
-      categoria,
-      sexo,
-      formato: formatoFinal,
-      seed: seedUsada,
-      dataEvento,
+      modalidadeNome: ch.modalidadeNome,
+      categoria: ch.categoria,
+      sexo: ch.sexo,
+      formato: ch.formato as any,
+      seed: novaSeed,
+      dataEvento: hojeIso,
       horaInicio,
       intervaloMinutos: Number(intervaloMinutos) || 30,
       quadras: quadrasStr.split(','),
@@ -287,73 +328,29 @@ export function PainelChaveamentoOficial({
       incluirTerceiroLugar,
     });
 
-    setPrevia({ formato: formatoFinal, grupos, partidas: partidasGeradas });
-  };
-
-  const handleGerarPrevia = (novaSeed = false) => {
-    const s = novaSeed ? gerarSeedAuditavel() : seed;
-    if (novaSeed) setSeed(s);
-    montarPreviaComParametros(s);
-  };
-
-  const handleMoverDeGrupo = (participanteId: string, grupoDestinoNome: string) => {
-    if (!previa?.grupos) return;
-    let movido: GrupoChaveamento['participantes'][0] | null = null;
-    const semParticipante = previa.grupos.map((g) => {
-      const encontrado = g.participantes.find((p) => p.id === participanteId);
-      if (encontrado) movido = encontrado;
-      return { ...g, participantes: g.participantes.filter((p) => p.id !== participanteId) };
-    });
-    if (!movido) return;
-    const novosGrupos = semParticipante.map((g) =>
-      g.nome === grupoDestinoNome ? { ...g, participantes: [...g.participantes, movido!] } : g
-    );
-    montarPreviaComParametros(seed, novosGrupos);
-  };
-
-  const handlePublicarChaveamento = async () => {
-    if (!previa) return;
-    const currentUser = JegdStorage.getCurrentUser();
-    const operador = currentUser?.nome || 'Coordenação SEMED';
-
-    const estruturaPayload =
-      previa.formato === 'BALIZAMENTO_ATLETISMO'
-        ? { provas: previa.provasAtletismo }
-        : previa.formato === 'SUICO_XADREZ'
-        ? previa.xadrez
-        : { grupos: previa.grupos };
-
     try {
       setSalvando(true);
       const res = await EventosApi.criar('chaveamento', {
-        municipioId,
-        substituirExistenteId: chaveamentoDuplicado?.id || null,
-        modalidadeCodigo: normalizarCodigoModalidade(modObj.codigo),
-        modalidadeNome: modObj.nome,
-        categoria,
-        sexo,
-        formato: previa.formato,
-        seed,
+        municipioId: municipioId || ch.municipioId,
+        substituirExistenteId: ch.id,
+        modalidadeCodigo: norm,
+        modalidadeNome: ch.modalidadeNome,
+        categoria: ch.categoria,
+        sexo: ch.sexo,
+        formato: ch.formato,
+        seed: novaSeed,
         status: 'RASCUNHO',
-        criadoPor: operador,
-        auditoriaJson: JSON.stringify({
-          semaforo: auditoria.semaforo,
-          resumo: auditoria.resumo,
-          alertas: auditoria.alertas,
-          geradoEm: new Date().toISOString(),
-        }),
-        estruturaJson: JSON.stringify(estruturaPayload),
-        partidas: previa.partidas || [],
+        criadoPor: ch.criadoPor,
+        auditoriaJson: ch.auditoriaJson,
+        estruturaJson: JSON.stringify({ grupos: gerado.grupos }),
+        partidas: gerado.partidas,
       });
-      setPrevia(null);
-      setSeed(gerarSeedAuditavel());
-      setMostrarMontador(false);
       await onAtualizado();
       if (res?.chaveamento?.id) {
         setChaveamentoExpandidoId(res.chaveamento.id);
       }
     } catch (err: any) {
-      alert(err.message || 'Erro ao salvar chaveamento');
+      alert(err?.message || 'Erro ao re-sortear');
     } finally {
       setSalvando(false);
     }
@@ -365,7 +362,7 @@ export function PainelChaveamentoOficial({
       await EventosApi.atualizar('chaveamento', ch.id, { status: 'CONGELADO' });
       await onAtualizado();
     } catch (err: any) {
-      alert(err.message || 'Erro ao congelar chaveamento');
+      alert(err.message || 'Erro ao congelar');
     } finally {
       setSalvando(false);
     }
@@ -379,7 +376,7 @@ export function PainelChaveamentoOficial({
       if (chaveamentoExpandidoId === ch.id) setChaveamentoExpandidoId(null);
       await onAtualizado();
     } catch (err: any) {
-      alert(err.message || 'Erro ao excluir chaveamento');
+      alert(err.message || 'Erro ao excluir');
     } finally {
       setSalvando(false);
     }
@@ -404,7 +401,7 @@ export function PainelChaveamentoOficial({
       });
       await onAtualizado();
     } catch (err: any) {
-      alert(err.message || 'Erro ao atualizar mesa de Xadrez');
+      alert(err.message || 'Erro ao atualizar mesa');
     }
   };
 
@@ -418,7 +415,7 @@ export function PainelChaveamentoOficial({
       });
       await onAtualizado();
     } catch (err: any) {
-      alert(err.message || 'Erro ao gerar próxima rodada Suíça');
+      alert(err.message || 'Erro ao gerar próxima rodada');
     } finally {
       setSalvando(false);
     }
@@ -459,621 +456,82 @@ export function PainelChaveamentoOficial({
       });
       await onAtualizado();
     } catch (err: any) {
-      alert(err.message || 'Erro ao salvar marca de Atletismo');
+      alert(err.message || 'Erro ao salvar marca');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* ================================================================ */}
-      {/* CABEÇALHO LIMPO + 2 BOTÕES DIRETOS                               */}
+      {/* BARRA ULTRA-LIMPA: TÍTULO + FILTRO SIMPLES + BOTÃO "+ NOVO"      */}
       {/* ================================================================ */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              Chaveamento & Tabelas
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Crie um chaveamento eliminatório ou uma tabela de pontos corridos e acompanhe os jogos ao vivo.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                mostrarMontador && tipoCriacao === 'CHAVEAMENTO'
-                  ? setMostrarMontador(false)
-                  : abrirMontadorComTipo('CHAVEAMENTO')
-              }
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                mostrarMontador && tipoCriacao === 'CHAVEAMENTO'
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-[#00A878] hover:bg-[#087A5B] text-white shadow-xs'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Criar Chaveamento</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                mostrarMontador && tipoCriacao === 'TABELA'
-                  ? setMostrarMontador(false)
-                  : abrirMontadorComTipo('TABELA')
-              }
-              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                mostrarMontador && tipoCriacao === 'TABELA'
-                  ? 'bg-slate-900 text-white border-slate-900'
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200'
-              }`}
-            >
-              <Table2 className="w-3.5 h-3.5 text-[#00A878]" />
-              <span>Criar Tabela</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Barra minimalista de categorias com inscritos */}
-        {categoriasAtivas.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-100">
-            <span className="text-[11px] font-medium text-slate-400 mr-1">Categorias:</span>
-            {categoriasAtivas.map((item) => {
-              const temChav = Boolean(item.chaveamento);
-              const aberto = temChav && chaveamentoExpandidoId === item.chaveamento!.id;
-              return (
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h3 className="text-base font-black text-[#0F2540] tracking-tight">
+            Chaveamentos & Tabelas
+          </h3>
+          {modsNosChaveamentos.length > 1 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFiltroModLista('TODAS')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
+                  filtroModLista === 'TODAS'
+                    ? 'bg-[#0F2540] text-white'
+                    : 'bg-[#F4F6F8] text-slate-600 hover:bg-slate-200/70'
+                }`}
+              >
+                Todas ({chaveamentos.length})
+              </button>
+              {modsNosChaveamentos.map((m) => (
                 <button
-                  key={item.chave}
+                  key={m.codigo}
                   type="button"
-                  onClick={() => {
-                    if (item.chaveamento) {
-                      setChaveamentoExpandidoId(aberto ? null : item.chaveamento.id);
-                      setMostrarMontador(false);
-                    } else {
-                      setTipoCriacao('CHAVEAMENTO');
-                      setModCodigo(item.modCodigo);
-                      setCategoria(item.categoria);
-                      setSexo(item.sexo);
-                      setExcluidosIds([]);
-                      setPrevia(null);
-                      setMostrarMontador(true);
-                    }
-                  }}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    aberto
-                      ? 'bg-slate-900 text-white'
-                      : temChav
-                      ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                      : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200/70'
+                  onClick={() => setFiltroModLista(m.codigo)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
+                    filtroModLista === m.codigo
+                      ? 'bg-[#0F2540] text-white'
+                      : 'bg-[#F4F6F8] text-slate-600 hover:bg-slate-200/70'
                   }`}
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      aberto ? 'bg-emerald-400' : temChav ? 'bg-[#00A878]' : 'bg-slate-400'
-                    }`}
-                  />
-                  <span>
-                    {item.modNome} · {item.categoria} · {item.sexo === 'MASCULINO' ? 'M' : 'F'}
-                  </span>
-                  <span className="opacity-60">({item.total})</span>
+                  {m.nome}
                 </button>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setModalNovoAberto(true)}
+          className="px-4 py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Novo Chaveamento</span>
+        </button>
       </div>
 
       {/* ================================================================ */}
-      {/* MONTADOR CLEAN (3 ETAPAS VISUAIS)                                */}
-      {/* ================================================================ */}
-      {mostrarMontador && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
-          {/* Topo do montador */}
-          <div className="flex items-center justify-between gap-2 pb-4 border-b border-slate-100">
-            <div>
-              <h4 className="text-sm font-bold text-slate-900">
-                {tipoCriacao === 'TABELA'
-                  ? 'Nova Tabela de Pontos Corridos'
-                  : 'Novo Chaveamento'}
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {tipoCriacao === 'TABELA'
-                  ? 'Estilo Brasileirão (Vitória +3 pts · Empate +1 pt) — Futsal e Futebol de Campo.'
-                  : 'Escolha a categoria, ajuste as equipes participantes e gere a prévia.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMostrarMontador(false)}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Etapa 1: Modalidade, Categoria e Naipe */}
-          <div className="space-y-3">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              1. Categoria da Competição
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Modalidade</label>
-                <select
-                  value={modObj.codigo}
-                  onChange={(e) => {
-                    setModCodigo(e.target.value);
-                    setExcluidosIds([]);
-                    setPrevia(null);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-white"
-                >
-                  {modalidadesDisponiveis.map((m) => (
-                    <option key={m.codigo} value={m.codigo}>
-                      {m.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Categoria</label>
-                <select
-                  value={categoria}
-                  onChange={(e) => {
-                    setCategoria(e.target.value);
-                    setExcluidosIds([]);
-                    setPrevia(null);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-white"
-                >
-                  {CATEGORIAS_EVENTOS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">Naipe</label>
-                <select
-                  value={sexo}
-                  onChange={(e) => {
-                    setSexo(e.target.value);
-                    setExcluidosIds([]);
-                    setPrevia(null);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-white"
-                >
-                  <option value="MASCULINO">Masculino</option>
-                  <option value="FEMININO">Feminino</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Formato quando for Chaveamento */}
-            {tipoCriacao === 'CHAVEAMENTO' && modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModoChaveamento('MATA_MATA');
-                    setPrevia(null);
-                  }}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
-                    modoChaveamento === 'MATA_MATA'
-                      ? 'bg-emerald-50/60 border-[#00A878] ring-1 ring-[#00A878]/20'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      modoChaveamento === 'MATA_MATA' ? 'bg-[#00A878] text-white' : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    <Trophy className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Modelo Copinha (Mata-Mata)</p>
-                    <p className="text-[11px] text-slate-500">Eliminatória direta com pênaltis e avanço automático.</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModoChaveamento('GRUPOS_MATA_MATA');
-                    setPrevia(null);
-                  }}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
-                    modoChaveamento === 'GRUPOS_MATA_MATA'
-                      ? 'bg-emerald-50/60 border-[#00A878] ring-1 ring-[#00A878]/20'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      modoChaveamento === 'GRUPOS_MATA_MATA' ? 'bg-[#00A878] text-white' : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Grupos + Mata-Mata</p>
-                    <p className="text-[11px] text-slate-500">Fase de grupos classificatória seguida de semifinais e final.</p>
-                  </div>
-                </button>
-              </div>
-            )}
-
-            {chaveamentoDuplicado && (
-              <div className="px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex items-center justify-between gap-2">
-                <span>Já existe uma competição criada para esta categoria. Salvar irá substituí-la.</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setChaveamentoExpandidoId(chaveamentoDuplicado.id);
-                    setMostrarMontador(false);
-                  }}
-                  className="font-bold underline shrink-0 cursor-pointer"
-                >
-                  Abrir existente
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Etapa 2: Equipes no Sorteio */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                2. Participantes no Sorteio ({participantesAtivos.length}/{auditoria.participantes.length})
-              </p>
-              {auditoria.participantes.length > 0 && (
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExcluidosIds([]);
-                      setPrevia(null);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
-                  >
-                    Todas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExcluidosIds(
-                        auditoria.participantes
-                          .filter((p) => p.alertas.some((al) => al.includes('Abaixo do mínimo')))
-                          .map((p) => p.id)
-                      );
-                      setPrevia(null);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold cursor-pointer"
-                    title="Remove automaticamente equipes abaixo do mínimo de atletas"
-                  >
-                    Tirar abaixo do mínimo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExcluidosIds(
-                        auditoria.participantes
-                          .filter((p) => p.statusHomologacao !== 'VALIDADA')
-                          .map((p) => p.id)
-                      );
-                      setPrevia(null);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold cursor-pointer"
-                  >
-                    Só Validadas
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {auditoria.participantes.length === 0 ? (
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-500 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-slate-400" />
-                <span>Nenhum participante inscrito em {modObj.nome} · {categoria} · {sexo}.</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
-                  {participantesAtivos.map((p) => (
-                    <div
-                      key={p.id}
-                      className="px-3 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/40 hover:bg-white hover:border-slate-300 flex items-start justify-between gap-2 transition-colors"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setParticipanteInspecionado(p)}
-                        className="min-w-0 flex-1 text-left cursor-pointer group"
-                        title="Clique para ver os alunos inscritos"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-2 h-2 rounded-full shrink-0 ${
-                              p.statusHomologacao === 'VALIDADA' ? 'bg-[#00A878]' : 'bg-amber-400'
-                            }`}
-                            title={p.statusHomologacao}
-                          />
-                          <span className="text-xs font-semibold text-slate-800 group-hover:text-[#087A5B] truncate">
-                            {p.sigla}
-                          </span>
-                        </div>
-                        {p.totalAtletas !== undefined && (
-                          <p className="text-[11px] text-slate-500 pl-3.5 flex items-center gap-1 mt-0.5">
-                            <span>{p.totalAtletas} atleta(s)</span>
-                            <span className="text-[#00A878] font-semibold inline-flex items-center gap-0.5 group-hover:underline">
-                              · <Eye className="w-3 h-3" /> Ver alunos
-                            </span>
-                          </p>
-                        )}
-                        {p.alertas.some((al) => al.includes('Abaixo do mínimo')) && (
-                          <p className="text-[10px] font-semibold text-rose-600 pl-3.5 mt-0.5">
-                            {p.alertas.find((al) => al.includes('Abaixo do mínimo'))}
-                          </p>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleParticipante(p.id)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0 cursor-pointer transition-colors"
-                        title={`Remover ${p.sigla} do sorteio`}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {excluidosIds.length > 0 && (
-                  <div className="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-slate-400 mr-1">Fora do sorteio:</span>
-                    {auditoria.participantes
-                      .filter((p) => excluidosIds.includes(p.id))
-                      .map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => toggleParticipante(p.id)}
-                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-50 border border-slate-200 text-[11px] font-semibold text-slate-500 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>{p.sigla}</span>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Opções opcionais + Botões de ação */}
-          <div className="pt-4 border-t border-slate-100 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setMostrarAvancado((v) => !v)}
-                className="text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>{mostrarAvancado ? 'Ocultar agenda e quadras' : 'Data, horário e quadras (opcional)'}</span>
-              </button>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleGerarPrevia(Boolean(previa))}
-                  className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  {previa ? <Shuffle className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5 text-emerald-400" />}
-                  <span>{previa ? 'Re-sortear' : 'Gerar Prévia'}</span>
-                </button>
-
-                {previa && (
-                  <button
-                    type="button"
-                    disabled={salvando}
-                    onClick={handlePublicarChaveamento}
-                    className="px-5 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>
-                      {salvando
-                        ? 'Salvando...'
-                        : chaveamentoDuplicado
-                        ? 'Substituir & Abrir'
-                        : 'Salvar & Abrir'}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {mostrarAvancado && (
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/70 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {modObj.codigo === 'xadrez' && (
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">Rodadas (Suíço)</label>
-                    <input
-                      type="number"
-                      min={3}
-                      max={7}
-                      value={rodadasXadrez}
-                      onChange={(e) => setRodadasXadrez(Number(e.target.value) || 5)}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                    />
-                  </div>
-                )}
-
-                {modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
-                  <>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Data</label>
-                      <input
-                        type="date"
-                        value={dataEvento}
-                        onChange={(e) => setDataEvento(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Início / Intervalo</label>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="time"
-                          value={horaInicio}
-                          onChange={(e) => setHoraInicio(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                        />
-                        <input
-                          type="number"
-                          min={10}
-                          max={120}
-                          value={intervaloMinutos}
-                          onChange={(e) => setIntervaloMinutos(Number(e.target.value) || 30)}
-                          className="w-16 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Quadras / Campos</label>
-                      <input
-                        type="text"
-                        value={quadrasStr}
-                        onChange={(e) => setQuadrasStr(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">Seed</label>
-                  <input
-                    type="text"
-                    value={seed}
-                    onChange={(e) => {
-                      setSeed(e.target.value);
-                      setPrevia(null);
-                    }}
-                    className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-mono"
-                  />
-                </div>
-
-                {tipoCriacao === 'CHAVEAMENTO' && modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
-                  <label className="sm:col-span-2 flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={incluirTerceiroLugar}
-                      onChange={(e) => setIncluirTerceiroLugar(e.target.checked)}
-                      className="accent-[#00A878]"
-                    />
-                    <span>Incluir disputa de 3º Lugar</span>
-                  </label>
-                )}
-              </div>
-            )}
-
-            {/* Etapa 3: Prévia limpa */}
-            {previa && (
-              <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/30 p-4 space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <p className="text-xs font-bold text-emerald-900">
-                    Prévia · {previa.partidas?.length || 0} jogo(s) prontos
-                  </p>
-                  {previa.grupos && previa.grupos.length > 1 && (
-                    <span className="text-[11px] text-emerald-700">
-                      Troque equipes de grupo abaixo se desejar
-                    </span>
-                  )}
-                </div>
-
-                {previa.grupos && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {previa.grupos.map((g) => (
-                      <div key={g.nome} className="bg-white rounded-xl border border-slate-200/80 p-3.5 space-y-2">
-                        <p className="text-xs font-bold text-slate-800">{g.nome}</p>
-                        {g.participantes.map((p, idx) => (
-                          <div key={p.id} className="flex items-center justify-between gap-2 text-xs text-slate-600">
-                            <span className="truncate">
-                              <span className="text-slate-400 mr-1.5">{idx + 1}.</span>
-                              <span className="font-semibold text-slate-800">{p.sigla}</span>
-                            </span>
-                            {previa.grupos!.length > 1 && (
-                              <select
-                                value={g.nome}
-                                onChange={(e) => handleMoverDeGrupo(p.id, e.target.value)}
-                                className="text-[11px] px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600"
-                              >
-                                {previa.grupos!.map((dest) => (
-                                  <option key={dest.nome} value={dest.nome}>
-                                    {dest.nome}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {previa.partidas && previa.partidas.length > 0 && (
-                  <div className="bg-white rounded-xl border border-slate-200/80 overflow-x-auto max-h-56 overflow-y-auto">
-                    <table className="w-full text-xs text-left">
-                      <thead className="bg-slate-50 text-[10px] uppercase text-slate-400 border-b border-slate-100 sticky top-0">
-                        <tr>
-                          <th className="px-3.5 py-2">Jogo</th>
-                          <th className="px-3.5 py-2">Fase</th>
-                          <th className="px-3.5 py-2">Confronto</th>
-                          <th className="px-3.5 py-2">Horário</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {previa.partidas.map((p) => (
-                          <tr key={p.numeroJogo}>
-                            <td className="px-3.5 py-2 font-mono text-slate-400">J{p.numeroJogo}</td>
-                            <td className="px-3.5 py-2 font-medium text-emerald-700">
-                              {p.fase === 'GRUPOS' ? p.grupo : FASES_LABEL[p.fase] || p.fase}
-                            </td>
-                            <td className="px-3.5 py-2 font-semibold text-slate-800">
-                              {p.escolaASigla} <span className="text-slate-300 font-normal">×</span> {p.escolaBSigla}
-                            </td>
-                            <td className="px-3.5 py-2 text-slate-500">
-                              {p.horario} · {p.local}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ================================================================ */}
-      {/* LISTA DE COMPETIÇÕES PUBLICADAS                                  */}
+      {/* LISTA DE CHAVEAMENTOS CRIADOS                                    */}
       {/* ================================================================ */}
       <div className="space-y-3">
-        {chaveamentos.length === 0 ? (
-          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center space-y-2">
-            <p className="text-sm font-semibold text-slate-700">Nenhuma competição criada ainda</p>
+        {chaveamentosFiltrados.length === 0 ? (
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center space-y-3">
+            <p className="text-sm font-bold text-[#0F2540]">Nenhum chaveamento criado ainda</p>
             <p className="text-xs text-slate-400">
-              Use os botões acima para criar um Chaveamento ou uma Tabela de Pontos Corridos.
+              Clique em &quot;Novo Chaveamento&quot; para sortear e começar em segundos.
             </p>
+            <button
+              type="button"
+              onClick={() => setModalNovoAberto(true)}
+              className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Criar Primeiro Chaveamento</span>
+            </button>
           </div>
         ) : (
-          chaveamentos.map((ch) => {
+          chaveamentosFiltrados.map((ch) => {
             const partidasDoChav = partidas.filter(
               (p) =>
                 normalizarCodigoModalidade(p.modalidadeCodigo) === normalizarCodigoModalidade(ch.modalidadeCodigo) &&
@@ -1081,6 +539,9 @@ export function PainelChaveamentoOficial({
                 p.sexo === ch.sexo
             );
             const encerrados = partidasDoChav.filter((p) => p.status === 'ENCERRADO' || p.status === 'WO').length;
+            const algumIniciado = partidasDoChav.some(
+              (p) => p.status !== 'AGENDADO' || p.placarA > 0 || p.placarB > 0
+            );
             const progresso = partidasDoChav.length > 0 ? Math.round((encerrados / partidasDoChav.length) * 100) : 0;
             const expandido = chaveamentoExpandidoId === ch.id;
             let estrutura: any = null;
@@ -1091,13 +552,18 @@ export function PainelChaveamentoOficial({
             }
             const fin: FinalizacaoCampeonato | null = estrutura?.finalizacao || null;
             const isTabela = ch.formato === 'BERGER_UNICO';
+            const podeResortear =
+              !algumIniciado &&
+              ch.status === 'RASCUNHO' &&
+              ch.formato !== 'BALIZAMENTO_ATLETISMO' &&
+              ch.formato !== 'SUICO_XADREZ';
 
             return (
               <div
                 key={ch.id}
-                className={`bg-white border rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4 transition-all ${
+                className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4 transition-all ${
                   ch.status === 'FINALIZADO'
-                    ? 'border-amber-300/90 border-l-4 border-l-amber-400'
+                    ? 'border-amber-300 border-l-4 border-l-amber-400'
                     : expandido
                     ? 'border-[#00A878]/50'
                     : 'border-slate-200/80 hover:border-slate-300'
@@ -1110,10 +576,10 @@ export function PainelChaveamentoOficial({
                     className="text-left flex-1 min-w-0 cursor-pointer space-y-1.5"
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-bold text-slate-900">
+                      <span className="text-sm font-black text-[#0F2540]">
                         {ch.modalidadeNome} · {ch.categoria} · {ch.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'}
                       </span>
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#F4F6F8] text-slate-600">
                         {isTabela
                           ? 'Pontos Corridos'
                           : ch.formato === 'MATA_MATA'
@@ -1127,11 +593,6 @@ export function PainelChaveamentoOficial({
                       {ch.status === 'FINALIZADO' && (
                         <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
                           🏆 {fin?.campeao ? fin.campeao.sigla : 'Finalizado'}
-                        </span>
-                      )}
-                      {ch.status === 'CONGELADO' && (
-                        <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
-                          <Lock className="w-3 h-3" /> Congelado
                         </span>
                       )}
                     </div>
@@ -1157,20 +618,33 @@ export function PainelChaveamentoOficial({
                       onClick={() => setChaveamentoExpandidoId(expandido ? null : ch.id)}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
                         expandido
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-emerald-50 hover:bg-[#00A878] text-emerald-800 hover:text-white'
+                          ? 'bg-[#0F2540] text-white'
+                          : 'bg-emerald-50 hover:bg-[#00A878] text-[#087A5B] hover:text-white'
                       }`}
                     >
                       {expandido ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       <span>{expandido ? 'Fechar' : isTabela ? 'Abrir Tabela' : 'Abrir Chave'}</span>
                     </button>
 
+                    {podeResortear && (
+                      <button
+                        type="button"
+                        disabled={salvando}
+                        onClick={() => handleResortearExistente(ch)}
+                        className="px-2.5 py-1.5 rounded-xl bg-[#F4F6F8] hover:bg-slate-200 text-[#0F2540] text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title="Gerar um novo sorteio para estas mesmas equipes"
+                      >
+                        <Shuffle className="w-3.5 h-3.5 text-[#00A878]" />
+                        <span>Re-sortear</span>
+                      </button>
+                    )}
+
                     {ch.status === 'RASCUNHO' && (
                       <button
                         type="button"
                         disabled={salvando}
                         onClick={() => handleCongelarChaveamento(ch)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer transition-colors"
+                        className="p-2 rounded-xl text-slate-400 hover:text-[#00A878] hover:bg-emerald-50 cursor-pointer"
                         title="Congelar chaveamento"
                       >
                         <Lock className="w-3.5 h-3.5" />
@@ -1180,7 +654,7 @@ export function PainelChaveamentoOficial({
                     <button
                       type="button"
                       onClick={() => gerarPdfChaveamentoOficial(ch, partidasDoChav)}
-                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span>PDF</span>
@@ -1193,9 +667,9 @@ export function PainelChaveamentoOficial({
                           type="button"
                           disabled={salvando}
                           onClick={() => handleExcluirChaveamento(ch)}
-                          className="px-2 py-0.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold cursor-pointer disabled:opacity-50"
+                          className="px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[11px] font-bold cursor-pointer"
                         >
-                          {salvando ? '...' : 'Sim'}
+                          Sim
                         </button>
                         <button
                           type="button"
@@ -1211,7 +685,7 @@ export function PainelChaveamentoOficial({
                         type="button"
                         disabled={salvando}
                         onClick={() => setConfirmandoExclusaoId(ch.id)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
                         title="Excluir competição"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1238,27 +712,22 @@ export function PainelChaveamentoOficial({
                 {expandido && ch.formato === 'BALIZAMENTO_ATLETISMO' && Array.isArray(estrutura?.provas) && (
                   <div className="border-t border-slate-100 pt-4 space-y-3">
                     {(estrutura.provas as ProvaAtletismoBalizamento[]).map((pr) => (
-                      <div key={pr.prova} className="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/70 space-y-2.5">
-                        <p className="text-xs font-bold text-slate-800 uppercase">{pr.prova}</p>
+                      <div key={pr.prova} className="bg-[#F4F6F8] rounded-xl p-4 space-y-2">
+                        <p className="text-xs font-black text-[#0F2540] uppercase">{pr.prova}</p>
                         {pr.series.map((s) => (
                           <div key={s.numero} className="space-y-1.5">
                             <p className="text-[11px] font-semibold text-slate-500">{s.nome}</p>
                             {s.raias.map((r) => (
-                              <div
-                                key={r.raia}
-                                className="grid grid-cols-12 gap-2 items-center bg-white px-3 py-2 rounded-xl border border-slate-200/70 text-xs"
-                              >
+                              <div key={r.raia} className="grid grid-cols-12 gap-2 items-center bg-white px-3 py-2 rounded-lg text-xs">
                                 <span className="col-span-1 font-bold text-[#00A878]">R{r.raia}</span>
-                                <span className="col-span-5 font-semibold text-slate-800 truncate">{r.atletaNome}</span>
+                                <span className="col-span-5 font-semibold text-[#0F2540] truncate">{r.atletaNome}</span>
                                 <span className="col-span-2 text-slate-400 truncate">{r.escolaSigla}</span>
                                 <input
                                   type="text"
                                   defaultValue={r.marca}
                                   placeholder="Marca"
-                                  onBlur={(e) =>
-                                    handleAtualizarRaiaAtletismo(ch, pr.prova, s.numero, r.raia, 'marca', e.target.value)
-                                  }
-                                  className="col-span-2 px-2 py-1 rounded-lg border border-slate-200 text-xs"
+                                  onBlur={(e) => handleAtualizarRaiaAtletismo(ch, pr.prova, s.numero, r.raia, 'marca', e.target.value)}
+                                  className="col-span-2 px-2 py-1 rounded border border-slate-200 text-xs"
                                 />
                                 <input
                                   type="number"
@@ -1266,10 +735,8 @@ export function PainelChaveamentoOficial({
                                   max={20}
                                   defaultValue={r.posicao ?? ''}
                                   placeholder="Pos."
-                                  onBlur={(e) =>
-                                    handleAtualizarRaiaAtletismo(ch, pr.prova, s.numero, r.raia, 'posicao', e.target.value)
-                                  }
-                                  className="col-span-2 px-2 py-1 rounded-lg border border-slate-200 text-xs"
+                                  onBlur={(e) => handleAtualizarRaiaAtletismo(ch, pr.prova, s.numero, r.raia, 'posicao', e.target.value)}
+                                  className="col-span-2 px-2 py-1 rounded border border-slate-200 text-xs"
                                 />
                               </div>
                             ))}
@@ -1293,7 +760,7 @@ export function PainelChaveamentoOficial({
                             type="button"
                             disabled={salvando}
                             onClick={() => handleGerarProximaRodadaXadrez(ch)}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-xl bg-[#00A878] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Gerar {estrutura.rodadas.length + 1}ª Rodada</span>
@@ -1302,35 +769,25 @@ export function PainelChaveamentoOficial({
                     </div>
 
                     {(estrutura as EstruturaXadrez).rodadas.map((rod) => (
-                      <div key={rod.numero} className="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/70 space-y-2">
-                        <p className="text-xs font-bold text-slate-700">{rod.numero}ª Rodada</p>
+                      <div key={rod.numero} className="bg-[#F4F6F8] rounded-xl p-4 space-y-1.5">
+                        <p className="text-xs font-bold text-[#0F2540]">{rod.numero}ª Rodada</p>
                         {rod.mesas.map((m) => (
-                          <div
-                            key={m.mesa}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200/70 text-xs"
-                          >
-                            <div>
+                          <div key={m.mesa} className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg text-xs">
+                            <span>
                               <span className="font-mono text-slate-400 mr-2">M{m.mesa}</span>
-                              <span className="font-semibold text-slate-800">{m.brancasNome}</span>{' '}
-                              <span className="text-slate-300">×</span>{' '}
-                              {m.pretasId === 'BYE' ? (
-                                <span className="text-[#00A878] font-bold">BYE</span>
-                              ) : (
-                                <span className="font-semibold text-slate-800">{m.pretasNome}</span>
-                              )}
-                            </div>
+                              <strong>{m.brancasNome}</strong> ×{' '}
+                              {m.pretasId === 'BYE' ? <strong className="text-[#00A878]">BYE</strong> : <strong>{m.pretasNome}</strong>}
+                            </span>
                             {m.pretasId !== 'BYE' && (
                               <select
                                 value={m.resultado}
-                                onChange={(e) =>
-                                  handleAtualizarMesaXadrez(ch, rod.numero, m.mesa, e.target.value as any)
-                                }
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold bg-white"
+                                onChange={(e) => handleAtualizarMesaXadrez(ch, rod.numero, m.mesa, e.target.value as any)}
+                                className="px-2 py-1 rounded border border-slate-200 text-xs font-semibold bg-white"
                               >
                                 <option value="PENDENTE">Pendente</option>
-                                <option value="1-0">1 - 0 (Brancas)</option>
-                                <option value="0.5-0.5">½ - ½ (Empate)</option>
-                                <option value="0-1">0 - 1 (Pretas)</option>
+                                <option value="1-0">1 - 0</option>
+                                <option value="0.5-0.5">½ - ½</option>
+                                <option value="0-1">0 - 1</option>
                               </select>
                             )}
                           </div>
@@ -1338,26 +795,26 @@ export function PainelChaveamentoOficial({
                       </div>
                     ))}
 
-                    <div className="bg-white rounded-2xl border border-slate-200/80 overflow-x-auto">
+                    <div className="bg-[#F4F6F8] rounded-xl p-3 overflow-x-auto">
                       <table className="w-full text-xs text-left">
-                        <thead className="text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                        <thead className="text-[10px] uppercase text-slate-400">
                           <tr>
-                            <th className="px-4 py-2">#</th>
-                            <th className="px-3 py-2">Enxadrista</th>
-                            <th className="px-3 py-2">Escola</th>
-                            <th className="px-3 py-2 text-center">J</th>
-                            <th className="px-3 py-2 text-center">Pts</th>
-                            <th className="px-3 py-2 text-center">Buchholz</th>
+                            <th className="px-3 py-1.5">#</th>
+                            <th className="px-3 py-1.5">Enxadrista</th>
+                            <th className="px-3 py-1.5">Escola</th>
+                            <th className="px-3 py-1.5 text-center">J</th>
+                            <th className="px-3 py-1.5 text-center">Pts</th>
+                            <th className="px-3 py-1.5 text-center">Buchholz</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 tabular-nums">
+                        <tbody className="divide-y divide-slate-200/70 tabular-nums">
                           {calcularClassificacaoXadrez(estrutura as EstruturaXadrez).map((c, idx) => (
-                            <tr key={c.id}>
-                              <td className="px-4 py-2 font-bold text-slate-600">{idx + 1}º</td>
-                              <td className="px-3 py-2 font-semibold text-slate-900">{c.nome}</td>
+                            <tr key={c.id} className="bg-white">
+                              <td className="px-3 py-2 font-bold text-[#0F2540]">{idx + 1}º</td>
+                              <td className="px-3 py-2 font-semibold text-[#0F2540]">{c.nome}</td>
                               <td className="px-3 py-2 text-slate-500">{c.sigla}</td>
                               <td className="px-3 py-2 text-center text-slate-500">{c.jogos}</td>
-                              <td className="px-3 py-2 text-center font-black text-emerald-700">{c.pontos.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center font-black text-[#00A878]">{c.pontos.toFixed(1)}</td>
                               <td className="px-3 py-2 text-center font-mono text-slate-500">{c.buchholz.toFixed(1)}</td>
                             </tr>
                           ))}
@@ -1371,136 +828,423 @@ export function PainelChaveamentoOficial({
           })
         )}
       </div>
+
       {/* ================================================================ */}
-      {/* MODAL DE CONFERÊNCIA DOS ALUNOS INSCRITOS NA EQUIPE              */}
+      {/* MODAL RÁPIDO: NOVO CHAVEAMENTO (2 CLIQUES)                       */}
       {/* ================================================================ */}
-      {participanteInspecionado && (
+      {modalNovoAberto && (
         <div
           className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setParticipanteInspecionado(null)}
+          onClick={() => setModalNovoAberto(false)}
         >
           <div
-            className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-sm font-bold text-slate-900">{participanteInspecionado.nome}</h4>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      participanteInspecionado.statusHomologacao === 'VALIDADA'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {participanteInspecionado.statusHomologacao}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {modObj.nome} · {categoria} · {sexo === 'MASCULINO' ? 'Masculino' : 'Feminino'} ·{' '}
-                  {participanteInspecionado.atletasDetalhes?.length || 0} aluno(s) inscrito(s)
-                </p>
+                <h4 className="text-sm font-black text-[#0F2540]">Novo Chaveamento</h4>
+                <p className="text-xs text-slate-400">Escolha a categoria, o modelo e clique em Sortear & Abrir.</p>
               </div>
               <button
                 type="button"
-                onClick={() => setParticipanteInspecionado(null)}
+                onClick={() => setModalNovoAberto(false)}
                 className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Alertas da equipe (se houver) */}
-            {participanteInspecionado.alertas.length > 0 && (
-              <div className="px-5 py-2.5 bg-amber-50/70 border-b border-amber-100 text-xs text-amber-900 font-medium">
-                {participanteInspecionado.alertas.join(' · ')}
+            {/* Corpo enxuto */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {/* Linha 1: Modalidade, Categoria e Naipe */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Modalidade</label>
+                  <select
+                    value={modCodigo}
+                    onChange={(e) => setModCodigo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-[#0F2540] bg-white"
+                  >
+                    {MODALIDADES_OFICIAIS.map((m) => (
+                      <option key={m.codigo} value={m.codigo}>{m.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Categoria</label>
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-[#0F2540] bg-white"
+                  >
+                    {CATEGORIAS_EVENTOS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Naipe</label>
+                  <select
+                    value={sexo}
+                    onChange={(e) => setSexo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-[#0F2540] bg-white"
+                  >
+                    <option value="MASCULINO">Masculino</option>
+                    <option value="FEMININO">Feminino</option>
+                  </select>
+                </div>
               </div>
-            )}
 
-            {/* Lista de alunos */}
-            <div className="p-5 overflow-y-auto flex-1 space-y-2">
+              {/* Linha 2: Modelo (seletor direto) */}
+              {modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
+                <div className={`grid grid-cols-1 ${permitePontosCorridos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2`}>
+                  <button
+                    type="button"
+                    onClick={() => setModelo('MATA_MATA')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      modelo === 'MATA_MATA'
+                        ? 'bg-emerald-50/70 border-[#00A878] text-[#0F2540]'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4 text-[#00A878] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Mata-Mata (Copinha)</p>
+                      <p className="text-[10px] text-slate-400">Quem ganha avança</p>
+                    </div>
+                  </button>
+
+                  {permitePontosCorridos && (
+                    <button
+                      type="button"
+                      onClick={() => setModelo('BERGER_UNICO')}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                        modelo === 'BERGER_UNICO'
+                          ? 'bg-emerald-50/70 border-[#00A878] text-[#0F2540]'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Table2 className="w-4 h-4 text-[#00A878] shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold">Pontos Corridos</p>
+                        <p className="text-[10px] text-slate-400">Vitória +3 pts · Brasileirão</p>
+                      </div>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setModelo('GRUPOS_MATA_MATA')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      modelo === 'GRUPOS_MATA_MATA'
+                        ? 'bg-emerald-50/70 border-[#00A878] text-[#0F2540]'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-[#00A878] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Grupos + Mata-Mata</p>
+                      <p className="text-[10px] text-slate-400">Grupos e semifinais</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {chaveamentoDuplicado && (
+                <div className="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                  Já existe um chaveamento para esta categoria. Ao confirmar, o atual será substituído.
+                </div>
+              )}
+
+              {/* Linha 3: Equipes (já filtrando automaticamente abaixo do mínimo) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#0F2540]">
+                    Equipes no sorteio ({participantesAtivos.length}/{auditoria.participantes.length})
+                  </span>
+                  {auditoria.participantes.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setExcluidosIds([])}
+                        className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold cursor-pointer"
+                      >
+                        Todas
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExcluidosIds(
+                            auditoria.participantes
+                              .filter((p) => p.statusHomologacao !== 'VALIDADA')
+                              .map((p) => p.id)
+                          )
+                        }
+                        className="px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-[#087A5B] font-semibold cursor-pointer"
+                      >
+                        Só Validadas
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {auditoria.participantes.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-[#F4F6F8] text-slate-500 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Nenhum participante inscrito nesta categoria.</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
+                      {participantesAtivos.map((p) => (
+                        <div
+                          key={p.id}
+                          className="px-3 py-2 rounded-xl border border-slate-200/80 bg-[#F8FAFC] flex items-center justify-between gap-2 text-xs"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setParticipanteInspecionado(p)}
+                            className="min-w-0 flex-1 text-left cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  p.statusHomologacao === 'VALIDADA' ? 'bg-[#00A878]' : 'bg-amber-400'
+                                }`}
+                              />
+                              <span className="font-bold text-[#0F2540] group-hover:text-[#00A878] truncate">
+                                {p.sigla}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 pl-3.5 inline-flex items-center gap-1">
+                              {p.totalAtletas ?? 1} atleta(s) · <Eye className="w-2.5 h-2.5 text-[#00A878]" /> ver
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleParticipante(p.id)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                            title="Tirar do sorteio"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {excluidosIds.length > 0 && (
+                      <div className="px-3 py-2 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Fora do sorteio:</span>
+                        {auditoria.participantes
+                          .filter((p) => excluidosIds.includes(p.id))
+                          .map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => toggleParticipante(p.id)}
+                              className="px-2 py-0.5 rounded-lg bg-white hover:bg-emerald-50 border border-slate-200 text-[11px] font-semibold text-slate-500 hover:text-[#087A5B] flex items-center gap-1 cursor-pointer"
+                              title={p.alertas.join(' · ')}
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>{p.sigla} ({p.totalAtletas ?? 0})</span>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Agenda opcional recolhida */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarAgenda((v) => !v)}
+                  className="text-[11px] font-semibold text-slate-400 hover:text-[#0F2540] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-3 h-3" />
+                  <span>{mostrarAgenda ? 'Ocultar data, horário e quadras' : 'Configurar data, horário e quadras (opcional)'}</span>
+                </button>
+                {mostrarAgenda && (
+                  <div className="mt-2.5 p-3 rounded-xl bg-[#F4F6F8] grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    {modObj.codigo === 'xadrez' ? (
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Rodadas</label>
+                        <input
+                          type="number"
+                          min={3}
+                          max={7}
+                          value={rodadasXadrez}
+                          onChange={(e) => setRodadasXadrez(Number(e.target.value) || 5)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Data</label>
+                          <input
+                            type="date"
+                            value={dataEvento}
+                            onChange={(e) => setDataEvento(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Início / Min</label>
+                          <div className="flex gap-1">
+                            <input
+                              type="time"
+                              value={horaInicio}
+                              onChange={(e) => setHoraInicio(e.target.value)}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white"
+                            />
+                            <input
+                              type="number"
+                              min={10}
+                              max={120}
+                              value={intervaloMinutos}
+                              onChange={(e) => setIntervaloMinutos(Number(e.target.value) || 30)}
+                              className="w-14 px-2 py-1.5 rounded-lg border border-slate-200 bg-white"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Quadras</label>
+                          <input
+                            type="text"
+                            value={quadrasStr}
+                            onChange={(e) => setQuadrasStr(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {modelo !== 'BERGER_UNICO' && modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
+                      <label className="sm:col-span-3 flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={incluirTerceiroLugar}
+                          onChange={(e) => setIncluirTerceiroLugar(e.target.checked)}
+                          className="accent-[#00A878]"
+                        />
+                        <span>Incluir disputa de 3º Lugar</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rodapé: 1 único botão direto */}
+            <div className="px-5 py-3.5 border-t border-slate-100 bg-[#F8FAFC] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setModalNovoAberto(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200/60 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={salvando || (modObj.codigo === 'atletismo' ? participantesAtivos.length === 0 : participantesAtivos.length < 2)}
+                onClick={handleSortearECriarAgora}
+                className="px-5 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-45 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>
+                  {salvando
+                    ? 'Criando...'
+                    : chaveamentoDuplicado
+                    ? 'Substituir & Abrir'
+                    : 'Sortear & Abrir Agora'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* MODAL DE CONFERÊNCIA DOS ALUNOS DA EQUIPE                        */}
+      {/* ================================================================ */}
+      {participanteInspecionado && (
+        <div
+          className="fixed inset-0 z-[60] bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setParticipanteInspecionado(null)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg max-h-[82vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-black text-[#0F2540]">{participanteInspecionado.nome}</h4>
+                <p className="text-xs text-slate-400">
+                  {participanteInspecionado.atletasDetalhes?.length || 0} aluno(s) inscrito(s) ·{' '}
+                  {participanteInspecionado.statusHomologacao}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setParticipanteInspecionado(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto flex-1 space-y-1.5">
               {!participanteInspecionado.atletasDetalhes ||
               participanteInspecionado.atletasDetalhes.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
-                  Nenhum aluno vinculado a esta inscrição.
-                </div>
+                <p className="py-6 text-center text-xs text-slate-400">Nenhum aluno vinculado.</p>
               ) : (
-                participanteInspecionado.atletasDetalhes.map((al, idx) => {
-                  const nascBr = al.dataNascimento
-                    ? al.dataNascimento.split('-').reverse().join('/')
-                    : '-';
-                  return (
-                    <div
-                      key={al.id}
-                      className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/40 text-xs"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {al.fotoUrl ? (
-                          <img
-                            src={al.fotoUrl}
-                            alt={al.nomeCompleto}
-                            className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-                          />
+                participanteInspecionado.atletasDetalhes.map((al, idx) => (
+                  <div
+                    key={al.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#F8FAFC] text-xs"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-bold text-[#0F2540] truncate">
+                        {idx + 1}. {al.nomeCompleto}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        {al.semDocumento ? (
+                          <span className="text-rose-600 font-semibold">Sem documento</span>
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[11px] font-bold shrink-0">
-                            {idx + 1}
-                          </div>
+                          `${al.documentoTipo} ${al.documentoNumero}`
                         )}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{al.nomeCompleto}</p>
-                          <p className="text-[11px] text-slate-500">
-                            Nasc.: {nascBr} ·{' '}
-                            {al.semDocumento ? (
-                              <span className="text-rose-600 font-semibold">Sem documento</span>
-                            ) : (
-                              <span>
-                                {al.documentoTipo} {al.documentoNumero}
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                          al.semDocumento
-                            ? 'bg-rose-100 text-rose-700'
-                            : al.conferido
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {al.semDocumento ? 'Pendente Doc.' : al.conferido ? 'Conferido' : 'OK'}
-                      </span>
+                      </p>
                     </div>
-                  );
-                })
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        al.semDocumento ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-[#087A5B]'
+                      }`}
+                    >
+                      {al.semDocumento ? 'Pendente' : 'OK'}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
 
-            {/* Rodapé do modal */}
-            <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-2">
+            <div className="px-5 py-3 border-t border-slate-100 flex justify-between">
               <button
                 type="button"
                 onClick={() => {
                   toggleParticipante(participanteInspecionado.id);
                   setParticipanteInspecionado(null);
                 }}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer ${
-                  excluidosIds.includes(participanteInspecionado.id)
-                    ? 'bg-[#00A878] hover:bg-[#087A5B] text-white'
-                    : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                }`}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold cursor-pointer"
               >
-                {excluidosIds.includes(participanteInspecionado.id)
-                  ? '+ Recolocar no sorteio'
-                  : 'Remover esta equipe do sorteio'}
+                {excluidosIds.includes(participanteInspecionado.id) ? '+ Incluir no sorteio' : 'Remover do sorteio'}
               </button>
               <button
                 type="button"
                 onClick={() => setParticipanteInspecionado(null)}
-                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer"
+                className="px-4 py-1.5 rounded-xl bg-[#0F2540] text-white text-xs font-bold cursor-pointer"
               >
                 Fechar
               </button>

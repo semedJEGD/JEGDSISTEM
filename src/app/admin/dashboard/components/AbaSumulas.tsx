@@ -143,13 +143,61 @@ export function AbaSumulas({
       const inscs = inscricoes.filter((i) => i.escolaId === esc.id);
       const masc = atls.filter((a) => a.sexo === 'MASCULINO').length;
       const fem = atls.filter((a) => a.sexo === 'FEMININO').length;
+      const mirim = atls.filter((a) => a.categoriaCalculada === 'MIRIM').length;
+      const infantil = atls.filter((a) => a.categoriaCalculada === 'INFANTIL').length;
+      const infanto = atls.filter((a) => a.categoriaCalculada === 'INFANTO').length;
+      const junior = atls.filter((a) => a.categoriaCalculada === 'JUNIOR').length;
       const conferidos = atls.filter((a) => a.conferidoPeloCoordenador).length;
       const semDoc = atls.filter(
         (a) => a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO'
       ).length;
-      return { esc, total: atls.length, masc, fem, conferidos, semDoc, equipes: inscs.length };
+      const semFoto = atls.filter((a) => !a.documentos?.foto3x4).length;
+      return { esc, total: atls.length, masc, fem, mirim, infantil, infanto, junior, conferidos, semDoc, semFoto, equipes: inscs.length };
     });
   }, [escolasOrdenadas, atletas, inscricoes]);
+
+  const resumoGeralMunicipio = useMemo(() => {
+    const escolasAtivas = resumoPorEscola.filter((r) => r.total > 0).length;
+    const totalAlunos = atletas.length;
+    const masc = atletas.filter((a) => a.sexo === 'MASCULINO').length;
+    const fem = atletas.filter((a) => a.sexo === 'FEMININO').length;
+    const conferidos = atletas.filter((a) => a.conferidoPeloCoordenador).length;
+    const semDoc = atletas.filter(
+      (a) => a.semDocumento || a.documentoTipo === 'SEM_DOCUMENTO' || a.documentoNumero === 'SEM DOCUMENTO'
+    ).length;
+    const mirim = atletas.filter((a) => a.categoriaCalculada === 'MIRIM').length;
+    const infantil = atletas.filter((a) => a.categoriaCalculada === 'INFANTIL').length;
+    const infanto = atletas.filter((a) => a.categoriaCalculada === 'INFANTO').length;
+    const junior = atletas.filter((a) => a.categoriaCalculada === 'JUNIOR').length;
+
+    const porModalidade = modalidades.map((m) => {
+      const atlsMod = atletas.filter((a) =>
+        (a.modalidadesInscritas || []).some(
+          (mi) => mi.modalidadeCodigo?.toLowerCase() === m.codigo.toLowerCase()
+        )
+      );
+      const escolasMod = new Set(atlsMod.map((a) => a.escolaId)).size;
+      const equipesMod = inscricoes.filter(
+        (i) => i.modalidadeCodigo?.toLowerCase() === m.codigo.toLowerCase()
+      ).length;
+      return { codigo: m.codigo, nome: m.nome, alunos: atlsMod.length, escolas: escolasMod, equipes: equipesMod };
+    }).sort((a, b) => b.alunos - a.alunos);
+
+    return {
+      escolasAtivas,
+      totalAlunos,
+      masc,
+      fem,
+      conferidos,
+      semDoc,
+      mirim,
+      infantil,
+      infanto,
+      junior,
+      totalEquipes: inscricoes.length,
+      porModalidade,
+    };
+  }, [resumoPorEscola, atletas, inscricoes, modalidades]);
 
   const executarGeracao = async (id: string, acao: () => Promise<void> | void) => {
     try {
@@ -164,18 +212,61 @@ export function AbaSumulas({
   };
 
   const handleExportarGeralCsv = () => {
-    const cab = ['Escola', 'Sigla', 'Total Alunos', 'Masc', 'Fem', 'Equipes', 'Conferidos', 'Sem Documento'];
+    const cab = [
+      'Escola',
+      'Sigla',
+      'Total Alunos',
+      'Masc',
+      'Fem',
+      'Mirim',
+      'Infantil',
+      'Infanto',
+      'Junior',
+      'Equipes',
+      'Conferidos',
+      'Sem Documento',
+    ];
     const linhas = resumoPorEscola.map((r) =>
-      [r.esc.nome, r.esc.sigla || '', r.total, r.masc, r.fem, r.equipes, r.conferidos, r.semDoc]
+      [
+        r.esc.nome,
+        r.esc.sigla || '',
+        r.total,
+        r.masc,
+        r.fem,
+        r.mirim,
+        r.infantil,
+        r.infanto,
+        r.junior,
+        r.equipes,
+        r.conferidos,
+        r.semDoc,
+      ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(';')
     );
-    const csv = '\uFEFF' + [cab.join(';'), ...linhas].join('\n');
+    const linhaTotal = [
+      'TOTAL GERAL',
+      '',
+      resumoGeralMunicipio.totalAlunos,
+      resumoGeralMunicipio.masc,
+      resumoGeralMunicipio.fem,
+      resumoGeralMunicipio.mirim,
+      resumoGeralMunicipio.infantil,
+      resumoGeralMunicipio.infanto,
+      resumoGeralMunicipio.junior,
+      resumoGeralMunicipio.totalEquipes,
+      resumoGeralMunicipio.conferidos,
+      resumoGeralMunicipio.semDoc,
+    ]
+      .map((v) => `"${String(v)}"`)
+      .join(';');
+
+    const csv = '\uFEFF' + [cab.join(';'), ...linhas, linhaTotal].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'Relatorio_Geral_Escolas_JEGDS_2026.csv';
+    a.download = 'Relatorio_Geral_Todas_Escolas_JEGDS_2026.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -303,18 +394,31 @@ export function AbaSumulas({
       )}
 
       {/* ============================================================ */}
-      {/* SEÇÃO 2: CONSOLIDADO GERAL DO MUNICÍPIO                      */}
+      {/* SEÇÃO 2: RELATÓRIO GERAL DE TODAS AS ESCOLAS                 */}
       {/* ============================================================ */}
       {secao === 'RELATORIO_GERAL' && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-black text-[#0F2540]">Relatório Geral Consolidado</h3>
+              <h3 className="text-base font-black text-[#0F2540]">Relatório Geral — Todas as Escolas</h3>
               <p className="text-xs text-slate-500">
-                Visão comparativa de todas as {escolas.length} escola(s) e {atletas.length} aluno(s) inscritos.
+                Consolidado executivo do município com comparativo por escola, faixa etária e modalidade.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={gerandoId === 'rel-geral-escolas-pdf'}
+                onClick={() =>
+                  executarGeracao('rel-geral-escolas-pdf', () =>
+                    RelatorioDelegacaoService.gerarRelatorioGeralTodasEscolas(escolas, atletas, inscricoes)
+                  )
+                }
+                className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{gerandoId === 'rel-geral-escolas-pdf' ? 'Gerando...' : 'PDF Geral de Todas as Escolas'}</span>
+              </button>
               <button
                 type="button"
                 disabled={gerandoId === 'rel-geral-pdf'}
@@ -323,10 +427,10 @@ export function AbaSumulas({
                     RelatorioDelegacaoService.gerarRelatorioGeralAtletas(escolas, atletas)
                   )
                 }
-                className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl bg-[#0F2540] hover:bg-[#17355A] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>{gerandoId === 'rel-geral-pdf' ? 'Gerando...' : 'PDF Geral de Alunos'}</span>
+                <Users className="w-3.5 h-3.5 text-emerald-300" />
+                <span>{gerandoId === 'rel-geral-pdf' ? 'Gerando...' : 'PDF Lista Completa de Alunos'}</span>
               </button>
               <button
                 type="button"
@@ -334,21 +438,68 @@ export function AbaSumulas({
                 className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-[#0F2540] text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-[#00A878]" />
-                <span>Planilha por Escola (CSV)</span>
+                <span>Excel / CSV</span>
               </button>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#F4F6F8] p-4 overflow-x-auto">
-            <table className="w-full text-xs text-left min-w-[680px]">
+          {/* KPIs Gerais do Município */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-xl bg-[#F4F6F8] p-4 border border-slate-200/70">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Escolas Ativas</p>
+              <p className="text-xl font-black text-[#0F2540] tabular-nums mt-0.5">
+                {resumoGeralMunicipio.escolasAtivas}{' '}
+                <span className="text-xs font-semibold text-slate-400">/ {escolas.length}</span>
+              </p>
+            </div>
+            <div className="rounded-xl bg-[#F4F6F8] p-4 border border-slate-200/70">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total de Alunos</p>
+              <p className="text-xl font-black text-[#0F2540] tabular-nums mt-0.5">
+                {resumoGeralMunicipio.totalAlunos}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {resumoGeralMunicipio.masc} Masc · {resumoGeralMunicipio.fem} Fem
+              </p>
+            </div>
+            <div className="rounded-xl bg-[#F4F6F8] p-4 border border-slate-200/70">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Equipes & Categorias</p>
+              <p className="text-xl font-black text-[#0F2540] tabular-nums mt-0.5">
+                {resumoGeralMunicipio.totalEquipes}
+              </p>
+              <p className="text-[10px] text-slate-500 tabular-nums">
+                M:{resumoGeralMunicipio.mirim} · I:{resumoGeralMunicipio.infantil} · IF:{resumoGeralMunicipio.infanto} · J:{resumoGeralMunicipio.junior}
+              </p>
+            </div>
+            <div className="rounded-xl bg-[#F4F6F8] p-4 border border-slate-200/70">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Conferidos / Sem Doc.</p>
+              <p className="text-xl font-black tabular-nums mt-0.5">
+                <span className="text-[#00A878]">{resumoGeralMunicipio.conferidos}</span>
+                <span className="text-slate-300 mx-1">/</span>
+                <span className={resumoGeralMunicipio.semDoc > 0 ? 'text-rose-600' : 'text-slate-400'}>
+                  {resumoGeralMunicipio.semDoc}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Tabela 1: Comparativo de Todas as Escolas com TOTAL GERAL */}
+          <div className="rounded-2xl bg-[#F4F6F8] p-4 overflow-x-auto space-y-2">
+            <p className="text-xs font-black uppercase tracking-wider text-[#0F2540] px-1">
+              1. Quadro Geral por Escola
+            </p>
+            <table className="w-full text-xs text-left min-w-[780px]">
               <thead className="text-[10px] uppercase tracking-wider text-slate-400">
                 <tr>
                   <th className="px-3 py-2">Escola</th>
-                  <th className="px-3 py-2 text-center">Alunos</th>
-                  <th className="px-3 py-2 text-center">Masc / Fem</th>
-                  <th className="px-3 py-2 text-center">Equipes</th>
-                  <th className="px-3 py-2 text-center">Conferidos</th>
-                  <th className="px-3 py-2 text-center">Sem Doc.</th>
+                  <th className="px-2 py-2 text-center">Alunos</th>
+                  <th className="px-2 py-2 text-center">M / F</th>
+                  <th className="px-2 py-2 text-center">Mir</th>
+                  <th className="px-2 py-2 text-center">Inf</th>
+                  <th className="px-2 py-2 text-center">Inft</th>
+                  <th className="px-2 py-2 text-center">Jun</th>
+                  <th className="px-2 py-2 text-center">Equipes</th>
+                  <th className="px-2 py-2 text-center">Conf.</th>
+                  <th className="px-2 py-2 text-center">S/Doc</th>
                   <th className="px-3 py-2 text-right">Ações</th>
                 </tr>
               </thead>
@@ -357,15 +508,19 @@ export function AbaSumulas({
                   <tr key={r.esc.id} className="bg-white hover:bg-slate-50/70">
                     <td className="px-3 py-2.5">
                       <span className="font-bold text-[#0F2540]">{r.esc.sigla || r.esc.nome}</span>
-                      <span className="block text-[10px] text-slate-400 truncate max-w-[240px]">{r.esc.nome}</span>
+                      <span className="block text-[10px] text-slate-400 truncate max-w-[200px]">{r.esc.nome}</span>
                     </td>
-                    <td className="px-3 py-2.5 text-center font-black text-[#0F2540]">{r.total}</td>
-                    <td className="px-3 py-2.5 text-center text-slate-500">
-                      {r.masc} / {r.fem}
+                    <td className="px-2 py-2.5 text-center font-black text-[#0F2540]">{r.total}</td>
+                    <td className="px-2 py-2.5 text-center text-slate-500">
+                      {r.masc}/{r.fem}
                     </td>
-                    <td className="px-3 py-2.5 text-center text-slate-600">{r.equipes}</td>
-                    <td className="px-3 py-2.5 text-center font-bold text-[#00A878]">{r.conferidos}</td>
-                    <td className={`px-3 py-2.5 text-center font-bold ${r.semDoc > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                    <td className="px-2 py-2.5 text-center text-slate-500">{r.mirim}</td>
+                    <td className="px-2 py-2.5 text-center text-slate-500">{r.infantil}</td>
+                    <td className="px-2 py-2.5 text-center text-slate-500">{r.infanto}</td>
+                    <td className="px-2 py-2.5 text-center text-slate-500">{r.junior}</td>
+                    <td className="px-2 py-2.5 text-center text-slate-600 font-semibold">{r.equipes}</td>
+                    <td className="px-2 py-2.5 text-center font-bold text-[#00A878]">{r.conferidos}</td>
+                    <td className={`px-2 py-2.5 text-center font-bold ${r.semDoc > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                       {r.semDoc}
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -378,7 +533,7 @@ export function AbaSumulas({
                           }}
                           className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-[#00A878] text-[#087A5B] hover:text-white text-[11px] font-bold cursor-pointer transition-colors"
                         >
-                          Ver Detalhes
+                          Abrir
                         </button>
                         <button
                           type="button"
@@ -399,8 +554,49 @@ export function AbaSumulas({
                     </td>
                   </tr>
                 ))}
+                {/* TOTAL GERAL */}
+                <tr className="bg-[#0F2540] text-white font-black">
+                  <td className="px-3 py-3 rounded-bl-xl">TOTAL GERAL ({escolas.length} escolas)</td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.totalAlunos}</td>
+                  <td className="px-2 py-3 text-center">
+                    {resumoGeralMunicipio.masc}/{resumoGeralMunicipio.fem}
+                  </td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.mirim}</td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.infantil}</td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.infanto}</td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.junior}</td>
+                  <td className="px-2 py-3 text-center">{resumoGeralMunicipio.totalEquipes}</td>
+                  <td className="px-2 py-3 text-center text-emerald-300">{resumoGeralMunicipio.conferidos}</td>
+                  <td className="px-2 py-3 text-center text-amber-300">{resumoGeralMunicipio.semDoc}</td>
+                  <td className="px-3 py-3 rounded-br-xl" />
+                </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Tabela 2: Resumo Geral por Modalidade */}
+          <div className="rounded-2xl bg-[#F4F6F8] p-4 space-y-2.5">
+            <p className="text-xs font-black uppercase tracking-wider text-[#0F2540] px-1">
+              2. Participação Geral por Modalidade
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {resumoGeralMunicipio.porModalidade.map((m) => (
+                <div
+                  key={m.codigo}
+                  className="bg-white rounded-xl p-3.5 border border-slate-200/70 flex items-center justify-between gap-2"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-[#0F2540]">{m.nome}</p>
+                    <p className="text-[11px] text-slate-400">
+                      {m.escolas} escola(s) · {m.equipes} equipe(s)
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-[#087A5B] text-xs font-black tabular-nums">
+                    {m.alunos}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

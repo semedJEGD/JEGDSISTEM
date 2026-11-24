@@ -936,18 +936,6 @@ export default function AdminDashboardPage() {
               <span>{sincronizandoOnline ? 'Sincronizando...' : `Online • ${ultimaSincronizacao}`}</span>
             </button>
 
-            {/* Imprimir Crachás em Lote (Todas as Escolas) */}
-            <button
-              type="button"
-              onClick={handleGerarTodosCrachas}
-              disabled={gerandoPdf || atletas.length === 0}
-              className="px-3 py-1.5 rounded-lg bg-[#E8F7F1] hover:bg-[#00A878] text-[#087A5B] hover:text-white border border-[#00A878]/30 text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
-              title="Gerar e imprimir PDF em lote com os crachás de todos os atletas cadastrados"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              <span>{gerandoPdf ? 'Gerando PDF...' : 'Crachás em Lote (PDF)'}</span>
-            </button>
-
             {/* Cadastrar Nova Escola */}
             <button
               type="button"
@@ -974,153 +962,42 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ================= FAIXA SLIM DE MÉTRICAS INTERATIVAS (ATALHOS RÁPIDOS) ================= */}
-      <div className="flex items-center justify-between gap-2.5 sm:gap-3 px-3.5 py-2.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs text-xs flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* BOTÃO 1: ESCOLAS */}
-          <button
-            type="button"
-            onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'ESCOLAS_LOTE'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/20'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-            }`}
-            title="Acessar gerenciamento e lotes por Escola"
-          >
-            <School className={`w-3.5 h-3.5 ${abaAtiva === 'ESCOLAS_LOTE' ? 'text-white' : 'text-slate-500'}`} />
-            <span>Escolas:</span>
-            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
-              abaAtiva === 'ESCOLAS_LOTE' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-900'
-            }`}>
-              {escolas.length}
-            </span>
-          </button>
-
-          {/* BOTÃO 2: ALUNOS (PAINEL GERAL DE ALUNOS COM MINI DASHBOARD) */}
-          <button
-            type="button"
-            onClick={() => setAbaAtiva('PAINEL_ALUNOS')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'PAINEL_ALUNOS'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-900'
-            }`}
-            title="Acessar Painel Geral de Alunos, busca unificada e mini dashboard"
-          >
-            <Users className={`w-3.5 h-3.5 ${abaAtiva === 'PAINEL_ALUNOS' ? 'text-white' : 'text-emerald-600'}`} />
-            <span>Alunos:</span>
-            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
-              abaAtiva === 'PAINEL_ALUNOS' ? 'bg-white/20 text-white' : 'bg-emerald-100/70 text-emerald-900'
-            }`}>
-              {atletas.length}
-            </span>
-          </button>
-
-          {/* BOTÃO 3: INSCRIÇÕES */}
-          <button
-            type="button"
-            onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'LISTAS_CHAMADA'
-                ? 'bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/20'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50/60 hover:border-amber-300 hover:text-amber-900'
-            }`}
-            title="Acessar súmulas e inscrições por modalidade"
-          >
-            <Trophy className={`w-3.5 h-3.5 ${abaAtiva === 'LISTAS_CHAMADA' ? 'text-white' : 'text-amber-500'}`} />
-            <span>Inscrições:</span>
-            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
-              abaAtiva === 'LISTAS_CHAMADA' ? 'bg-white/20 text-white' : 'bg-amber-100/70 text-amber-900'
-            }`}>
-              {inscricoes.length}
-            </span>
-          </button>
-
-          {/* BOTÃO 4: HOMOLOGADOS */}
-          <button
-            type="button"
-            onClick={() => {
-              setSubAbaHomologacao('EQUIPES');
-              setFiltroStatus('VALIDADA');
-              setAbaAtiva('HOMOLOGACAO');
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA'
-                ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
-                : 'bg-white text-emerald-800 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300'
-            }`}
-            title="Ver inscrições e atletas homologados"
-          >
-            <CheckCheck className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'text-white' : 'text-teal-600'}`} />
-            <span>Homologadas:</span>
-            <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-black ${
-              abaAtiva === 'HOMOLOGACAO' && filtroStatus === 'VALIDADA' ? 'bg-white/20 text-white' : 'bg-teal-100/70 text-teal-900'
-            }`}>
-              {inscricoes.filter(i => i.status === 'VALIDADA').length}/{inscricoes.length}
-            </span>
-          </button>
-        </div>
-
-        {/* BOTÃO 5: PENDÊNCIAS */}
-        <div>
-          <button
-            type="button"
-            onClick={() => {
-              setSubAbaHomologacao('ALERTAS');
-              setAbaAtiva('HOMOLOGACAO');
-            }}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ${
-              abaAtiva === 'HOMOLOGACAO' && subAbaHomologacao === 'ALERTAS'
-                ? 'bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-600/20'
-                : alertasInconsistencia.length > 0
-                  ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300'
-                  : 'bg-white text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-50'
-            }`}
-            title="Ver auditoria de documentos e pendências"
-          >
-            <AlertTriangle className={`w-3.5 h-3.5 ${abaAtiva === 'HOMOLOGACAO' && subAbaHomologacao === 'ALERTAS' ? 'text-white' : alertasInconsistencia.length > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
-            <span>{alertasInconsistencia.length} Pendências</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ================= NAVEGAÇÃO REORGANIZADA POR 6 ABAS FOCADAS ================= */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
+      {/* ================= NAVEGAÇÃO PRINCIPAL ENXUTA ================= */}
+      <div className="flex items-center gap-1 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar w-full">
         <button
           onClick={() => setAbaAtiva('ESCOLAS_LOTE')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'ESCOLAS_LOTE'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <Building2 className="w-4 h-4" />
+          <Building2 className="w-3.5 h-3.5" />
           <span>Escolas ({escolas.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('PAINEL_ALUNOS')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'PAINEL_ALUNOS'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <Users className="w-4 h-4 text-emerald-500" />
-          <span>Painel de Alunos ({atletas.length})</span>
+          <Users className="w-3.5 h-3.5" />
+          <span>Alunos ({atletas.length})</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('HOMOLOGACAO')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'HOMOLOGACAO'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <CheckCheck className="w-4 h-4" />
-          <span>Homologação & Pendências</span>
+          <CheckCheck className="w-3.5 h-3.5" />
+          <span>Homologação</span>
           {alertasInconsistencia.length > 0 && (
             <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               abaAtiva === 'HOMOLOGACAO' ? 'bg-white text-rose-700' : 'bg-rose-500 text-white'
@@ -1132,50 +1009,50 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setAbaAtiva('LISTAS_CHAMADA')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'LISTAS_CHAMADA'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <ClipboardList className="w-4 h-4" />
+          <ClipboardList className="w-3.5 h-3.5" />
           <span>Relatórios & Súmulas</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('CRACHA_LOGISTICA')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'CRACHA_LOGISTICA'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <IdCard className="w-4 h-4" />
-          <span>Logística & Crachás QR</span>
+          <IdCard className="w-3.5 h-3.5" />
+          <span>Crachás</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('EVENTOS_DIA')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'EVENTOS_DIA'
               ? 'bg-[#00A878] text-white shadow-2xs'
-              : 'text-[#087A5B] bg-[#E8F7F1]/70 hover:bg-[#E8F7F1]'
+              : 'text-[#087A5B] bg-emerald-50/70 hover:bg-emerald-100/70'
           }`}
         >
-          <Trophy className="w-4 h-4" />
-          <span>Eventos do Dia & Telão</span>
+          <Trophy className="w-3.5 h-3.5" />
+          <span>Competição & Telão</span>
         </button>
 
         <button
           onClick={() => setAbaAtiva('AVISOS')}
-          className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer ${
             abaAtiva === 'AVISOS'
-              ? 'bg-slate-900 text-white shadow-2xs'
+              ? 'bg-[#0F2540] text-white shadow-2xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          <Megaphone className="w-4 h-4" />
-          <span>Comunicados ({comunicados.length})</span>
+          <Megaphone className="w-3.5 h-3.5" />
+          <span>Avisos ({comunicados.length})</span>
         </button>
       </div>
 

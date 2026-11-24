@@ -1535,6 +1535,82 @@ export function ChaveamentoInterativo({
                       })}
                     </div>
                   </div>
+
+                  {/* Jogos do grupo/tabela inline logo abaixo para lançar placar sem trocar de aba */}
+                  {jogosDoGrupo.length > 0 && (
+                    <div className="pt-3 border-t border-slate-200/80 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                        Jogos ({jogosDoGrupo.filter((j) => j.status === 'ENCERRADO' || j.status === 'WO').length}/{jogosDoGrupo.length} concluídos)
+                      </p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                        {jogosDoGrupo.map((p) => {
+                          const encerrado = p.status === 'ENCERRADO' || p.status === 'WO';
+                          const busy = ocupadoId === p.id;
+                          return (
+                            <div
+                              key={p.id}
+                              className="bg-white rounded-lg px-3 py-2 shadow-[0_1px_2px_rgba(15,37,64,0.04)] border border-slate-100 flex items-center justify-between gap-2 text-xs"
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="text-[10px] font-mono text-slate-400">J{p.numeroJogo || '-'}</span>
+                                <span className="font-semibold text-[#0F2540] truncate flex-1 text-right">
+                                  {p.escolaASigla || p.escolaANome}
+                                </span>
+                                <div className="flex items-center gap-1 bg-[#F4F6F8] px-1.5 py-0.5 rounded-md border border-slate-200/80 shrink-0">
+                                  {!encerrado && (
+                                    <button type="button" disabled={busy} onClick={() => handlePlacar(p, -1, 0)} className="w-4 h-4 rounded hover:bg-white text-slate-500 font-bold">
+                                      -
+                                    </button>
+                                  )}
+                                  <span className="w-4 text-center font-black tabular-nums text-[#0F2540]">{p.placarA}</span>
+                                  {!encerrado && (
+                                    <button type="button" disabled={busy} onClick={() => handlePlacar(p, 1, 0)} className="w-4 h-4 rounded hover:bg-white text-slate-500 font-bold">
+                                      +
+                                    </button>
+                                  )}
+                                  <span className="text-slate-300">×</span>
+                                  {!encerrado && (
+                                    <button type="button" disabled={busy} onClick={() => handlePlacar(p, 0, -1)} className="w-4 h-4 rounded hover:bg-white text-slate-500 font-bold">
+                                      -
+                                    </button>
+                                  )}
+                                  <span className="w-4 text-center font-black tabular-nums text-[#0F2540]">{p.placarB}</span>
+                                  {!encerrado && (
+                                    <button type="button" disabled={busy} onClick={() => handlePlacar(p, 0, 1)} className="w-4 h-4 rounded hover:bg-white text-slate-500 font-bold">
+                                      +
+                                    </button>
+                                  )}
+                                </div>
+                                <span className="font-semibold text-[#0F2540] truncate flex-1">
+                                  {p.escolaBSigla || p.escolaBNome}
+                                </span>
+                              </div>
+                              {!encerrado ? (
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => handleEncerrar(p)}
+                                  className="px-2 py-1 rounded-md bg-[#00A878] hover:bg-[#087A5B] text-white text-[10px] font-bold shrink-0 cursor-pointer"
+                                >
+                                  OK
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => handleReabrir(p)}
+                                  className="p-1 rounded-md text-slate-400 hover:text-[#0F2540] shrink-0 cursor-pointer"
+                                  title="Reabrir"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })
