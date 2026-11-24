@@ -34,6 +34,10 @@ import {
   agruparArtilhariaPorModalidade,
   formatarDataBR,
 } from '@/lib/eventos-service';
+import {
+  CardPodioJornalistico,
+  parsePodioConteudo,
+} from '@/components/eventos/CardPodioJornalistico';
 
 type SlideTipo =
   | 'AO_VIVO'
@@ -740,8 +744,12 @@ export default function TelaoEventosPage() {
           </div>
         )}
 
-        {/* SLIDE: NOTÍCIA / BOLETIM DO DIA (CARTAZ INTEIRO COM object-contain + TEXTO SEM CORTE) */}
+        {/* SLIDE: NOTÍCIA / BOLETIM DO DIA OU PÓDIO JORNALÍSTICO ANIMADO */}
         {slideAtual?.tipo === 'NOTICIA' && (() => {
+          const podioSlide = parsePodioConteudo(slideAtual.payload.conteudo);
+          if (podioSlide) {
+            return <CardPodioJornalistico dados={podioSlide} modo="TELAO" temaEscuro={temaEscuro} />;
+          }
           const temImagemValida = Boolean(slideAtual.payload.imagemUrl && !imagensQuebradas[slideAtual.payload.id]);
           return (
             <div

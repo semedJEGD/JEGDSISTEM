@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Atleta, Escola, InscricaoEquipe, ModalidadeConfig } from '@/types/jegd';
 import { PainelChaveamentoOficial } from './PainelChaveamentoOficial';
+import { LancadorPodioJornalistico } from './LancadorPodioJornalistico';
 import {
   EventosBundle,
   PartidaEventoItem,
@@ -1258,75 +1259,88 @@ export function AbaEventosCompeticao({
       )}
 
       {/* ============================================================ */}
-      {/* SUB-ABA 5: MEDALHAS OLÍMPICAS & CHAMADAS DO TELÃO */}
+      {/* SUB-ABA 5: PÓDIO JORNALÍSTICO, MEDALHAS & CHAMADAS DO TELÃO  */}
       {/* ============================================================ */}
       {subAba === 'MEDALHAS' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Lançar Medalha */}
-          <div className="space-y-4">
-            <form onSubmit={handleLancarMedalha} className="bg-white border border-[#E2EAE5] rounded-2xl p-5 shadow-2xs space-y-3">
-              <h3 className="text-sm font-black text-[#17221D]">Lançar Medalha no Quadro Olímpico</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Escola Premiada *</label>
-                  <select value={medEscolaId} onChange={(e) => setMedEscolaId(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
-                    <option value="">Selecione a escola...</option>
-                    {escolasOrdenadas.map((e) => (
-                      <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Medalha</label>
-                  <select value={medTipo} onChange={(e) => setMedTipo(e.target.value as any)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
-                    <option value="OURO">🥇 Ouro (1º Lugar)</option>
-                    <option value="PRATA">🥈 Prata (2º Lugar)</option>
-                    <option value="BRONZE">🥉 Bronze (3º Lugar)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Modalidade</label>
-                  <select value={medModCodigo} onChange={(e) => setMedModCodigo(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
-                    {MODALIDADES_EVENTOS_OPCOES.map((m) => (
-                      <option key={m.codigo} value={m.codigo}>{m.nome}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Categoria</label>
-                  <select value={medCat} onChange={(e) => setMedCat(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
-                    {CATEGORIAS_EVENTOS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 block mb-1">Prova / Atleta (Opcional)</label>
-                  <input type="text" value={medProva} onChange={(e) => setMedProva(e.target.value)} placeholder="Ex.: 100m Rasos" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold" />
-                </div>
-              </div>
-              <button type="submit" disabled={salvando} className="w-full py-2.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-black cursor-pointer">
-                + Registrar Medalha
-              </button>
-            </form>
+        <div className="space-y-6">
+          {/* Lançador de Pódio Completo + Manchete Jornalística + Prévia Animada */}
+          <LancadorPodioJornalistico
+            municipioId={municipioId}
+            escolas={escolas}
+            atletas={atletas}
+            onPublicado={carregarDados}
+          />
 
-            {quadroMedalhas.length > 0 && (
-              <div className="bg-white border border-[#E2EAE5] rounded-2xl p-4 shadow-2xs space-y-2">
-                <h4 className="text-xs font-black uppercase text-slate-500">Quadro Atual</h4>
-                {quadroMedalhas.map((q, i) => (
-                  <div key={q.escolaId} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0">
-                    <span className="font-bold text-[#17221D]">{i + 1}º {q.escolaSigla}</span>
-                    <span className="font-black space-x-2">
-                      <span>🥇{q.ouro}</span>
-                      <span>🥈{q.prata}</span>
-                      <span>🥉{q.bronze}</span>
-                      <span className="text-[#087A5B]">({q.total})</span>
-                    </span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Lançamento Avulso + Quadro Atual */}
+            <div className="space-y-4">
+              {quadroMedalhas.length > 0 && (
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-2.5">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-[#0F2540]">
+                    Quadro Geral de Medalhas
+                  </h4>
+                  {quadroMedalhas.map((q, i) => (
+                    <div key={q.escolaId} className="flex items-center justify-between text-xs py-2 border-b border-slate-100 last:border-0">
+                      <span className="font-bold text-[#0F2540]">{i + 1}º {q.escolaSigla}</span>
+                      <span className="font-black space-x-2 tabular-nums">
+                        <span>🥇 {q.ouro}</span>
+                        <span>🥈 {q.prata}</span>
+                        <span>🥉 {q.bronze}</span>
+                        <span className="text-[#00A878]">({q.total})</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <form onSubmit={handleLancarMedalha} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Lançamento Avulso (1 Medalha Isolada)
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">Escola Premiada *</label>
+                    <select value={medEscolaId} onChange={(e) => setMedEscolaId(e.target.value)} required className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
+                      <option value="">Selecione a escola...</option>
+                      {escolasOrdenadas.map((e) => (
+                        <option key={e.id} value={e.id}>{e.nome} ({e.sigla})</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">Medalha</label>
+                    <select value={medTipo} onChange={(e) => setMedTipo(e.target.value as any)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
+                      <option value="OURO">🥇 Ouro (1º Lugar)</option>
+                      <option value="PRATA">🥈 Prata (2º Lugar)</option>
+                      <option value="BRONZE">🥉 Bronze (3º Lugar)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">Modalidade</label>
+                    <select value={medModCodigo} onChange={(e) => setMedModCodigo(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
+                      {MODALIDADES_EVENTOS_OPCOES.map((m) => (
+                        <option key={m.codigo} value={m.codigo}>{m.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">Categoria</label>
+                    <select value={medCat} onChange={(e) => setMedCat(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
+                      {CATEGORIAS_EVENTOS.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">Prova / Atleta (Opcional)</label>
+                    <input type="text" value={medProva} onChange={(e) => setMedProva(e.target.value)} placeholder="Ex.: 100m Rasos" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold" />
+                  </div>
+                </div>
+                <button type="submit" disabled={salvando} className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer">
+                  + Registrar Medalha Avulsa
+                </button>
+              </form>
+            </div>
 
           {/* Chamadas Rápidas para o Telão */}
           <div className="space-y-4">
@@ -1412,6 +1426,7 @@ export function AbaEventosCompeticao({
                 </div>
               ))}
             </div>
+          </div>
           </div>
         </div>
       )}

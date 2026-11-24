@@ -39,6 +39,10 @@ import {
   EstruturaXadrez,
   ProvaAtletismoBalizamento,
 } from '@/lib/chaveamento-service';
+import {
+  CardPodioJornalistico,
+  parsePodioConteudo,
+} from '@/components/eventos/CardPodioJornalistico';
 
 type AbaPublica = 'COBERTURA' | 'ATLETAS_DIA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
 
@@ -472,8 +476,20 @@ export default function EventosDoDiaPage() {
               </div>
             )}
 
-            {/* MANCHETE PRINCIPAL EDITORIAL */}
+            {/* MANCHETE PRINCIPAL EDITORIAL (OU PÓDIO JORNALÍSTICO ANIMADO) */}
             {manchetePrincipal ? (
+              (() => {
+                const podioManchete = parsePodioConteudo(manchetePrincipal.conteudo);
+                if (podioManchete) {
+                  return (
+                    <CardPodioJornalistico
+                      dados={podioManchete}
+                      modo="PORTAL"
+                      onClick={() => setNoticiaAberta(manchetePrincipal)}
+                    />
+                  );
+                }
+                return (
               <article
                 onClick={() => setNoticiaAberta(manchetePrincipal)}
                 className="group bg-white border border-[#E2EAE5] hover:border-[#00A878]/50 rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all cursor-pointer grid grid-cols-1 md:grid-cols-12"
@@ -516,6 +532,8 @@ export default function EventosDoDiaPage() {
                   </div>
                 </div>
               </article>
+                );
+              })()
             ) : (
               /* Estado Inicial Elegante (sem card duplicado nem placeholder vazio feio) */
               <div className="bg-white border border-[#E2EAE5] rounded-2xl p-6 sm:p-8 shadow-2xs space-y-4">
