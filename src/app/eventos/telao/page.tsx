@@ -94,6 +94,7 @@ export default function TelaoEventosPage() {
   const [progressoKey, setProgressoKey] = useState(0);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const whooshLockRef = useRef(false);
+  const prevAoVivoIdsRef = useRef<string>('');
 
   useEffect(() => {
     JegdStorage.init();
@@ -126,7 +127,7 @@ export default function TelaoEventosPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const data = await EventosApi.carregar(municipioId, { incluirAtletas: false });
+      const data = await EventosApi.carregar(municipioId, { incluirAtletas: false, nocache: true });
       setBundle(data);
     } catch (err) {
       console.error('Erro ao atualizar telão:', err);
@@ -138,7 +139,7 @@ export default function TelaoEventosPage() {
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       carregar();
-    }, 30000);
+    }, 8000);
     return () => clearInterval(id);
   }, [carregar]);
 
@@ -156,29 +157,20 @@ export default function TelaoEventosPage() {
     const lista: SlideDef[] = [];
     const partidasJaExibidas = new Set<string>();
 
+    const normCod = (c?: string | null) => (c || '').trim().toLowerCase().replace(/-/g, '_');
+
     const filtrarPorMod = (modCodigo?: string | null) => {
       if (modalidadesSelecionadas.length === 0) return true;
       if (!modCodigo) return true;
-      return modalidadesSelecionadas.includes(modCodigo);
+      const n = normCod(modCodigo);
+      return modalidadesSelecionadas.some((sel) => normCod(sel) === n);
     };
 
     const partidasFiltradas = bundle.partidas.filter((p) => filtrarPorMod(p.modalidadeCodigo));
     const noticiasTelao = bundle.noticias.filter((n) => n.destaqueTelao !== false);
     const videosVinheta = bundle.avisos.filter((a) => a.ativo && a.tipo === 'VIDEO');
 
-    // 1. DESTAQUE PRINCIPAL (Notícia #1 — ex: Cartaz da Abertura)
-    if (noticiasTelao.length > 0) {
-      const n0 = noticiasTelao[0];
-      lista.push({
-        id: `noticia-${n0.id}`,
-        tag: 'DESTAQUE OFICIAL',
-        titulo: n0.modalidadeNome ? `Boletim • ${n0.modalidadeNome}` : `Cobertura Oficial • ${siglaEvento}`,
-        tipo: 'NOTICIA',
-        payload: n0,
-      });
-    }
-
-    // 2. PULSO DO MOMENTO: AO VIVO (máx 2 jogos grandes) ou PRÓXIMOS JOGOS (até 4)
+    // 1. PRIORIDADE MÁXIMA: JOGOS AO VIVO (sobe direto pro 1º slide do telão!)
     const aoVivo = partidasFiltradas.filter((p) => p.status === 'AO_VIVO');
     if (aoVivo.length > 0) {
       aoVivo.forEach((p) => partidasJaExibidas.add(p.id));
@@ -192,7 +184,22 @@ export default function TelaoEventosPage() {
           payload: aoVivo.slice(i, i + 2),
         });
       }
-    } else {
+    }
+
+    // 2. DESTAQUE PRINCIPAL (Notícia #1 ou Pódio Jornalístico)
+    if (noticiasTelao.length > 0) {
+      const n0 = noticiasTelao[0];
+      lista.push({
+        id: `noticia-${n0.id}`,
+        tag: 'DESTAQUE OFICIAL',
+        titulo: n0.modalidadeNome ? `Boletim • ${n0.modalidadeNome}` : `Cobertura Oficial • ${siglaEvento}`,
+        tipo: 'NOTICIA',
+        payload: n0,
+      });
+    }
+
+    // Se não houver jogo ao vivo, mostra os próximos confrontos do dia
+    if (aoVivo.length === 0) {
       const proximos = partidasFiltradas.filter((p) => p.status === 'AGENDADO').slice(0, 4);
       if (proximos.length > 0) {
         proximos.forEach((p) => partidasJaExibidas.add(p.id));
@@ -368,6 +375,29 @@ export default function TelaoEventosPage() {
 
   // Rotação automática (pausa o timer padrão se o slide atual for VIDEO_VINHETA, pois o onEnded do vídeo dispara o whoosh!)
   const slideAtual = slides[slideIdx % slides.length] || slides[0];
+
+  // Assim que um novo jogo entrar AO_VIVO, salta imediatamente para o slide 0 (Placar Ao Vivo)
+  const aoVivoIdsKey = useMemo(
+    () =>
+      slides
+        .filter((s) => s.tipo === 'AO_VIVO')
+        .flatMap((s) => (s.payload as PartidaEventoItem[]).map((p) => p.id))
+        .sort()
+        .join(','),
+    [slides]
+  );
+
+  useEffect(() => {
+    const prev = prevAoVivoIdsRef.current;
+    prevAoVivoIdsRef.current = aoVivoIdsKey;
+    if (aoVivoIdsKey && aoVivoIdsKey !== prev) {
+      const idxAoVivo = slides.findIndex((s) => s.tipo === 'AO_VIVO');
+      if (idxAoVivo >= 0 && slideIdx !== idxAoVivo) {
+        setSlideIdx(idxAoVivo);
+        setProgressoKey((k) => k + 1);
+      }
+    }
+  }, [aoVivoIdsKey, slides, slideIdx]);
 
   useEffect(() => {
     if (pausado || slides.length <= 1) return;
