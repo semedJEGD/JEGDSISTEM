@@ -482,12 +482,16 @@ export function auditarCategoriaParaChaveamento(params: {
       const seqEscola = (indicePorEscola.get(insc.escolaId) || 0) + 1;
       indicePorEscola.set(insc.escolaId, seqEscola);
       const temMultiplas = (totalPorEscola.get(insc.escolaId) || 1) > 1;
+      const letraEquipe =
+        insc.numeroEquipe === 2 || /(-B|-eq2|__eq2)$/i.test(insc.id || '')
+          ? 'B'
+          : seqEscola === 2
+          ? 'B'
+          : seqEscola === 1
+          ? 'A'
+          : String.fromCharCode(64 + seqEscola);
       const numEqLabel =
-        insc.numeroEquipe && insc.numeroEquipe > 1
-          ? ` (Eq. ${insc.numeroEquipe})`
-          : temMultiplas
-          ? ` (Eq. ${seqEscola})`
-          : '';
+        temMultiplas || insc.numeroEquipe === 2 ? ` (Equipe ${letraEquipe})` : '';
 
       const qtd = insc.atletaIds?.length || 0;
       const partAlertas: string[] = [];

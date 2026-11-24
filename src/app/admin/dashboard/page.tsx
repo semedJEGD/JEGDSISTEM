@@ -1139,7 +1139,7 @@ export default function AdminDashboardPage() {
           }`}
         >
           <ClipboardList className="w-4 h-4" />
-          <span>Súmulas & Competição</span>
+          <span>Relatórios & Súmulas</span>
         </button>
 
         <button

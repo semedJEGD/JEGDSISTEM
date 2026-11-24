@@ -171,6 +171,7 @@ export async function GET(request: Request) {
       const equipeKey = insc.equipe || `insc-${insc.escolaId}-${modCodigo}-${insc.categoria}-${insc.sexo}`;
 
       if (!inscricoesMap.has(equipeKey)) {
+        const isEquipeB = /(-B|-eq2|__eq2|_2)$/i.test(equipeKey);
         inscricoesMap.set(equipeKey, {
           id: equipeKey,
           municipioId: insc.municipioId || escolaPorId.get(insc.escolaId)?.municipioId || undefined,
@@ -179,6 +180,7 @@ export async function GET(request: Request) {
           modalidadeNome: modNome,
           categoria: insc.categoria,
           sexo: insc.sexo,
+          numeroEquipe: isEquipeB ? 2 : 1,
           atletaIds: [],
           provasPorAtleta: {},
           comissaoIds: [],

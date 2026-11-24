@@ -1436,9 +1436,10 @@ export class JegdStorage {
 
         if (totalEquipesDestaMod < maxEquipesPermitidas) {
           const proxNumero = totalEquipesDestaMod + 1;
+          const letraEquipe = proxNumero === 2 ? 'B' : 'A';
 
           const novaInsc: InscricaoEquipe = {
-            id: `insc-${Date.now()}-${modInsc.modalidadeCodigo}-eq${proxNumero}`,
+            id: `insc-${escolaId}-${modInsc.modalidadeCodigo}-${cat}-${atleta.sexo}-${letraEquipe}`,
             municipioId: curMun.id,
             escolaId,
             modalidadeCodigo: modInsc.modalidadeCodigo,
@@ -1446,7 +1447,7 @@ export class JegdStorage {
             categoria: cat,
             sexo: atleta.sexo,
             numeroEquipe: proxNumero,
-            nomeEquipe: proxNumero > 1 ? `${modObj.nome} - Equipe ${proxNumero}` : modObj.nome,
+            nomeEquipe: maxEquipesPermitidas > 1 ? `${modObj.nome} - Equipe ${letraEquipe}` : modObj.nome,
             atletaIds: [atleta.id],
             provasPorAtleta: modInsc.provas ? { [atleta.id]: modInsc.provas } : undefined,
             comissaoIds: [],

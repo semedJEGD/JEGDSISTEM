@@ -55,6 +55,7 @@ import {
 import { JegdsRulesService, PROVAS_ATLETISMO_POR_CATEGORIA } from '@/services/jegds-rules';
 import { ModalSeletorPerfil } from '../components/ModalSeletorPerfil';
 import { ModalCadastroAtleta } from '../atletas/components/ModalCadastroAtleta';
+import { RelatorioEscolaDetalhado } from '@/components/relatorios/RelatorioEscolaDetalhado';
 
 export default function EscolaDashboardPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function EscolaDashboardPage() {
   const [gerandoPdfLote, setGerandoPdfLote] = useState(false);
 
   // Navegação por Abas Unificadas
-  const [abaAtiva, setAbaAtiva] = useState<'ALUNOS' | 'EQUIPES' | 'HOMOLOGACAO' | 'COMISSAO'>('ALUNOS');
+  const [abaAtiva, setAbaAtiva] = useState<'ALUNOS' | 'EQUIPES' | 'HOMOLOGACAO' | 'COMISSAO' | 'RELATORIO'>('ALUNOS');
 
   // Perfil Ativo
   const [perfilAtivo, setPerfilAtivo] = useState<PerfilAtivoEscola | null>(null);
@@ -913,6 +914,17 @@ export default function EscolaDashboardPage() {
           <GraduationCap className="w-4 h-4" />
           <span>Comissão Técnica ({comissao.length})</span>
         </button>
+
+        <button
+          onClick={() => setAbaAtiva('RELATORIO')}
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer ${abaAtiva === 'RELATORIO'
+            ? 'bg-[#00A878] text-white shadow-2xs'
+            : 'text-[#087A5B] bg-[#E8F7F1]/70 hover:bg-[#E8F7F1]'
+            }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          <span>Relatório da Escola</span>
+        </button>
       </div>
 
       {/* ================= ABA 1: ALUNOS & INSCRIÇÕES ================= */}
@@ -1488,6 +1500,18 @@ export default function EscolaDashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= ABA 5: RELATÓRIO DETALHADO DA ESCOLA ================= */}
+      {abaAtiva === 'RELATORIO' && escola && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <RelatorioEscolaDetalhado
+            escola={escola}
+            atletas={atletas}
+            inscricoes={inscricoes}
+            modalidades={modalidades}
+          />
         </div>
       )}
 

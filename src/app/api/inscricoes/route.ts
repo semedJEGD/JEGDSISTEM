@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MODALIDADES_JEGDS, JegdsRulesService, ModalidadeCodigoJEGDS } from '@/services/jegds-rules';
 
 export const preferredRegion = ['gru1'];
 
@@ -162,6 +163,110 @@ export async function POST(request: Request) {
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Erro ao processar inscrição' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/inscricoes
+ * Reorganiza todas as equipes do banco (principalmente Futsal e Futebol de Campo)
+ * separando estritamente em Equipe A e Equipe B conforme os limites oficiais do regulamento.
+ */
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const municipioId = body?.municipioId;
+    const where: any = {};
+    if (municipioId && municipioId !== 'ALL') {
+      where.municipioId = municipioId;
+    }
+
+    const todas = await prisma.inscricao.findMany({
+      where,
+      include: {
+        atleta: { select: { id: true, nomeCompleto: true } },
+        modalidade: { select: { id: true, codigo: true, maxAtletas: true } },
+      },
+      orderBy: [{ status: 'asc' }, { dataInscricao: 'asc' }],
+    });
+
+    // Agrupa por (escolaId, modalidadeId, categoria, sexo)
+    const grupos = new Map<string, typeof todas>();
+    for (const insc of todas) {
+      const chave = `${insc.escolaId}__${insc.modalidadeId}__${insc.categoria}__${insc.sexo}`;
+      if (!grupos.has(chave)) grupos.set(chave, []);
+      grupos.get(chave)!.push(insc);
+    }
+
+    let atualizados = 0;
+    let equipesA = 0;
+    let equipesB = 0;
+
+    for (const lista of grupos.values()) {
+      const sample = lista[0];
+      const modCod = (sample.modalidade?.codigo || '').toLowerCase().replace(/-/g, '_') as ModalidadeCodigoJEGDS;
+      const regraMod = MODALIDADES_JEGDS[modCod];
+      const maxPorEquipe = regraMod?.limiteMaxElenco || sample.modalidade?.maxAtletas || 10;
+      const maxEquipes = JegdsRulesService.getMaxEquipesPorModalidade(modCod);
+
+      // Ordena: VALIDADA primeiro, depois alfabética por nome do atleta
+      const ordenada = [...lista].sort((a, b) => {
+        const sA = a.status === 'VALIDADA' ? 0 : 1;
+        const sB = b.status === 'VALIDADA' ? 0 : 1;
+        if (sA !== sB) return sA - sB;
+        return (a.atleta?.nomeCompleto || '').localeCompare(b.atleta?.nomeCompleto || '', 'pt-BR');
+      });
+
+      const baseChave = `insc-${sample.escolaId}-${modCod}-${sample.categoria}-${sample.sexo}`;
+      const chaveA = `${baseChave}-A`;
+      const chaveB = `${baseChave}-B`;
+
+      const idsA: string[] = [];
+      const idsB: string[] = [];
+
+      ordenada.forEach((item, idx) => {
+        if (idx < maxPorEquipe) {
+          idsA.push(item.id);
+        } else if (maxEquipes >= 2 && idx < maxPorEquipe * 2) {
+          idsB.push(item.id);
+        } else {
+          // Excedente além do teto fica na última equipe permitida para revisão manual
+          if (maxEquipes >= 2) idsB.push(item.id);
+          else idsA.push(item.id);
+        }
+      });
+
+      if (idsA.length > 0) {
+        equipesA++;
+        const r = await prisma.inscricao.updateMany({
+          where: { id: { in: idsA } },
+          data: { equipe: chaveA },
+        });
+        atualizados += r.count;
+      }
+
+      if (idsB.length > 0) {
+        equipesB++;
+        const r = await prisma.inscricao.updateMany({
+          where: { id: { in: idsB } },
+          data: { equipe: chaveB },
+        });
+        atualizados += r.count;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        registrosAtualizados: atualizados,
+        equipesA,
+        equipesB,
+      },
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || 'Erro ao reorganizar equipes' },
       { status: 500 }
     );
   }
