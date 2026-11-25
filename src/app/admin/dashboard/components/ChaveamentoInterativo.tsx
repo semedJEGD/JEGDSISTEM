@@ -14,11 +14,14 @@ import {
   Target,
   Flag,
   Calendar,
+  Clock,
   MapPin,
   Filter,
   GitBranch,
   ListOrdered,
   Swords,
+  Radio,
+  ExternalLink,
 } from 'lucide-react';
 import { Escola } from '@/types/jegd';
 import {
@@ -149,6 +152,20 @@ export function ChaveamentoInterativo({
   const [penaltisInput, setPenaltisInput] = useState<Record<string, { a: string; b: string }>>({});
   const [parciaisInput, setParciaisInput] = useState<Record<string, string>>({});
   const [mdTenisMesa, setMdTenisMesa] = useState<3 | 5>(3);
+
+  // Edição inline de horário/data/local de uma partida
+  const [editandoHorarioId, setEditandoHorarioId] = useState<string | null>(null);
+  const [editDataEvento, setEditDataEvento] = useState('');
+  const [editHorario, setEditHorario] = useState('');
+  const [editLocal, setEditLocal] = useState('');
+
+  // Reagendamento em lote de todas as partidas do chaveamento
+  const [abrirReagendarLote, setAbrirReagendarLote] = useState(false);
+  const [loteData, setLoteData] = useState(() => partidas[0]?.dataEvento || '2026-11-28');
+  const [loteHoraInicio, setLoteHoraInicio] = useState(() => partidas[0]?.horario || '08:00');
+  const [loteIntervalo, setLoteIntervalo] = useState('20');
+  const [loteLocal, setLoteLocal] = useState(() => partidas[0]?.local || '');
+  const [publicadoFeedback, setPublicadoFeedback] = useState(false);
 
   const modNorm = useMemo(
     () => normalizarCodigoModalidade(chaveamento.modalidadeCodigo),
@@ -669,6 +686,132 @@ export function ChaveamentoInterativo({
     }
   };
 
+  const handleAbrirEditarHorario = (p: PartidaEventoItem) => {
+    setEditandoHorarioId(p.id);
+    setEditDataEvento(p.dataEvento || '2026-11-28');
+    setEditHorario(p.horario || '08:00');
+    setEditLocal(p.local || '');
+  };
+
+  const handleSalvarHorarioPartida = async (partidaId: string) => {
+    if (!editDataEvento || !editHorario) {
+      alert('Informe a data e o horário da partida.');
+      return;
+    }
+    try {
+      setOcupadoId(partidaId);
+      await EventosApi.atualizar('partida', partidaId, {
+        dataEvento: editDataEvento,
+        horario: editHorario,
+        local: editLocal.trim() || null,
+      });
+      setEditandoHorarioId(null);
+      setAvisoAvanco('Horário da partida atualizado no chaveamento, no Portal de Eventos e no Telão.');
+      setTimeout(() => setAvisoAvanco(null), 4000);
+      await onAtualizado();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao atualizar horário da partida');
+    } finally {
+      setOcupadoId(null);
+    }
+  };
+
+  const handleAplicarHorariosLote = async () => {
+    if (!loteData || !loteHoraInicio) {
+      alert('Informe a data e o horário inicial.');
+      return;
+    }
+    const [hh, mm] = loteHoraInicio.split(':').map((n) => parseInt(n, 10) || 0);
+    const intervalo = Math.max(5, parseInt(loteIntervalo, 10) || 20);
+    const baseMin = hh * 60 + mm;
+
+    const itens = partidasOrdenadas.map((p, idx) => {
+      const totalMin = baseMin + idx * intervalo;
+      const h = String(Math.floor(totalMin / 60) % 24).padStart(2, '0');
+      const m = String(totalMin % 60).padStart(2, '0');
+      return {
+        id: p.id,
+        dados: {
+          dataEvento: loteData,
+          horario: `${h}:${m}`,
+          ...(loteLocal.trim() ? { local: loteLocal.trim() } : {}),
+        },
+      };
+    });
+
+    try {
+      setOcupadoId('REAGENDAR_LOTE');
+      await EventosApi.atualizar('partidas_atualizar_lote', chaveamento.id, { itens });
+      setAbrirReagendarLote(false);
+      setAvisoAvanco(
+        `${itens.length} partida(s) reagendada(s) para ${formatarDataBR(loteData)} a partir das ${loteHoraInicio} (a cada ${intervalo} min).`
+      );
+      setTimeout(() => setAvisoAvanco(null), 5000);
+      await onAtualizado();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao reagendar partidas em lote');
+    } finally {
+      setOcupadoId(null);
+    }
+  };
+
+  const handlePublicarEventosETelao = async () => {
+    if (partidasOrdenadas.length === 0) {
+      alert('Não há partidas neste chaveamento para publicar.');
+      return;
+    }
+    const primeira = partidasOrdenadas[0];
+    const ultima = partidasOrdenadas[partidasOrdenadas.length - 1];
+    const dataRef = primeira.dataEvento || '2026-11-28';
+    const horaInicioRef = primeira.horario || '08:00';
+    const horaFimRef = ultima.horario || '';
+    const localRef = primeira.local || 'Quadra Oficial JEGDS';
+    const sexoLabel = chaveamento.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino';
+    const etapaLabel =
+      modNorm === 'queimada' || modNorm === 'tenis_mesa' || modNorm === 'xadrez'
+        ? '1ª Etapa'
+        : modNorm === 'atletismo' || modNorm === 'beach_soccer'
+        ? '2ª Etapa'
+        : '3ª Etapa';
+
+    try {
+      setOcupadoId('PUBLICAR');
+      if (chaveamento.status === 'RASCUNHO') {
+        await EventosApi.atualizar('chaveamento', chaveamento.id, { status: 'CONGELADO' });
+      }
+      await EventosApi.criar('cronograma', {
+        municipioId: municipioId || chaveamento.municipioId,
+        titulo: `${chaveamento.modalidadeNome} — ${chaveamento.categoria} ${sexoLabel}`,
+        descricao: `${partidasOrdenadas.length} partida(s) oficiais do chaveamento (${resumoCompeticao.totalEquipes} equipes).`,
+        etapa: etapaLabel,
+        modalidadeNome: chaveamento.modalidadeNome,
+        categoria: `${chaveamento.categoria} ${sexoLabel}`,
+        local: localRef,
+        dataEvento: dataRef,
+        horarioInicio: horaInicioRef,
+        horarioFim: horaFimRef || null,
+        status: 'PREVISTO',
+      });
+      await EventosApi.criar('aviso', {
+        municipioId: municipioId || chaveamento.municipioId,
+        titulo: `Tabela Oficial: ${chaveamento.modalidadeNome} (${chaveamento.categoria} ${sexoLabel})`,
+        mensagem: `${partidasOrdenadas.length} jogos confirmados em ${formatarDataBR(dataRef)} a partir das ${horaInicioRef} — ${localRef}.`,
+        tipo: 'CHAMADA',
+        ativo: true,
+      });
+
+      setPublicadoFeedback(true);
+      setAvisoAvanco(
+        `Publicado no Portal de Eventos (/eventos) e no Telão (/eventos/telao)! Todas as ${partidasOrdenadas.length} partidas e o cronograma já estão ao vivo.`
+      );
+      await onAtualizado();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao publicar nos Eventos e Telão');
+    } finally {
+      setOcupadoId(null);
+    }
+  };
+
   const handleSalvarSlotManual = async (partida: PartidaEventoItem, lado: 'A' | 'B') => {
     const esc = escolas.find((e) => e.id === escolaSelecionadaId);
     if (!esc) return;
@@ -748,20 +891,73 @@ export function ChaveamentoInterativo({
           isFinal ? 'border-amber-300 ring-1 ring-amber-200/70' : 'border-slate-200/80'
         }`}
       >
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span className="font-mono font-medium">
-            J{p.numeroJogo || '-'} · {formatarDataBR(p.dataEvento).slice(0, 5)} {p.horario}
-          </span>
-          {encerrado ? (
-            <span className="font-mono font-bold text-[#0F2540]">
-              {p.status === 'WO' ? 'W.O.' : formatarPlacarComPenaltis(p.placarA, p.placarB, p.detalhesPlacar)}
-            </span>
-          ) : (
-            <span className={`text-[10px] font-semibold ${(STATUS_META[p.status] || STATUS_META.AGENDADO).text}`}>
-              {(STATUS_META[p.status] || STATUS_META.AGENDADO).label}
-            </span>
-          )}
-        </div>
+        {editandoHorarioId === p.id ? (
+          <div className="p-2 rounded-lg bg-[#F4F6F8] border border-slate-200 space-y-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
+              <input
+                type="date"
+                value={editDataEvento}
+                onChange={(e) => setEditDataEvento(e.target.value)}
+                className="px-2 py-1 rounded border border-slate-300 bg-white text-[11px] font-medium text-[#0F2540]"
+              />
+              <input
+                type="time"
+                value={editHorario}
+                onChange={(e) => setEditHorario(e.target.value)}
+                className="px-2 py-1 rounded border border-slate-300 bg-white text-[11px] font-medium text-[#0F2540]"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={editLocal}
+                onChange={(e) => setEditLocal(e.target.value)}
+                placeholder="Quadra / Local"
+                className="flex-1 px-2 py-1 rounded border border-slate-300 bg-white text-[11px] text-[#0F2540]"
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => handleSalvarHorarioPartida(p.id)}
+                className="px-2 py-1 rounded bg-[#00A878] hover:bg-[#087A5B] text-white text-[11px] font-bold cursor-pointer"
+                title="Salvar horário"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditandoHorarioId(null)}
+                className="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-600 text-[11px] cursor-pointer"
+                title="Cancelar"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-[11px] text-slate-400 gap-2">
+            <button
+              type="button"
+              onClick={() => handleAbrirEditarHorario(p)}
+              className="font-mono font-medium hover:text-[#0F2540] flex items-center gap-1 transition-colors cursor-pointer"
+              title="Clique para editar data, horário e quadra"
+            >
+              <span>
+                J{p.numeroJogo || '-'} · {formatarDataBR(p.dataEvento).slice(0, 5)} {p.horario}
+              </span>
+              <Clock className="w-3 h-3 text-slate-400 hover:text-[#00A878]" />
+            </button>
+            {encerrado ? (
+              <span className="font-mono font-bold text-[#0F2540]">
+                {p.status === 'WO' ? 'W.O.' : formatarPlacarComPenaltis(p.placarA, p.placarB, p.detalhesPlacar)}
+              </span>
+            ) : (
+              <span className={`text-[10px] font-semibold ${(STATUS_META[p.status] || STATUS_META.AGENDADO).text}`}>
+                {(STATUS_META[p.status] || STATUS_META.AGENDADO).label}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="space-y-1.5">
           {/* Equipe A */}
@@ -1167,7 +1363,30 @@ export function ChaveamentoInterativo({
             <p className="text-base font-black text-slate-600 tabular-nums">{resumoCompeticao.pendentes}</p>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => setAbrirReagendarLote((v) => !v)}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                abrirReagendarLote
+                  ? 'bg-[#0F2540] text-white border-[#0F2540]'
+                  : 'bg-white hover:bg-slate-100 border-slate-200 text-[#0F2540]'
+              }`}
+              title="Reagendar data, horário e quadra de todas as partidas deste chaveamento"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Horários</span>
+            </button>
+            <button
+              type="button"
+              disabled={ocupadoId === 'PUBLICAR'}
+              onClick={handlePublicarEventosETelao}
+              className="px-3 py-1.5 rounded-lg bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+              title="Publicar tabela, cronograma e chamada no Portal /eventos e no Telão"
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>{ocupadoId === 'PUBLICAR' ? 'Publicando...' : 'Publicar Eventos & Telão'}</span>
+            </button>
             {temMataMata && temGrupos && (
               <button
                 type="button"
@@ -1192,11 +1411,105 @@ export function ChaveamentoInterativo({
         </div>
       </div>
 
-      {/* Feedback de avanço */}
+      {/* Barra expansível: Reagendar Horários em Lote */}
+      {abrirReagendarLote && (
+        <div className="rounded-xl bg-white border border-slate-200 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-black text-[#0F2540]">Reagendar Horários em Lote</p>
+              <p className="text-[11px] text-slate-500">
+                Atualiza todas as {partidasOrdenadas.length} partidas deste chaveamento de uma vez (você também pode clicar no horário de qualquer jogo individual).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAbrirReagendarLote(false)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 items-end">
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Data dos Jogos</label>
+              <input
+                type="date"
+                value={loteData}
+                onChange={(e) => setLoteData(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#0F2540]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">1º Jogo às</label>
+              <input
+                type="time"
+                value={loteHoraInicio}
+                onChange={(e) => setLoteHoraInicio(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#0F2540]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Intervalo (min)</label>
+              <input
+                type="number"
+                min={5}
+                max={120}
+                value={loteIntervalo}
+                onChange={(e) => setLoteIntervalo(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#0F2540]"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Quadra / Local (opcional)</label>
+              <input
+                type="text"
+                value={loteLocal}
+                onChange={(e) => setLoteLocal(e.target.value)}
+                placeholder="Ex: Quadra 1"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-[#0F2540]"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={ocupadoId === 'REAGENDAR_LOTE'}
+              onClick={handleAplicarHorariosLote}
+              className="px-3.5 py-2 rounded-lg bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+            >
+              {ocupadoId === 'REAGENDAR_LOTE' ? 'Salvando...' : 'Aplicar em todas'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback de avanço / publicação */}
       {avisoAvanco && (
-        <div className="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-[#00A878] shrink-0" />
-          <span>{avisoAvanco}</span>
+        <div className="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs font-semibold flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#00A878] shrink-0" />
+            <span>{avisoAvanco}</span>
+          </div>
+          {publicadoFeedback && (
+            <div className="flex items-center gap-2">
+              <a
+                href="/eventos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-md bg-white border border-emerald-200 text-[#087A5B] hover:bg-emerald-100 text-[11px] font-bold inline-flex items-center gap-1"
+              >
+                <span>Abrir Portal /eventos</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href="/eventos/telao"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-md bg-[#0F2540] text-white hover:bg-[#17355A] text-[11px] font-bold inline-flex items-center gap-1"
+              >
+                <span>Abrir Telão</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -1406,18 +1719,67 @@ export function ChaveamentoInterativo({
                             cancelado ? 'opacity-60' : ''
                           }`}
                         >
-                          {/* Meta: Jogo, Data, Hora, Quadra */}
-                          <div className="flex items-center gap-3 text-[11px] text-slate-400 lg:w-52 shrink-0">
-                            <span className="font-mono font-bold text-[#0F2540]/70 w-7">J{p.numeroJogo || '-'}</span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {formatarDataBR(p.dataEvento).slice(0, 5)} · {p.horario}
-                            </span>
-                            {p.local && (
-                              <span className="hidden sm:flex items-center gap-1 truncate max-w-[110px]" title={p.local}>
-                                <MapPin className="w-3 h-3 shrink-0" />
-                                <span className="truncate">{p.local}</span>
-                              </span>
+                          {/* Meta: Jogo, Data, Hora, Quadra (editável em 1 clique) */}
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 lg:w-64 shrink-0">
+                            <span className="font-mono font-bold text-[#0F2540]/70 w-7 shrink-0">J{p.numeroJogo || '-'}</span>
+                            {editandoHorarioId === p.id ? (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <input
+                                  type="date"
+                                  value={editDataEvento}
+                                  onChange={(e) => setEditDataEvento(e.target.value)}
+                                  className="px-1.5 py-0.5 rounded border border-slate-300 bg-white text-[11px] text-[#0F2540]"
+                                />
+                                <input
+                                  type="time"
+                                  value={editHorario}
+                                  onChange={(e) => setEditHorario(e.target.value)}
+                                  className="px-1.5 py-0.5 rounded border border-slate-300 bg-white text-[11px] text-[#0F2540]"
+                                />
+                                <input
+                                  type="text"
+                                  value={editLocal}
+                                  onChange={(e) => setEditLocal(e.target.value)}
+                                  placeholder="Quadra"
+                                  className="w-20 px-1.5 py-0.5 rounded border border-slate-300 bg-white text-[11px] text-[#0F2540]"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => handleSalvarHorarioPartida(p.id)}
+                                  className="p-1 rounded bg-[#00A878] text-white cursor-pointer"
+                                  title="Salvar horário"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditandoHorarioId(null)}
+                                  className="p-1 rounded bg-slate-200 text-slate-600 cursor-pointer"
+                                  title="Cancelar"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleAbrirEditarHorario(p)}
+                                className="flex items-center gap-2 hover:text-[#0F2540] transition-colors cursor-pointer text-left min-w-0"
+                                title="Clique para editar data, horário e quadra"
+                              >
+                                <span className="flex items-center gap-1 shrink-0">
+                                  <Calendar className="w-3 h-3" />
+                                  {formatarDataBR(p.dataEvento).slice(0, 5)} · {p.horario}
+                                </span>
+                                {p.local && (
+                                  <span className="hidden sm:flex items-center gap-1 truncate max-w-[100px]" title={p.local}>
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">{p.local}</span>
+                                  </span>
+                                )}
+                                <Edit3 className="w-3 h-3 text-slate-300 hover:text-[#00A878] shrink-0" />
+                              </button>
                             )}
                           </div>
 
