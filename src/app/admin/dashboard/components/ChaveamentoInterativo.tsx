@@ -147,6 +147,35 @@ export function ChaveamentoInterativo({
   const [escolaSelecionadaId, setEscolaSelecionadaId] = useState('');
   const [avisoAvanco, setAvisoAvanco] = useState<string | null>(null);
   const [penaltisInput, setPenaltisInput] = useState<Record<string, { a: string; b: string }>>({});
+  const [parciaisInput, setParciaisInput] = useState<Record<string, string>>({});
+  const [mdTenisMesa, setMdTenisMesa] = useState<3 | 5>(3);
+
+  const modNorm = useMemo(
+    () => normalizarCodigoModalidade(chaveamento.modalidadeCodigo),
+    [chaveamento.modalidadeCodigo]
+  );
+  const isQueimada = modNorm === 'queimada';
+  const isTenisMesa = modNorm === 'tenis_mesa';
+  const isVolei = modNorm.includes('volei');
+  const usaSets = isTenisMesa || isVolei;
+  const placaresRapidosSets: Array<[number, number]> = useMemo(() => {
+    if (isVolei || (isTenisMesa && mdTenisMesa === 3)) {
+      return [
+        [2, 0],
+        [2, 1],
+        [1, 2],
+        [0, 2],
+      ];
+    }
+    return [
+      [3, 0],
+      [3, 1],
+      [3, 2],
+      [2, 3],
+      [1, 3],
+      [0, 3],
+    ];
+  }, [isVolei, isTenisMesa, mdTenisMesa]);
 
   // Finalização do campeonato
   const [abrirFinalizar, setAbrirFinalizar] = useState(false);
@@ -516,6 +545,8 @@ export function ChaveamentoInterativo({
       vencedorForcado?: 'A' | 'B';
       woLado?: 'A' | 'B';
       penaltis?: { penA: number; penB: number };
+      placarFinal?: { placarA: number; placarB: number };
+      detalhesPlacar?: string | null;
     }
   ) => {
     try {
@@ -542,21 +573,47 @@ export function ChaveamentoInterativo({
           detalhesPlacar: formatarDetalhesPenaltis(penA, penB),
           vencedorEscolaId: penA > penB ? partida.escolaAId : partida.escolaBId,
         };
+      } else if (opts?.placarFinal) {
+        const { placarA, placarB } = opts.placarFinal;
+        const vencedorId =
+          placarA > placarB ? partida.escolaAId : placarB > placarA ? partida.escolaBId : null;
+        const detalhesTrim = (opts.detalhesPlacar ?? parciaisInput[partida.id] ?? '').trim();
+        dados = {
+          status: 'ENCERRADO',
+          placarA,
+          placarB,
+          detalhesPlacar: detalhesTrim || null,
+          vencedorEscolaId: vencedorId,
+        };
+      } else if (opts?.vencedorForcado) {
+        const vencedorId = opts.vencedorForcado === 'A' ? partida.escolaAId : partida.escolaBId;
+        const placarJaReflete =
+          (opts.vencedorForcado === 'A' && partida.placarA > partida.placarB) ||
+          (opts.vencedorForcado === 'B' && partida.placarB > partida.placarA);
+        const detalhesTrim = (opts.detalhesPlacar ?? parciaisInput[partida.id] ?? '').trim();
+        dados = {
+          status: 'ENCERRADO',
+          ...(placarJaReflete
+            ? {}
+            : {
+                placarA: opts.vencedorForcado === 'A' ? 1 : 0,
+                placarB: opts.vencedorForcado === 'B' ? 1 : 0,
+              }),
+          detalhesPlacar: detalhesTrim || null,
+          vencedorEscolaId: vencedorId,
+        };
       } else {
         const vencedorId =
-          opts?.vencedorForcado === 'A'
-            ? partida.escolaAId
-            : opts?.vencedorForcado === 'B'
-            ? partida.escolaBId
-            : partida.placarA > partida.placarB
+          partida.placarA > partida.placarB
             ? partida.escolaAId
             : partida.placarB > partida.placarA
             ? partida.escolaBId
             : null;
+        const detalhesTrim = (opts?.detalhesPlacar ?? parciaisInput[partida.id] ?? '').trim();
 
         dados = {
           status: 'ENCERRADO',
-          detalhesPlacar: null,
+          detalhesPlacar: detalhesTrim || null,
           vencedorEscolaId: vencedorId,
         };
       }
@@ -872,10 +929,124 @@ export function ChaveamentoInterativo({
           </div>
         </div>
 
-        {/* Encerrar / Pênaltis */}
+        {/* Parciais registradas (Tênis de Mesa / Voleibol) */}
+        {encerrado && p.detalhesPlacar && !pen && (
+          <div className="px-2 py-1 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-medium text-slate-500 text-center">
+            Parciais: <span className="font-semibold text-[#0F2540]">{p.detalhesPlacar}</span>
+          </div>
+        )}
+
+        {/* Encerrar / Ações específicas da modalidade */}
         {!encerrado && ambosDefinidos && (
-          <div className="pt-1">
-            {p.placarA !== p.placarB ? (
+          <div className="pt-1 space-y-2">
+            {isQueimada ? (
+              p.placarA !== p.placarB ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => handleEncerrar(p)}
+                  className="w-full py-1.5 rounded-lg bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <span>
+                    {isFinal
+                      ? `Confirmar Campeão (${p.placarA > p.placarB ? p.escolaASigla : p.escolaBSigla})`
+                      : `Avançar ${p.placarA > p.placarB ? p.escolaASigla : p.escolaBSigla}`}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleEncerrar(p, { vencedorForcado: 'A' })}
+                    className="py-1.5 px-2 rounded-lg bg-[#00A878] hover:bg-[#087A5B] text-white text-[11px] font-bold truncate transition-colors disabled:opacity-50 cursor-pointer"
+                    title={`Declarar vitória de ${p.escolaASigla || p.escolaANome}`}
+                  >
+                    Venceu {p.escolaASigla || p.escolaANome}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleEncerrar(p, { vencedorForcado: 'B' })}
+                    className="py-1.5 px-2 rounded-lg bg-[#0F2540] hover:bg-[#17355A] text-white text-[11px] font-bold truncate transition-colors disabled:opacity-50 cursor-pointer"
+                    title={`Declarar vitória de ${p.escolaBSigla || p.escolaBNome}`}
+                  >
+                    Venceu {p.escolaBSigla || p.escolaBNome}
+                  </button>
+                </div>
+              )
+            ) : usaSets ? (
+              <div className="p-2 rounded-lg bg-[#F4F6F8] border border-slate-200/80 space-y-1.5">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Sets ({isVolei ? 'Md3' : `Md${mdTenisMesa}`})
+                  </span>
+                  {isTenisMesa && (
+                    <div className="inline-flex rounded-md bg-white border border-slate-200 p-0.5 text-[10px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setMdTenisMesa(3)}
+                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                          mdTenisMesa === 3 ? 'bg-[#0F2540] text-white' : 'text-slate-500'
+                        }`}
+                      >
+                        Md3
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMdTenisMesa(5)}
+                        className={`px-1.5 py-0.5 rounded cursor-pointer ${
+                          mdTenisMesa === 5 ? 'bg-[#0F2540] text-white' : 'text-slate-500'
+                        }`}
+                      >
+                        Md5
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={parciaisInput[p.id] ?? p.detalhesPlacar ?? ''}
+                  onChange={(e) => setParciaisInput((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                  placeholder={isVolei ? 'Parciais opcional (ex: 25×18, 25×20)' : 'Parciais opcional (ex: 11×7, 11×9)'}
+                  className="w-full px-2 py-1 rounded-md border border-slate-200 bg-white text-[11px] text-[#0F2540] placeholder:text-slate-400"
+                />
+                <div className={`grid gap-1 ${placaresRapidosSets.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                  {placaresRapidosSets.map(([sa, sb]) => (
+                    <button
+                      key={`${sa}x${sb}`}
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        handleEncerrar(p, {
+                          placarFinal: { placarA: sa, placarB: sb },
+                          detalhesPlacar: (parciaisInput[p.id] ?? p.detalhesPlacar ?? '').trim() || null,
+                        })
+                      }
+                      className={`py-1 rounded-md text-[11px] font-black tabular-nums transition-colors disabled:opacity-40 cursor-pointer ${
+                        sa > sb
+                          ? 'bg-[#00A878] hover:bg-[#087A5B] text-white'
+                          : 'bg-[#0F2540] hover:bg-[#17355A] text-white'
+                      }`}
+                      title={`${p.escolaASigla || p.escolaANome} ${sa} × ${sb} ${p.escolaBSigla || p.escolaBNome}`}
+                    >
+                      {sa}×{sb}
+                    </button>
+                  ))}
+                </div>
+                {p.placarA !== p.placarB && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleEncerrar(p)}
+                    className="w-full py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#087A5B] text-[11px] font-bold cursor-pointer"
+                  >
+                    Confirmar {p.placarA}×{p.placarB} →
+                  </button>
+                )}
+              </div>
+            ) : p.placarA !== p.placarB ? (
               <button
                 type="button"
                 disabled={busy}
@@ -1303,15 +1474,70 @@ export function ChaveamentoInterativo({
                           </div>
 
                           {/* Situação & Ação */}
-                          <div className="flex items-center justify-end gap-2 lg:w-52 shrink-0">
+                          <div className="flex items-center justify-end gap-2 lg:w-auto shrink-0 flex-wrap">
+                            {encerrado && p.detalhesPlacar && !pen && (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-semibold text-slate-600">
+                                {p.detalhesPlacar}
+                              </span>
+                            )}
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${st.bg} ${st.text}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                               {st.label}
                             </span>
 
                             {!encerrado ? (
-                              <div className="flex items-center gap-1">
-                                {ambosDefinidos && !cancelado && (
+                              <div className="flex items-center gap-1 flex-wrap justify-end">
+                                {ambosDefinidos && !cancelado && isQueimada && p.placarA === p.placarB ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => handleEncerrar(p, { vencedorForcado: 'A' })}
+                                      className="px-2 py-1 rounded-md bg-[#00A878] hover:bg-[#087A5B] text-white text-[11px] font-bold cursor-pointer max-w-[110px] truncate"
+                                      title={`Vitória de ${p.escolaASigla || p.escolaANome}`}
+                                    >
+                                      Venceu {p.escolaASigla || p.escolaANome}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => handleEncerrar(p, { vencedorForcado: 'B' })}
+                                      className="px-2 py-1 rounded-md bg-[#0F2540] hover:bg-[#17355A] text-white text-[11px] font-bold cursor-pointer max-w-[110px] truncate"
+                                      title={`Vitória de ${p.escolaBSigla || p.escolaBNome}`}
+                                    >
+                                      Venceu {p.escolaBSigla || p.escolaBNome}
+                                    </button>
+                                  </>
+                                ) : ambosDefinidos && !cancelado && usaSets ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={parciaisInput[p.id] ?? p.detalhesPlacar ?? ''}
+                                      onChange={(e) => setParciaisInput((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                                      placeholder={isVolei ? '25×18, 25×20' : '11×7, 11×9'}
+                                      className="w-24 px-1.5 py-1 rounded-md border border-slate-200 bg-white text-[10px] text-[#0F2540] placeholder:text-slate-400"
+                                      title="Parciais dos sets (opcional)"
+                                    />
+                                    {placaresRapidosSets.slice(0, 4).map(([sa, sb]) => (
+                                      <button
+                                        key={`${sa}x${sb}`}
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() =>
+                                          handleEncerrar(p, {
+                                            placarFinal: { placarA: sa, placarB: sb },
+                                            detalhesPlacar: (parciaisInput[p.id] ?? p.detalhesPlacar ?? '').trim() || null,
+                                          })
+                                        }
+                                        className={`px-1.5 py-1 rounded-md text-[10px] font-black tabular-nums text-white cursor-pointer ${
+                                          sa > sb ? 'bg-[#00A878] hover:bg-[#087A5B]' : 'bg-[#0F2540] hover:bg-[#17355A]'
+                                        }`}
+                                      >
+                                        {sa}×{sb}
+                                      </button>
+                                    ))}
+                                  </>
+                                ) : ambosDefinidos && !cancelado ? (
                                   <button
                                     type="button"
                                     disabled={busy}
@@ -1320,7 +1546,7 @@ export function ChaveamentoInterativo({
                                   >
                                     Encerrar
                                   </button>
-                                )}
+                                ) : null}
                                 <select
                                   value={p.status}
                                   disabled={busy}

@@ -421,6 +421,85 @@ export function PainelChaveamentoOficial({
     }
   };
 
+  const handleFinalizarXadrez = async (ch: ChaveamentoEventoItem) => {
+    try {
+      const est: EstruturaXadrez = JSON.parse(ch.estruturaJson || '{}');
+      const ranking = calcularClassificacaoXadrez(est);
+      if (ranking.length === 0) {
+        alert('Não há classificação calculada para finalizar o torneio de Xadrez.');
+        return;
+      }
+
+      const mapJogador = (linha?: typeof ranking[number]) => {
+        if (!linha) return null;
+        const jog = est.jogadores?.find((j) => j.id === linha.id);
+        return {
+          escolaId: jog?.escolaId || linha.id,
+          nome: `${linha.nome} (${linha.sigla})`,
+          sigla: linha.sigla || linha.nome,
+          escolaNome: jog?.escolaNome || linha.sigla || linha.nome,
+          atletaNome: linha.nome,
+        };
+      };
+
+      const primeiro = mapJogador(ranking[0]);
+      const segundo = mapJogador(ranking[1]);
+      const terceiro = mapJogador(ranking[2]);
+
+      const resumoPodio = [
+        primeiro ? `🥇 1º: ${primeiro.nome}` : null,
+        segundo ? `🥈 2º: ${segundo.nome}` : null,
+        terceiro ? `🥉 3º: ${terceiro.nome}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      if (!confirm(`Finalizar torneio de Xadrez e lançar medalhas oficiais?\n\n${resumoPodio}`)) {
+        return;
+      }
+
+      setSalvando(true);
+      const finalizacao: FinalizacaoCampeonato = {
+        campeao: primeiro ? { escolaId: primeiro.escolaId, nome: primeiro.nome, sigla: primeiro.sigla } : null,
+        vice: segundo ? { escolaId: segundo.escolaId, nome: segundo.nome, sigla: segundo.sigla } : null,
+        terceiro: terceiro ? { escolaId: terceiro.escolaId, nome: terceiro.nome, sigla: terceiro.sigla } : null,
+        finalizadoEm: new Date().toISOString(),
+      };
+
+      await EventosApi.atualizar('chaveamento', ch.id, {
+        status: 'FINALIZADO',
+        estruturaJson: JSON.stringify({ ...est, finalizacao }),
+      });
+
+      const podioMedalhas: Array<{ item: typeof primeiro; tipo: 'OURO' | 'PRATA' | 'BRONZE' }> = [
+        { item: primeiro, tipo: 'OURO' },
+        { item: segundo, tipo: 'PRATA' },
+        { item: terceiro, tipo: 'BRONZE' },
+      ];
+      for (const p of podioMedalhas) {
+        if (!p.item) continue;
+        await EventosApi.criar('medalha', {
+          municipioId: municipioId || ch.municipioId,
+          escolaId: p.item.escolaId,
+          escolaNome: p.item.escolaNome,
+          escolaSigla: p.item.sigla,
+          modalidadeCodigo: ch.modalidadeCodigo,
+          modalidadeNome: ch.modalidadeNome,
+          categoria: ch.categoria,
+          sexo: ch.sexo,
+          tipo: p.tipo,
+          atletaNome: p.item.atletaNome,
+        });
+      }
+
+      await onAtualizado();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao finalizar torneio de Xadrez');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   // Atletismo inline
   const handleAtualizarRaiaAtletismo = async (
     ch: ChaveamentoEventoItem,
@@ -751,49 +830,124 @@ export function PainelChaveamentoOficial({
                 {expandido && ch.formato === 'SUICO_XADREZ' && estrutura?.rodadas && (
                   <div className="border-t border-slate-100 pt-4 space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-xs font-semibold text-slate-500">
-                        Sistema {estrutura.sistema} · {estrutura.rodadas.length}/{estrutura.totalRodadasPrevistas} rodadas
-                      </span>
-                      {estrutura.sistema === 'SUICO' &&
-                        estrutura.rodadas.length < estrutura.totalRodadasPrevistas && (
-                          <button
-                            type="button"
-                            disabled={salvando}
-                            onClick={() => handleGerarProximaRodadaXadrez(ch)}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#00A878] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Gerar {estrutura.rodadas.length + 1}ª Rodada</span>
-                          </button>
-                        )}
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-[#0F2540]">
+                          Sistema {estrutura.sistema} · {estrutura.rodadas.length}/{estrutura.totalRodadasPrevistas} rodadas
+                        </span>
+                        <p className="text-[11px] text-slate-500">
+                          Clique em <strong>1-0</strong> (Brancas), <strong>½-½</strong> (Empate) ou <strong>0-1</strong> (Pretas) em cada mesa.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {estrutura.sistema === 'SUICO' &&
+                          estrutura.rodadas.length < estrutura.totalRodadasPrevistas && (
+                            <button
+                              type="button"
+                              disabled={salvando}
+                              onClick={() => handleGerarProximaRodadaXadrez(ch)}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Gerar {estrutura.rodadas.length + 1}ª Rodada</span>
+                            </button>
+                          )}
+                        <button
+                          type="button"
+                          disabled={salvando}
+                          onClick={() => handleFinalizarXadrez(ch)}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#0F2540] hover:bg-[#17355A] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{ch.status === 'FINALIZADO' ? 'Atualizar Pódio' : 'Finalizar & Lançar Pódio'}</span>
+                        </button>
+                      </div>
                     </div>
 
-                    {(estrutura as EstruturaXadrez).rodadas.map((rod) => (
-                      <div key={rod.numero} className="bg-[#F4F6F8] rounded-xl p-4 space-y-1.5">
-                        <p className="text-xs font-bold text-[#0F2540]">{rod.numero}ª Rodada</p>
-                        {rod.mesas.map((m) => (
-                          <div key={m.mesa} className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg text-xs">
-                            <span>
-                              <span className="font-mono text-slate-400 mr-2">M{m.mesa}</span>
-                              <strong>{m.brancasNome}</strong> ×{' '}
-                              {m.pretasId === 'BYE' ? <strong className="text-[#00A878]">BYE</strong> : <strong>{m.pretasNome}</strong>}
+                    {(estrutura as EstruturaXadrez).rodadas.map((rod) => {
+                      const decididas = rod.mesas.filter((m) => m.resultado !== 'PENDENTE').length;
+                      return (
+                        <div key={rod.numero} className="bg-[#F4F6F8] rounded-xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-[#0F2540]">{rod.numero}ª Rodada</p>
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              {decididas}/{rod.mesas.length} mesa(s) decidida(s)
                             </span>
-                            {m.pretasId !== 'BYE' && (
-                              <select
-                                value={m.resultado}
-                                onChange={(e) => handleAtualizarMesaXadrez(ch, rod.numero, m.mesa, e.target.value as any)}
-                                className="px-2 py-1 rounded border border-slate-200 text-xs font-semibold bg-white"
-                              >
-                                <option value="PENDENTE">Pendente</option>
-                                <option value="1-0">1 - 0</option>
-                                <option value="0.5-0.5">½ - ½</option>
-                                <option value="0-1">0 - 1</option>
-                              </select>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                    ))}
+                          {rod.mesas.map((m) => (
+                            <div
+                              key={m.mesa}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg text-xs border border-slate-100"
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-slate-400">M{m.mesa}</span>
+                                <span
+                                  className={
+                                    m.resultado === '1-0'
+                                      ? 'font-black text-[#00A878]'
+                                      : m.resultado === '0-1'
+                                      ? 'text-slate-400 line-through'
+                                      : 'font-semibold text-[#0F2540]'
+                                  }
+                                >
+                                  ♔ {m.brancasNome}
+                                </span>
+                                <span className="text-slate-300">×</span>
+                                {m.pretasId === 'BYE' ? (
+                                  <strong className="text-[#00A878]">BYE (+1.0)</strong>
+                                ) : (
+                                  <span
+                                    className={
+                                      m.resultado === '0-1'
+                                        ? 'font-black text-[#00A878]'
+                                        : m.resultado === '1-0'
+                                        ? 'text-slate-400 line-through'
+                                        : 'font-semibold text-[#0F2540]'
+                                    }
+                                  >
+                                    ♚ {m.pretasNome}
+                                  </span>
+                                )}
+                              </div>
+                              {m.pretasId !== 'BYE' && (
+                                <div className="inline-flex items-center gap-1 shrink-0">
+                                  {(
+                                    [
+                                      { val: '1-0', label: '1 - 0', title: `Vitória de ${m.brancasNome}` },
+                                      { val: '0.5-0.5', label: '½ - ½', title: 'Empate' },
+                                      { val: '0-1', label: '0 - 1', title: `Vitória de ${m.pretasNome}` },
+                                    ] as const
+                                  ).map((btn) => {
+                                    const ativo = m.resultado === btn.val;
+                                    return (
+                                      <button
+                                        key={btn.val}
+                                        type="button"
+                                        title={ativo ? 'Clique para voltar a Pendente' : btn.title}
+                                        onClick={() =>
+                                          handleAtualizarMesaXadrez(
+                                            ch,
+                                            rod.numero,
+                                            m.mesa,
+                                            ativo ? 'PENDENTE' : btn.val
+                                          )
+                                        }
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-black tabular-nums transition-colors cursor-pointer ${
+                                          ativo
+                                            ? 'bg-[#00A878] text-white shadow-2xs'
+                                            : 'bg-slate-100 hover:bg-slate-200 text-[#0F2540]'
+                                        }`}
+                                      >
+                                        {btn.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
 
                     <div className="bg-[#F4F6F8] rounded-xl p-3 overflow-x-auto">
                       <table className="w-full text-xs text-left">
@@ -810,7 +964,9 @@ export function PainelChaveamentoOficial({
                         <tbody className="divide-y divide-slate-200/70 tabular-nums">
                           {calcularClassificacaoXadrez(estrutura as EstruturaXadrez).map((c, idx) => (
                             <tr key={c.id} className="bg-white">
-                              <td className="px-3 py-2 font-bold text-[#0F2540]">{idx + 1}º</td>
+                              <td className="px-3 py-2 font-bold text-[#0F2540]">
+                                {idx === 0 ? '🥇 1º' : idx === 1 ? '🥈 2º' : idx === 2 ? '🥉 3º' : `${idx + 1}º`}
+                              </td>
                               <td className="px-3 py-2 font-semibold text-[#0F2540]">{c.nome}</td>
                               <td className="px-3 py-2 text-slate-500">{c.sigla}</td>
                               <td className="px-3 py-2 text-center text-slate-500">{c.jogos}</td>
