@@ -149,6 +149,14 @@ export function AbaEscolasLote({
     });
   }, [atletasFiltrados]);
 
+  const isAprovadoNaModalidade = (atleta: Atleta, modCodigo: string, modNome: string) => {
+    if (atleta.conferidoPeloCoordenador) return true;
+    const modEntry = atleta.modalidadesInscritas?.find(
+      m => m.modalidadeCodigo === modCodigo || m.modalidadeNome.toLowerCase().includes(modNome.toLowerCase())
+    );
+    return modEntry?.status === 'VALIDADA';
+  };
+
   // Modalidades ativas com seus respectivos atletas ordenados
   const modalidadesComAtletas = useMemo(() => {
     return modalidades
@@ -520,8 +528,8 @@ export function AbaEscolasLote({
 
                         if (atletasNestaMod.length === 0) return null;
 
-                        const todosAprovados = atletasNestaMod.every(a => a.conferidoPeloCoordenador);
-                        const totalAprovados = atletasNestaMod.filter(a => a.conferidoPeloCoordenador).length;
+                        const todosAprovados = atletasNestaMod.every(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome));
+                        const totalAprovados = atletasNestaMod.filter(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome)).length;
 
                         const ordemCat = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
                         const naipes = ['FEMININO', 'MASCULINO'];
@@ -613,8 +621,8 @@ export function AbaEscolasLote({
                             {/* DIVISÃO E AGRUPAMENTO POR CATEGORIA E NAIPE */}
                             <div className="space-y-4">
                               {gruposNestaMod.map((grupo) => {
-                                const grupoTodosAprovados = grupo.atletas.every(a => a.conferidoPeloCoordenador);
-                                const grupoTotalAprovados = grupo.atletas.filter(a => a.conferidoPeloCoordenador).length;
+                                const grupoTodosAprovados = grupo.atletas.every(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome));
+                                const grupoTotalAprovados = grupo.atletas.filter(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome)).length;
 
                                 return (
                                   <div
@@ -750,8 +758,8 @@ export function AbaEscolasLote({
                   /* VISUALIZAÇÃO EM TABELA SEPARADA POR MODALIDADE -> E DEPOIS POR GRUPO & NAIPE */
                   <div className="space-y-6">
                     {modalidadesComAtletas.map(({ modalidade, atletas: atletasDestaMod }) => {
-                      const todosAprovados = atletasDestaMod.every(a => a.conferidoPeloCoordenador);
-                      const totalAprovados = atletasDestaMod.filter(a => a.conferidoPeloCoordenador).length;
+                      const todosAprovados = atletasDestaMod.every(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome));
+                      const totalAprovados = atletasDestaMod.filter(a => isAprovadoNaModalidade(a, modalidade.codigo, modalidade.nome)).length;
 
                       const ordemCat = ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'];
                       const naipes = ['FEMININO', 'MASCULINO'];

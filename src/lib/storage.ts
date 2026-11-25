@@ -1055,15 +1055,20 @@ export class JegdStorage {
         const atl = listAtl.find(a => a.id === atlId);
         if (atl) {
           const mods = atl.modalidadesInscritas || [];
-          if (!mods.some(m => m.modalidadeCodigo === insc.modalidadeCodigo)) {
+          const existingMod = mods.find(m => m.modalidadeCodigo === insc.modalidadeCodigo);
+          if (!existingMod) {
             atl.modalidadesInscritas = [
               ...mods,
               {
                 modalidadeCodigo: insc.modalidadeCodigo,
                 modalidadeNome: insc.modalidadeNome,
-                provas: insc.provasPorAtleta?.[atlId]
+                provas: insc.provasPorAtleta?.[atlId],
+                status: insc.status
               }
             ];
+            atlChanged = true;
+          } else if (existingMod.status !== insc.status) {
+            existingMod.status = insc.status;
             atlChanged = true;
           }
         }

@@ -136,6 +136,7 @@ export interface Atleta {
     modalidadeCodigo: ModalidadeCodigo;
     modalidadeNome: string;
     provas?: string[];
+    status?: string;
   }[];
   conferidoPeloCoordenador?: boolean;
   observacaoCoordenador?: string;

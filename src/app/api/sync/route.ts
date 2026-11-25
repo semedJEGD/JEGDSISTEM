@@ -114,6 +114,7 @@ export async function GET(request: Request) {
         categoria: any;
         sexo: any;
         provas: string[];
+        status: string;
       }>();
       for (const i of inscricoesDoAtleta) {
         const cod = i.modalidade?.codigo || i.modalidadeId;
@@ -126,10 +127,16 @@ export async function GET(request: Request) {
             categoria: i.categoria,
             sexo: i.sexo,
             provas: provasList,
+            status: i.status || 'PENDENTE',
           });
-        } else if (provasList.length > 0) {
-          const merged = Array.from(new Set([...atual.provas, ...provasList]));
-          atual.provas = merged;
+        } else {
+          if (provasList.length > 0) {
+            const merged = Array.from(new Set([...atual.provas, ...provasList]));
+            atual.provas = merged;
+          }
+          if (i.status === 'VALIDADA') {
+            atual.status = 'VALIDADA';
+          }
         }
       }
       const modalidadesDoAtleta = Array.from(modsPorCodigo.values());

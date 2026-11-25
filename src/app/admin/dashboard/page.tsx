@@ -273,6 +273,18 @@ export default function AdminDashboardPage() {
   const toggleConferenciaAtleta = (atleta: Atleta) => {
     const novoStatus = !atleta.conferidoPeloCoordenador;
     JegdStorage.updateAtletaConferencia(atleta.id, novoStatus);
+    const inscsDoAtleta = inscricoes.filter(
+      (i) => i.escolaId === atleta.escolaId && i.atletaIds.includes(atleta.id)
+    );
+    const dataHomologacao = novoStatus ? new Date().toLocaleString('pt-BR') : undefined;
+    inscsDoAtleta.forEach((insc) => {
+      JegdStorage.saveInscricao({
+        ...insc,
+        status: novoStatus ? 'VALIDADA' : 'PENDENTE',
+        motivoRejeicao: undefined,
+        dataHomologacao,
+      });
+    });
     carregarTodosDados();
   };
 
@@ -298,13 +310,46 @@ export default function AdminDashboardPage() {
   const handleAprovarEquipeModalidade = (escola: Escola, modalidade: ModalidadeConfig, atletasDaEquipe: Atleta[]) => {
     const atletaIds = atletasDaEquipe.map((a) => a.id);
     const atletaIdSet = new Set(atletaIds);
-    const inscricoesRelacionadas = inscricoes.filter(
+    let inscricoesRelacionadas = inscricoes.filter(
       (i) =>
         i.escolaId === escola.id &&
         (i.modalidadeCodigo?.toLowerCase() === modalidade.codigo.toLowerCase() ||
           i.modalidadeNome?.toLowerCase().includes(modalidade.nome.toLowerCase())) &&
         i.atletaIds.some((id) => atletaIdSet.has(id))
     );
+
+    // Garante que todos os atletas da modalidade tenham sua inscrição persistida como VALIDADA no Neon
+    const idsCobertos = new Set(inscricoesRelacionadas.flatMap((i) => i.atletaIds));
+    const faltantes = atletasDaEquipe.filter((a) => !idsCobertos.has(a.id));
+    if (faltantes.length > 0) {
+      const porGrupo = new Map<string, Atleta[]>();
+      faltantes.forEach((a) => {
+        const key = `${a.categoriaCalculada || 'INFANTIL'}__${a.sexo}`;
+        if (!porGrupo.has(key)) porGrupo.set(key, []);
+        porGrupo.get(key)!.push(a);
+      });
+      const extras: InscricaoEquipe[] = [];
+      const agoraIso = new Date().toISOString();
+      porGrupo.forEach((lista, key) => {
+        const [cat, sx] = key.split('__');
+        extras.push({
+          id: `insc-${escola.id}-${modalidade.codigo}-${cat}-${sx}`,
+          municipioId: escola.municipioId,
+          escolaId: escola.id,
+          modalidadeCodigo: modalidade.codigo,
+          modalidadeNome: modalidade.nome,
+          categoria: cat as any,
+          sexo: sx as any,
+          atletaIds: lista.map((a) => a.id),
+          comissaoIds: [],
+          status: 'VALIDADA',
+          dataInscricao: agoraIso,
+          createdAt: agoraIso,
+          updatedAt: agoraIso,
+        });
+      });
+      inscricoesRelacionadas = [...inscricoesRelacionadas, ...extras];
+    }
 
     aprovarInscricoesEAtletas(inscricoesRelacionadas, atletaIds);
   };
