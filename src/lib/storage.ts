@@ -383,15 +383,30 @@ export class JegdStorage {
       if (data.inscricoes && Array.isArray(data.inscricoes)) {
         const storedInscData = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
         const storedInscricoes: InscricaoEquipe[] = storedInscData ? JSON.parse(storedInscData) : [];
-        const mergedInscricoes: InscricaoEquipe[] = [...data.inscricoes];
+        const atletasAtuaisRaw = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+        const atletasAtuais: Atleta[] = atletasAtuaisRaw ? JSON.parse(atletasAtuaisRaw) : [];
+        const atletasValidosIds = new Set(atletasAtuais.map(a => a.id));
+        const deletedRawInsc = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
+        const deletedIdsInsc: string[] = deletedRawInsc ? JSON.parse(deletedRawInsc) : [];
+
+        const limparAtletasEquipe = (ids?: string[]) =>
+          Array.isArray(ids)
+            ? ids.filter(aId => !deletedIdsInsc.includes(aId) && (atletasValidosIds.size === 0 || atletasValidosIds.has(aId)))
+            : [];
+
+        const mergedInscricoes: InscricaoEquipe[] = (data.inscricoes as InscricaoEquipe[])
+          .map((i: InscricaoEquipe) => ({ ...i, atletaIds: limparAtletasEquipe(i.atletaIds) }))
+          .filter((i: InscricaoEquipe) => i.atletaIds.length > 0);
 
         for (const localInsc of storedInscricoes) {
+          const localIdsLimpos = limparAtletasEquipe(localInsc.atletaIds);
+          if (localIdsLimpos.length === 0) continue;
+
           const idx = mergedInscricoes.findIndex(i => i.id === localInsc.id);
           if (idx >= 0) {
             const cloudIds = mergedInscricoes[idx].atletaIds || [];
-            const localIds = localInsc.atletaIds || [];
-            if (localIds.length > cloudIds.length) {
-              mergedInscricoes[idx].atletaIds = Array.from(new Set([...cloudIds, ...localIds]));
+            if (localIdsLimpos.length > cloudIds.length) {
+              mergedInscricoes[idx].atletaIds = Array.from(new Set([...cloudIds, ...localIdsLimpos]));
             }
             const localTime = localInsc.updatedAt ? new Date(localInsc.updatedAt).getTime() : 0;
             const cloudTime = mergedInscricoes[idx].updatedAt ? new Date(mergedInscricoes[idx].updatedAt).getTime() : 0;
@@ -403,8 +418,9 @@ export class JegdStorage {
               mergedInscricoes[idx].updatedAt = localInsc.updatedAt;
             }
           } else {
-            mergedInscricoes.push(localInsc);
-            JegdCloudSync.syncInscricao(localInsc).catch(() => {});
+            const inscLimpa = { ...localInsc, atletaIds: localIdsLimpos };
+            mergedInscricoes.push(inscLimpa);
+            JegdCloudSync.syncInscricao(inscLimpa).catch(() => {});
           }
         }
         localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(mergedInscricoes));
@@ -997,8 +1013,9 @@ export class JegdStorage {
         }
         return insc;
       });
-      if (mudouInsc) {
-        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
+      const semVazias = todasInscricoes.filter(i => Array.isArray(i.atletaIds) && i.atletaIds.length > 0);
+      if (mudouInsc || semVazias.length !== todasInscricoes.length) {
+        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(semVazias));
       }
     } catch (e) {
       console.error('Erro ao remover atleta das equipes:', e);
@@ -1061,6 +1078,7 @@ export class JegdStorage {
     this.init();
     const data = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
     let list: InscricaoEquipe[] = data ? JSON.parse(data) : [];
+    list = list.filter(i => Array.isArray(i.atletaIds) && i.atletaIds.length > 0);
     
     if (escolaId) {
       return list.filter(i => i.escolaId === escolaId);
