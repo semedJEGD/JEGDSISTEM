@@ -22,7 +22,9 @@ import {
   Swords,
   Radio,
   ExternalLink,
+  Printer,
 } from 'lucide-react';
+import { gerarPdfChaveamentoVisual } from '@/lib/pdf/tabela-jogos';
 import { Escola } from '@/types/jegd';
 import {
   ArtilhariaEventoItem,
@@ -1364,6 +1366,15 @@ export function ChaveamentoInterativo({
           </div>
 
           <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => gerarPdfChaveamentoVisual(chaveamento, partidasOrdenadas)}
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-emerald-50 border border-emerald-200 text-[#087A5B] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="Baixar PDF no modelo Chaveamento Visual (Paisagem)"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>PDF Chave</span>
+            </button>
             <button
               type="button"
               onClick={() => setAbrirReagendarLote((v) => !v)}

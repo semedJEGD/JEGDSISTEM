@@ -305,3 +305,416 @@ export function gerarPdfChaveamentoOficial(
     `tabela-oficial-${chaveamento.modalidadeCodigo}-${chaveamento.categoria}-${chaveamento.sexo}.pdf`
   );
 }
+
+// ============================================================
+// MODELO 2: PDF CHAVEAMENTO VISUAL EM ÁRVORE (PAISAGEM A4)
+// ============================================================
+
+function iniciaisEquipePdf(sigla?: string | null): string {
+  if (!sigla) return '?';
+  const clean = sigla.replace(/[^A-Za-zÀ-ÿ0-9\s]/g, '').trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return clean.slice(0, 2).toUpperCase() || '?';
+}
+
+function isTbdPdf(id?: string | null): boolean {
+  return !id || id.startsWith('TBD_');
+}
+
+export function gerarPdfChaveamentoVisual(
+  chaveamento: ChaveamentoEventoItem,
+  partidas: PartidaEventoItem[]
+): void {
+  const doc = criarDocumentoA4('landscape');
+  const pageWidth = doc.internal.pageSize.getWidth(); // 297mm
+  const pageHeight = doc.internal.pageSize.getHeight(); // 210mm
+  const margin = 12;
+
+  const partidasOrd = [...partidas].sort((a, b) => (a.numeroJogo || 0) - (b.numeroJogo || 0));
+  const equipesSet = new Set<string>();
+  partidasOrd.forEach((p) => {
+    if (!isTbdPdf(p.escolaAId)) equipesSet.add(p.escolaAId);
+    if (!isTbdPdf(p.escolaBId)) equipesSet.add(p.escolaBId);
+  });
+  const totalEquipes = equipesSet.size;
+  const totalPartidas = partidasOrd.length;
+  const concluidas = partidasOrd.filter((p) => p.status === 'ENCERRADO' || p.status === 'WO').length;
+  const pendentes = totalPartidas - concluidas;
+
+  const ORDEM_FASES = ['OITAVAS', 'QUARTAS', 'SEMIFINAL', 'FINAL'];
+  const fasesMataMata = ORDEM_FASES.map((fase) => ({
+    fase,
+    label: fase === 'FINAL' ? 'GRANDE FINAL' : (FASES_LABEL[fase] || fase).toUpperCase(),
+    jogos: partidasOrd.filter((p) => p.fase === fase),
+  })).filter((f) => f.jogos.length > 0);
+
+  const jogoTerceiro = partidasOrd.find((p) => p.fase === 'TERCEIRO_LUGAR') || null;
+  const jogosGrupos = partidasOrd.filter((p) => p.fase === 'GRUPOS');
+  const faseAtualLabel =
+    fasesMataMata[0]?.label || (jogosGrupos.length > 0 ? 'FASE DE GRUPOS' : 'CHAVEAMENTO OFICIAL');
+
+  const sexoLabel = chaveamento.sexo === 'MASCULINO' ? 'Masculino' : 'Feminino';
+
+  const desenharCabecalho = (subtituloExtra?: string) => {
+    // Card cabeçalho (estilo limpo igual à interface)
+    doc.setFillColor(244, 246, 248);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, 10, pageWidth - margin * 2, 22, 3, 3, 'FD');
+
+    // Tag superior verde esmeralda
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 168, 120);
+    doc.text(
+      `JEGDS 2026 • ${subtituloExtra || faseAtualLabel} • ${chaveamento.categoria} · ${sexoLabel}`,
+      margin + 6,
+      17
+    );
+
+    // Título principal
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(15, 37, 64);
+    doc.text(chaveamento.modalidadeNome, margin + 6, 26.5);
+
+    // Métricas à direita
+    const metricas = [
+      { label: 'EQUIPES', valor: String(totalEquipes), cor: [15, 37, 64] as [number, number, number] },
+      { label: 'PARTIDAS', valor: String(totalPartidas), cor: [15, 37, 64] as [number, number, number] },
+      { label: 'CONCLUÍDAS', valor: String(concluidas), cor: [0, 168, 120] as [number, number, number] },
+      { label: 'PENDENTES', valor: String(pendentes), cor: [71, 85, 105] as [number, number, number] },
+    ];
+    let mx = pageWidth - margin - 108;
+    metricas.forEach((m, idx) => {
+      if (idx > 0) {
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.25);
+        doc.line(mx - 4, 15, mx - 4, 27);
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(m.label, mx, 17.5);
+      doc.setFontSize(12);
+      doc.setTextColor(...m.cor);
+      doc.text(m.valor, mx, 26);
+      mx += 27;
+    });
+  };
+
+  const desenharRodape = () => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text(
+      'JEGDS 2026 • Secretaria Municipal de Educação (SEMED) • Chaveamento Oficial Visual',
+      margin,
+      pageHeight - 6
+    );
+    const emitido = new Date().toLocaleString('pt-BR');
+    doc.text(
+      `Seed: ${chaveamento.seed} • Emitido em ${emitido}`,
+      pageWidth - margin,
+      pageHeight - 6,
+      { align: 'right' }
+    );
+  };
+
+  const desenharCardPartida = (
+    p: PartidaEventoItem,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    isFinal = false
+  ) => {
+    const encerrado = p.status === 'ENCERRADO' || p.status === 'WO';
+    const tbdA = isTbdPdf(p.escolaAId);
+    const tbdB = isTbdPdf(p.escolaBId);
+    const venceuA =
+      encerrado && (p.vencedorEscolaId === p.escolaAId || (!p.vencedorEscolaId && p.placarA > p.placarB));
+    const venceuB =
+      encerrado && (p.vencedorEscolaId === p.escolaBId || (!p.vencedorEscolaId && p.placarB > p.placarA));
+
+    // Card branco com borda dourada na Final
+    doc.setFillColor(255, 255, 255);
+    if (isFinal) {
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(0.6);
+    } else {
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.3);
+    }
+    doc.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
+
+    // Cabeçalho do card: J1 · 28/11 08:30 | Status
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(148, 163, 184);
+    const dataCurta = formatarDataBR(p.dataEvento).slice(0, 5);
+    const localCurto = p.local ? ` · ${p.local.slice(0, 12)}` : '';
+    doc.text(`J${p.numeroJogo || '-'} · ${dataCurta} ${p.horario}${localCurto}`, x + 3, y + 5);
+
+    const statusTxt =
+      p.status === 'ENCERRADO'
+        ? 'Encerrada'
+        : p.status === 'WO'
+        ? 'W.O.'
+        : p.status === 'AO_VIVO'
+        ? 'Ao Vivo'
+        : 'Agendada';
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(
+      p.status === 'AO_VIVO' ? 0 : encerrado ? 15 : 100,
+      p.status === 'AO_VIVO' ? 168 : encerrado ? 37 : 116,
+      p.status === 'AO_VIVO' ? 120 : encerrado ? 64 : 139
+    );
+    doc.text(statusTxt, x + w - 3, y + 5, { align: 'right' });
+
+    // Duas linhas de equipe
+    const rowH = Math.min(9.5, (h - 10) / 2);
+    const drawTeamRow = (
+      ry: number,
+      nome: string,
+      placar: number,
+      tbd: boolean,
+      venceu: boolean,
+      perdeu: boolean
+    ) => {
+      if (venceu) {
+        doc.setFillColor(236, 253, 245);
+      } else {
+        doc.setFillColor(248, 250, 252);
+      }
+      doc.roundedRect(x + 2.5, ry, w - 5, rowH, 1.5, 1.5, 'F');
+
+      // Barra lateral colorida
+      if (venceu) doc.setFillColor(0, 168, 120);
+      else if (perdeu) doc.setFillColor(251, 113, 133);
+      else doc.setFillColor(203, 213, 225);
+      doc.rect(x + 2.5, ry, 1.1, rowH, 'F');
+
+      let textX = x + 5.5;
+      if (!tbd) {
+        const cr = 3.1;
+        const cx = x + 7.5;
+        const cy = ry + rowH / 2;
+        if (venceu) doc.setFillColor(0, 168, 120);
+        else doc.setFillColor(226, 232, 240);
+        doc.circle(cx, cy, cr, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.5);
+        if (venceu) doc.setTextColor(255, 255, 255);
+        else doc.setTextColor(15, 37, 64);
+        doc.text(iniciaisEquipePdf(nome), cx, cy + 1.8, { align: 'center' });
+        textX = x + 12.2;
+      }
+
+      doc.setFont('helvetica', venceu ? 'bold' : 'normal');
+      doc.setFontSize(7.5);
+      if (tbd || perdeu) doc.setTextColor(148, 163, 184);
+      else doc.setTextColor(15, 37, 64);
+      const maxChars = Math.max(14, Math.floor((w - 22) / 1.85));
+      doc.text(nome.slice(0, maxChars), textX, ry + rowH / 2 + 2.2);
+
+      // Placar à direita
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(venceu ? 0 : 15, venceu ? 168 : 37, venceu ? 120 : 64);
+      const placarStr = encerrado || p.status === 'AO_VIVO' ? String(placar) : '—';
+      doc.text(placarStr, x + w - 4.5, ry + rowH / 2 + 2.4, { align: 'right' });
+    };
+
+    const row1Y = y + 7.5;
+    const row2Y = row1Y + rowH + 1.8;
+    drawTeamRow(row1Y, p.escolaASigla || p.escolaANome, p.placarA, tbdA, venceuA, venceuB);
+    drawTeamRow(row2Y, p.escolaBSigla || p.escolaBNome, p.placarB, tbdB, venceuB, venceuA);
+
+    // Parciais ou pênaltis se houver
+    if (encerrado && p.detalhesPlacar) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(p.detalhesPlacar.slice(0, 32), x + w / 2, y + h - 1.5, { align: 'center' });
+    }
+  };
+
+  // ============================================================
+  // PÁGINA 1: ÁRVORE VISUAL DO CHAVEAMENTO (OU GRADE DE JOGOS)
+  // ============================================================
+  desenharCabecalho();
+
+  const canvasX = margin;
+  const canvasY = 36;
+  const canvasW = pageWidth - margin * 2;
+  const canvasH = pageHeight - canvasY - 12;
+
+  doc.setFillColor(244, 246, 248);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(canvasX, canvasY, canvasW, canvasH, 3, 3, 'FD');
+
+  if (fasesMataMata.length > 0) {
+    const numCols = fasesMataMata.length;
+    const padX = 8;
+    const padTop = 14;
+    const padBottom = 8;
+    const gapX = numCols <= 3 ? 12 : 8;
+    const colW = (canvasW - padX * 2 - gapX * (numCols - 1)) / numCols;
+    const availH = canvasH - padTop - padBottom;
+
+    // Guardar posições centrais dos cards de cada coluna para desenhar conectores
+    const cardCentros: Array<Array<{ rightX: number; leftX: number; midY: number }>> = [];
+
+    fasesMataMata.forEach((col, colIdx) => {
+      const colX = canvasX + padX + colIdx * (colW + gapX);
+      const isFinalCol = col.fase === 'FINAL';
+
+      // Cabeçalho da coluna
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(15, 37, 64);
+      doc.text(col.label, colX, canvasY + 8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`${col.jogos.length} jogo(s)`, colX + colW, canvasY + 8.5, { align: 'right' });
+
+      const count = col.jogos.length;
+      const areaColH = isFinalCol && jogoTerceiro ? availH * 0.56 : availH;
+      const cardH = Math.min(34, Math.max(24, (areaColH - (count - 1) * 6) / count));
+      const slotH = areaColH / count;
+
+      const centrosCol: Array<{ rightX: number; leftX: number; midY: number }> = [];
+
+      col.jogos.forEach((jogo, jIdx) => {
+        const cardY = canvasY + padTop + jIdx * slotH + (slotH - cardH) / 2;
+        desenharCardPartida(jogo, colX, cardY, colW, cardH, isFinalCol);
+        centrosCol.push({
+          leftX: colX,
+          rightX: colX + colW,
+          midY: cardY + cardH / 2,
+        });
+      });
+
+      cardCentros.push(centrosCol);
+
+      // Disputa de 3º lugar abaixo da Grande Final
+      if (isFinalCol && jogoTerceiro) {
+        const sepY = canvasY + padTop + areaColH + 4;
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.25);
+        doc.line(colX, sepY, colX + colW, sepY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text('DISPUTA DE 3º LUGAR', colX, sepY + 6);
+
+        const card3Y = sepY + 9;
+        const card3H = Math.min(32, canvasY + canvasH - padBottom - card3Y);
+        desenharCardPartida(jogoTerceiro, colX, card3Y, colW, card3H, false);
+      }
+    });
+
+    // Desenhar linhas conectoras ortogonais entre rodadas
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.45);
+    for (let c = 0; c < cardCentros.length - 1; c++) {
+      const atual = cardCentros[c];
+      const prox = cardCentros[c + 1];
+      if (atual.length === 0 || prox.length === 0) continue;
+
+      const midX = atual[0].rightX + gapX / 2;
+
+      if (atual.length === prox.length * 2) {
+        for (let i = 0; i < prox.length; i++) {
+          const topCard = atual[i * 2];
+          const botCard = atual[i * 2 + 1];
+          const target = prox[i];
+          doc.line(topCard.rightX, topCard.midY, midX, topCard.midY);
+          doc.line(botCard.rightX, botCard.midY, midX, botCard.midY);
+          doc.line(midX, topCard.midY, midX, botCard.midY);
+          doc.line(midX, target.midY, target.leftX, target.midY);
+        }
+      } else {
+        atual.forEach((orig, idx) => {
+          const target = prox[Math.min(idx, prox.length - 1)];
+          doc.line(orig.rightX, orig.midY, midX, orig.midY);
+          doc.line(midX, orig.midY, midX, target.midY);
+          doc.line(midX, target.midY, target.leftX, target.midY);
+        });
+      }
+    }
+  } else {
+    // Fallback para Pontos Corridos (grade visual de cards 3 por linha)
+    const cols = 3;
+    const padX = 8;
+    const gap = 6;
+    const cardW = (canvasW - padX * 2 - gap * (cols - 1)) / cols;
+    const cardH = 30;
+    let cx = canvasX + padX;
+    let cy = canvasY + 10;
+
+    partidasOrd.slice(0, 12).forEach((p, idx) => {
+      desenharCardPartida(p, cx, cy, cardW, cardH, false);
+      if ((idx + 1) % cols === 0) {
+        cx = canvasX + padX;
+        cy += cardH + 6;
+      } else {
+        cx += cardW + gap;
+      }
+    });
+  }
+
+  desenharRodape();
+
+  // ============================================================
+  // PÁGINA 2 (SE HOUVER FASE DE GRUPOS): CONFRONTOS DOS GRUPOS
+  // ============================================================
+  if (fasesMataMata.length > 0 && jogosGrupos.length > 0) {
+    doc.addPage('a4', 'landscape');
+    desenharCabecalho('FASE DE GRUPOS');
+
+    doc.setFillColor(244, 246, 248);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(canvasX, canvasY, canvasW, canvasH, 3, 3, 'FD');
+
+    const cols = 3;
+    const padX = 8;
+    const gap = 5.5;
+    const cardW = (canvasW - padX * 2 - gap * (cols - 1)) / cols;
+    const cardH = 29;
+    let cx = canvasX + padX;
+    let cy = canvasY + 9;
+
+    jogosGrupos.forEach((p, idx) => {
+      if (cy + cardH > canvasY + canvasH - 4) {
+        desenharRodape();
+        doc.addPage('a4', 'landscape');
+        desenharCabecalho('FASE DE GRUPOS (CONT.)');
+        doc.setFillColor(244, 246, 248);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(canvasX, canvasY, canvasW, canvasH, 3, 3, 'FD');
+        cx = canvasX + padX;
+        cy = canvasY + 9;
+      }
+      desenharCardPartida(p, cx, cy, cardW, cardH, false);
+      if ((idx + 1) % cols === 0) {
+        cx = canvasX + padX;
+        cy += cardH + 5.5;
+      } else {
+        cx += cardW + gap;
+      }
+    });
+
+    desenharRodape();
+  }
+
+  abrirPdfNovaGuia(
+    doc,
+    `chaveamento-visual-${chaveamento.modalidadeCodigo}-${chaveamento.categoria}-${chaveamento.sexo}.pdf`
+  );
+}

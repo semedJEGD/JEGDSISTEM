@@ -39,7 +39,7 @@ import {
   EstruturaXadrez,
   FinalizacaoCampeonato,
 } from '@/lib/chaveamento-service';
-import { gerarPdfChaveamentoOficial } from '@/lib/pdf/tabela-jogos';
+import { gerarPdfChaveamentoOficial, gerarPdfChaveamentoVisual } from '@/lib/pdf/tabela-jogos';
 import { JegdStorage } from '@/lib/storage';
 import { ChaveamentoInterativo } from './ChaveamentoInterativo';
 
@@ -734,10 +734,23 @@ export function PainelChaveamentoOficial({
                       type="button"
                       onClick={() => gerarPdfChaveamentoOficial(ch, partidasDoChav)}
                       className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                      title="Gerar PDF em formato Tabela Oficial"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                      <span>PDF</span>
+                      <span>PDF Tabela</span>
                     </button>
+
+                    {ch.formato !== 'BALIZAMENTO_ATLETISMO' && ch.formato !== 'SUICO_XADREZ' && (
+                      <button
+                        type="button"
+                        onClick={() => gerarPdfChaveamentoVisual(ch, partidasDoChav)}
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-[#00A878] border border-emerald-200 text-[#087A5B] hover:text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Gerar PDF em formato Chaveamento Visual (Paisagem)"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>PDF Chave</span>
+                      </button>
+                    )}
 
                     {confirmandoExclusaoId === ch.id ? (
                       <div className="flex items-center gap-1 bg-rose-50 border border-rose-200 rounded-xl px-2.5 py-1">
