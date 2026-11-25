@@ -191,4 +191,63 @@ const checkSemDocMesmo = JegdsRulesService.compararDuplicidade(
 assert(checkSemDocMesmo.duplicado && checkSemDocMesmo.motivo === 'NOME_DATA_NASC', 'Deve detectar duplicidade de aluno sem documento por Nome + Data Nasc');
 console.log('✅ SUCESSO: Aluno sem documentos é protegido contra duplicidade por Nome Completo e Data de Nascimento.');
 
+console.log('\n5. Testes de Regressão — Código do Atleta Automático (Conflito de Matrícula entre Escolas):');
+const atletaOutraEscolaCodigo: Atleta = {
+  id: 'atl-cintia-0589',
+  escolaId: 'esc-anisio',
+  nomeCompleto: 'CINTIA DA SILVA APRIGIO',
+  dataNascimento: '2014-03-10',
+  sexo: 'FEMININO',
+  semDocumento: true,
+  documentoTipo: 'SEM_DOCUMENTO',
+  documentoNumero: 'SEM DOCUMENTO',
+  matricula: 'JEGDS-2026-0589',
+  crachaToken: 'JEGDS-2026-0589',
+  serieTurma: '7º Ano (Fundamental)',
+  telefoneContato: '(99) 98800-3333',
+  consentimentoResponsavel: true,
+  categoriaCalculada: 'INFANTIL',
+  ativo: true,
+  documentos: {},
+  createdAt: new Date().toISOString()
+};
+JegdStorage.saveAtleta(atletaOutraEscolaCodigo);
+
+// Novo aluno em outra escola com mesmo Código do Atleta automático (colisão por sync) NÃO pode acusar conflito de instituição
+const diagCodigoAuto = JegdStorage.verificarDuplicidadeAtleta({
+  nomeCompleto: 'WYARA LARISSA DA SILVA CONCEIÇÃO',
+  dataNascimento: '2016-02-05',
+  documentoNumero: 'SEM DOCUMENTO',
+  matricula: 'JEGDS-2026-0589',
+  semDocumento: true,
+  escolaIdAtual: 'esc-aldenora'
+});
+assert.strictEqual(diagCodigoAuto.duplicado, false, 'Código automático do sistema (JEGDS-2026-0589) nunca deve gerar falso conflito de instituição');
+console.log('✅ SUCESSO: Colisão de Código do Atleta automático (JEGDS-2026-0589) não bloqueia cadastro de outro aluno.');
+
+// Ao salvar novo aluno com código automático já ocupado, saveAtleta deve regenerar automaticamente o próximo código livre
+const novoAtletaColisao: Atleta = {
+  id: 'atl-wyara-novo',
+  escolaId: 'esc-aldenora',
+  nomeCompleto: 'WYARA LARISSA DA SILVA CONCEIÇÃO',
+  dataNascimento: '2016-02-05',
+  sexo: 'FEMININO',
+  semDocumento: true,
+  documentoTipo: 'SEM_DOCUMENTO',
+  documentoNumero: 'SEM DOCUMENTO',
+  matricula: 'JEGDS-2026-0589',
+  crachaToken: 'JEGDS-2026-0589',
+  serieTurma: '7º Ano (Fundamental)',
+  telefoneContato: '(99) 98800-4444',
+  consentimentoResponsavel: true,
+  categoriaCalculada: 'MIRIM',
+  ativo: true,
+  documentos: {},
+  createdAt: new Date().toISOString()
+};
+JegdStorage.saveAtleta(novoAtletaColisao);
+const wyaraSalva = JegdStorage.getAtletas('esc-aldenora').find(a => a.id === 'atl-wyara-novo');
+assert(wyaraSalva && wyaraSalva.matricula !== 'JEGDS-2026-0589', 'saveAtleta deve regenerar código quando já ocupado por outro atleta');
+console.log(`✅ SUCESSO: Código colidido regenerado automaticamente para ${wyaraSalva?.matricula}.`);
+
 console.log('\n🎉 TODOS OS TESTES DE AUDITORIA DE DUPLICIDADE E MULTI-INSCRIÇÃO FORAM APROVADOS COM 100% DE SUCESSO!\n');

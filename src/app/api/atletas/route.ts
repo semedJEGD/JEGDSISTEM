@@ -100,82 +100,115 @@ export async function POST(request: Request) {
     const docNumeroFinal = isSemDoc ? (body.documentoNumero || 'SEM DOCUMENTO') : (body.documentoNumero || 'SEM DOCUMENTO');
 
     const atletaId = body.id || `atl-${Date.now()}`;
-    let crachaTokenFinal: string | undefined = body.crachaToken || body.matricula || undefined;
+    const codigoOriginal = body.crachaToken || body.matricula || undefined;
+    let crachaTokenFinal: string | undefined = codigoOriginal;
     let matriculaFinal: string | undefined = body.matricula || body.crachaToken || undefined;
 
-    // Evita falha HTTP 500 por colisão de crachaToken (@unique) quando dois navegadores
-    // geram o mesmo código sequencial offline/concorrentemente.
-    if (crachaTokenFinal) {
-      const conflito = await prisma.atleta.findFirst({
+    const gerarProximoCodigoLivre = async (baseCode: string) => {
+      const prefixo = baseCode.replace(/-\d+$/, '') || 'JEGDS-2026';
+      const existentes = await prisma.atleta.findMany({
         where: {
-          crachaToken: crachaTokenFinal,
-          NOT: { id: atletaId },
+          OR: [
+            { crachaToken: { startsWith: `${prefixo}-` } },
+            { matricula: { startsWith: `${prefixo}-` } },
+          ],
         },
-        select: { id: true },
+        select: { crachaToken: true, matricula: true },
       });
-
-      if (conflito) {
-        const prefixo = crachaTokenFinal.replace(/-\d+$/, '') || 'JEGDS-2026';
-        const existentes = await prisma.atleta.findMany({
-          where: { crachaToken: { startsWith: `${prefixo}-` } },
-          select: { crachaToken: true },
-        });
-        let maxSeq = 0;
-        for (const row of existentes) {
-          const m = row.crachaToken?.match(/(\d{4,})$/);
+      let maxSeq = 0;
+      for (const row of existentes) {
+        for (const val of [row.crachaToken, row.matricula]) {
+          const m = val?.match(/(\d{4,})$/);
           if (m) {
             const n = parseInt(m[1], 10);
             if (!isNaN(n) && n > maxSeq) maxSeq = n;
           }
         }
-        const novoCodigo = `${prefixo}-${String(maxSeq + 1).padStart(4, '0')}`;
-        crachaTokenFinal = novoCodigo;
-        if (!matriculaFinal || matriculaFinal === body.crachaToken) {
-          matriculaFinal = novoCodigo;
+      }
+      return `${prefixo}-${String(maxSeq + 1).padStart(4, '0')}`;
+    };
+
+    // Evita falha HTTP 500 por colisão de crachaToken (@unique) ou matrícula duplicada quando dois
+    // navegadores/escolas geram o mesmo código sequencial offline ou concorrentemente.
+    let atleta: any = null;
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      if (crachaTokenFinal) {
+        const conflito = await prisma.atleta.findFirst({
+          where: {
+            OR: [
+              { crachaToken: crachaTokenFinal },
+              { matricula: crachaTokenFinal },
+            ],
+            NOT: { id: atletaId },
+          },
+          select: { id: true },
+        });
+
+        if (conflito) {
+          const novoCodigo = await gerarProximoCodigoLivre(crachaTokenFinal);
+          const eraMesmoCodigo = !matriculaFinal || matriculaFinal === crachaTokenFinal || matriculaFinal === codigoOriginal;
+          crachaTokenFinal = novoCodigo;
+          if (eraMesmoCodigo) {
+            matriculaFinal = novoCodigo;
+          }
         }
       }
-    }
 
-    const atleta = await prisma.atleta.upsert({
-      where: { id: atletaId },
-      update: {
-        nomeCompleto,
-        dataNascimento,
-        sexo: body.sexo,
-        semDocumento: isSemDoc,
-        documentoTipo: docTipoFinal,
-        documentoNumero: docNumeroFinal,
-        crachaToken: crachaTokenFinal,
-        matricula: matriculaFinal,
-        turma: body.serieTurma || body.turma,
-        tipoSanguineo: body.tipoSanguineo,
-        fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
-        documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
-        escolaId: body.escolaId,
-        municipioId: municipioId || undefined,
-        categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
-        consentimentoResponsavel: body.consentimentoResponsavel ?? true,
-      },
-      create: {
-        id: atletaId,
-        nomeCompleto,
-        dataNascimento,
-        sexo: body.sexo,
-        semDocumento: isSemDoc,
-        documentoTipo: docTipoFinal,
-        documentoNumero: docNumeroFinal,
-        crachaToken: crachaTokenFinal,
-        matricula: matriculaFinal,
-        turma: body.serieTurma || body.turma,
-        tipoSanguineo: body.tipoSanguineo,
-        fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
-        documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
-        escolaId: body.escolaId,
-        municipioId: municipioId || undefined,
-        categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
-        consentimentoResponsavel: body.consentimentoResponsavel ?? true,
+      try {
+        atleta = await prisma.atleta.upsert({
+          where: { id: atletaId },
+          update: {
+            nomeCompleto,
+            dataNascimento,
+            sexo: body.sexo,
+            semDocumento: isSemDoc,
+            documentoTipo: docTipoFinal,
+            documentoNumero: docNumeroFinal,
+            crachaToken: crachaTokenFinal,
+            matricula: matriculaFinal,
+            turma: body.serieTurma || body.turma,
+            tipoSanguineo: body.tipoSanguineo,
+            fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
+            documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
+            escolaId: body.escolaId,
+            municipioId: municipioId || undefined,
+            categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
+            consentimentoResponsavel: body.consentimentoResponsavel ?? true,
+          },
+          create: {
+            id: atletaId,
+            nomeCompleto,
+            dataNascimento,
+            sexo: body.sexo,
+            semDocumento: isSemDoc,
+            documentoTipo: docTipoFinal,
+            documentoNumero: docNumeroFinal,
+            crachaToken: crachaTokenFinal,
+            matricula: matriculaFinal,
+            turma: body.serieTurma || body.turma,
+            tipoSanguineo: body.tipoSanguineo,
+            fotoUrl: body.documentos?.foto3x4 || body.fotoUrl,
+            documentoUrl: body.documentos?.documentoIdentidade || body.documentoUrl,
+            escolaId: body.escolaId,
+            municipioId: municipioId || undefined,
+            categoria: body.categoriaCalculada || body.categoria || 'INFANTIL',
+            consentimentoResponsavel: body.consentimentoResponsavel ?? true,
+          }
+        });
+        break;
+      } catch (err: any) {
+        if (err?.code === 'P2002' && crachaTokenFinal && tentativa < 4) {
+          const novoCodigo = await gerarProximoCodigoLivre(crachaTokenFinal);
+          const eraMesmoCodigo = !matriculaFinal || matriculaFinal === crachaTokenFinal || matriculaFinal === codigoOriginal;
+          crachaTokenFinal = novoCodigo;
+          if (eraMesmoCodigo) {
+            matriculaFinal = novoCodigo;
+          }
+          continue;
+        }
+        throw err;
       }
-    });
+    }
 
     // Sincroniza as modalidades em que o atleta foi inscrito
     if (Array.isArray(body.modalidadesInscritas)) {

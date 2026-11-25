@@ -424,10 +424,21 @@ export class JegdsRulesService {
   }
 
   /**
+   * Identifica se o valor de matrícula é um Código de Atleta gerado automaticamente pelo sistema
+   * (ex: JEGDS-2026-0589, JEGD-2026-0001, MAT-2026-001). Códigos automáticos não representam
+   * identidade pessoal do aluno e nunca devem acusar duplicidade entre escolas.
+   */
+  public static isCodigoSistema(codigo?: string): boolean {
+    if (!codigo) return false;
+    const trimmed = codigo.trim().toUpperCase();
+    return /^(?:[A-Z]{2,10}-\d{4}-\d{3,}|MAT-\d+)$/.test(trimmed);
+  }
+
+  /**
    * Avalia duplicidade de cadastro de estudante entre atletas cadastrados
    */
   public static compararDuplicidade(
-    novo: { nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; semDocumento?: boolean },
+    novo: { nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; semDocumento?: boolean; escolaId?: string },
     existente: { id: string; nomeCompleto: string; dataNascimento: string; documentoNumero?: string; matricula?: string; escolaId: string; semDocumento?: boolean }
   ): { duplicado: boolean; motivo?: 'DOCUMENTO' | 'NOME_DATA_NASC' | 'MATRICULA'; descricao?: string } {
     const isDocSemDoc = (doc?: string, semDoc?: boolean) => {
@@ -475,10 +486,19 @@ export class JegdsRulesService {
       };
     }
 
-    // 3. Coincidência por Matrícula na mesma escola
+    // 3. Coincidência por Matrícula escolar manual (somente na mesma escola e ignorando código automático do sistema)
+    const mesmaEscola = Boolean(novo.escolaId && existente.escolaId && novo.escolaId === existente.escolaId);
     const matNovo = this.normalizarTexto(novo.matricula || '');
     const matExistente = this.normalizarTexto(existente.matricula || '');
-    if (matNovo && matExistente && matNovo.length >= 3 && matNovo === matExistente) {
+    if (
+      mesmaEscola &&
+      !this.isCodigoSistema(novo.matricula) &&
+      !this.isCodigoSistema(existente.matricula) &&
+      matNovo &&
+      matExistente &&
+      matNovo.length >= 3 &&
+      matNovo === matExistente
+    ) {
       return {
         duplicado: true,
         motivo: 'MATRICULA',

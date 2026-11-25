@@ -812,13 +812,24 @@ export class JegdStorage {
     if (!this.isClient()) return { ok: false, atleta, error: 'Ambiente sem navegador' };
     const curMun = this.getCurrentMunicipio();
 
+    const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
+    const list: Atleta[] = data ? JSON.parse(data) : [];
+
     // Código de Inscrição Único Sequencial
-    const codigoInscricao = atleta.matricula && atleta.matricula.trim() !== '' && !atleta.matricula.startsWith('MAT-')
+    let codigoInscricao = atleta.matricula && atleta.matricula.trim() !== '' && !atleta.matricula.startsWith('MAT-')
       ? atleta.matricula
       : this.gerarProximoCodigoInscricao(atleta.municipioId || curMun.id);
 
+    // Se o código já pertence a outro atleta (ex: outra escola cadastrou simultaneamente), gera o próximo livre
+    const codigoEmUso = list.some(
+      a => a.id !== atleta.id && (a.matricula === codigoInscricao || a.crachaToken === codigoInscricao)
+    );
+    if (codigoEmUso) {
+      codigoInscricao = this.gerarProximoCodigoInscricao(atleta.municipioId || curMun.id);
+    }
+
     // O código do crachá é exatamente o mesmo código de inscrição do aluno
-    const crachaToken = atleta.crachaToken && atleta.crachaToken.trim() !== ''
+    const crachaToken = !codigoEmUso && atleta.crachaToken && atleta.crachaToken.trim() !== ''
       ? atleta.crachaToken
       : codigoInscricao;
 
@@ -829,8 +840,6 @@ export class JegdStorage {
       crachaToken
     };
 
-    const data = localStorage.getItem(STORAGE_KEYS.ATLETAS);
-    const list: Atleta[] = data ? JSON.parse(data) : [];
     const idx = list.findIndex(a => a.id === atletaToSave.id);
     if (idx >= 0) list[idx] = atletaToSave;
     else list.unshift(atletaToSave);
@@ -895,7 +904,8 @@ export class JegdStorage {
           dataNascimento: params.dataNascimento,
           documentoNumero: params.documentoNumero,
           matricula: params.matricula,
-          semDocumento: params.semDocumento
+          semDocumento: params.semDocumento,
+          escolaId: params.escolaIdAtual
         },
         atl
       );
