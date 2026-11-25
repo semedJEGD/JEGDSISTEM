@@ -137,6 +137,7 @@ export default function EscolaInscricoesPage() {
     switch (modCodigo) {
       case 'queimada':
       case 'tenis_mesa':
+      case 'xadrez':
         return {
           etapa: 1,
           etapaNome: '1ª ETAPA OFICIAL',
@@ -156,7 +157,6 @@ export default function EscolaInscricoesPage() {
           badge: 'bg-cyan-600 text-white'
         };
       case 'futsal':
-      case 'xadrez':
       case 'futebol_campo':
       case 'voleibol':
       default:

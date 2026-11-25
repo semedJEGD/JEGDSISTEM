@@ -69,9 +69,9 @@ const ORDEM_CATEGORIAS: Record<string, number> = {
 };
 
 const ETAPAS_DIA_CONFIG = [
-  { id: 'ETAPA1', label: '1ª Etapa (28/11)', sub: 'Queimada & Tênis de Mesa', codigos: ['queimada', 'tenis-mesa'] },
+  { id: 'ETAPA1', label: '1ª Etapa (28/11)', sub: 'Queimada, Tênis de Mesa & Xadrez', codigos: ['queimada', 'tenis-mesa', 'xadrez'] },
   { id: 'ETAPA2', label: '2ª Etapa (05/12)', sub: 'Atletismo & Beach Soccer', codigos: ['atletismo', 'beach-soccer'] },
-  { id: 'ETAPA3', label: '3ª Etapa (12/12)', sub: 'Futsal, Futebol, Vôlei & Xadrez', codigos: ['futsal', 'futebol-campo', 'voleibol', 'xadrez'] },
+  { id: 'ETAPA3', label: '3ª Etapa (12/12)', sub: 'Futsal, Futebol & Vôlei', codigos: ['futsal', 'futebol-campo', 'voleibol'] },
   { id: 'TODAS', label: 'Todas as Etapas', sub: 'Todas as modalidades', codigos: [] as string[] },
 ] as const;
 
@@ -761,7 +761,7 @@ export default function EventosDoDiaPage() {
               <option value="TODAS">Todas Modalidades</option>
               {(etapaSelecionadaObj.codigos.length > 0
                 ? etapaSelecionadaObj.codigos
-                : ['queimada', 'tenis-mesa', 'atletismo', 'beach-soccer', 'futsal', 'futebol-campo', 'voleibol', 'xadrez']
+                : ['queimada', 'tenis-mesa', 'xadrez', 'atletismo', 'beach-soccer', 'futsal', 'futebol-campo', 'voleibol']
               ).map((cod) => (
                 <option key={cod} value={cod}>
                   {cod.replace('-', ' ').toUpperCase()}

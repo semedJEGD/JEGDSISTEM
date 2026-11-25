@@ -53,9 +53,9 @@ const ORDEM_CAT: Record<string, number> = {
 
 const ETAPAS_FILTRO = [
   { id: 'TODAS', label: 'Todas as Etapas', codigos: [] as string[] },
-  { id: 'ETAPA1', label: '1ª Etapa (Queimada & Tênis de Mesa)', codigos: ['queimada', 'tenis-mesa'] },
+  { id: 'ETAPA1', label: '1ª Etapa (Queimada, Tênis de Mesa & Xadrez)', codigos: ['queimada', 'tenis-mesa', 'xadrez'] },
   { id: 'ETAPA2', label: '2ª Etapa (Atletismo & Beach Soccer)', codigos: ['atletismo', 'beach-soccer'] },
-  { id: 'ETAPA3', label: '3ª Etapa (Futsal, Futebol, Vôlei & Xadrez)', codigos: ['futsal', 'futebol-campo', 'voleibol', 'xadrez'] },
+  { id: 'ETAPA3', label: '3ª Etapa (Futsal, Futebol & Vôlei)', codigos: ['futsal', 'futebol-campo', 'voleibol'] },
 ] as const;
 
 function formatarDataCurtaBR(iso?: string): string {

@@ -78,6 +78,7 @@ export default function ModalidadesPage() {
     switch (modCodigo) {
       case 'queimada':
       case 'tenis_mesa':
+      case 'xadrez':
         return {
           etapa: 1,
           rotulo: '1ª ETAPA',
@@ -93,7 +94,6 @@ export default function ModalidadesPage() {
           badge: 'bg-cyan-50 text-cyan-800 border-cyan-300'
         };
       case 'futsal':
-      case 'xadrez':
       case 'futebol_campo':
       case 'voleibol':
       default:

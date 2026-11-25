@@ -67,8 +67,8 @@ export const MODALIDADES_JEGDS: Record<ModalidadeCodigoJEGDS, ModalidadeInfo> = 
     codigo: 'xadrez',
     nome: 'Xadrez',
     tipo: 'INDIVIDUAL',
-    dataEvento: '2026-12-12',
-    prazoInscricaoPadrao: '2026-12-05',
+    dataEvento: '2026-11-28',
+    prazoInscricaoPadrao: '2026-11-21',
     limiteMaxElenco: 4
   },
   futebol_campo: {
@@ -338,13 +338,13 @@ export class JegdsRulesService {
     prazoInscricao: string;
     descricao: string;
   } {
-    if (modalidade === 'queimada' || modalidade === 'tenis_mesa') {
+    if (modalidade === 'queimada' || modalidade === 'tenis_mesa' || modalidade === 'xadrez') {
       return {
         etapa: 1,
         etapaNome: '1ª ETAPA OFICIAL',
         dataEvento: '28/11/2026',
         prazoInscricao: '21/11/2026',
-        descricao: 'Queimada (8 atletas) e Tênis de Mesa (até 4 atletas)'
+        descricao: 'Queimada (8 atletas), Tênis de Mesa (até 4 atletas) e Xadrez (até 4 atletas)'
       };
     }
     if (modalidade === 'atletismo' || modalidade === 'beach_soccer') {
@@ -361,7 +361,7 @@ export class JegdsRulesService {
       etapaNome: '3ª ETAPA OFICIAL',
       dataEvento: '12/12/2026',
       prazoInscricao: '05/12/2026',
-      descricao: 'Futsal (até 2 times), Futebol de Campo (até 2 times), Voleibol e Xadrez'
+      descricao: 'Futsal (até 2 times), Futebol de Campo (até 2 times) e Voleibol'
     };
   }
 
