@@ -61,7 +61,7 @@ export class JegdStorage {
   private static isInitializing = false;
   private static hasInitialized = false;
   private static lastSyncTimestamp = 0;
-  private static readonly SYNC_COOLDOWN_MS = 25000;
+  private static readonly SYNC_COOLDOWN_MS = 5000;
 
   private static isClient(): boolean {
     return typeof window !== 'undefined';
@@ -318,20 +318,16 @@ export class JegdStorage {
         changed = true;
       }
       if (data.atletas && Array.isArray(data.atletas)) {
-        const storedData = localStorage.getItem(STORAGE_KEYS.ATLETAS);
-        const storedAtletas: Atleta[] = storedData ? JSON.parse(storedData) : [];
         const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
         const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
 
-        // Filtra da nuvem qualquer atleta que foi excluído ou que seja de teste e reconstrói documentos em memória
+        // Banco central (Neon PostgreSQL) é a fonte única da verdade.
+        // Apenas ignora tombstones por ID exato (nunca por matrícula/crachá) e limpa o tombstone assim que o servidor confirmar a exclusão.
+        const idsAindaNaNuvem = new Set<string>();
         const cloudValidos = data.atletas
           .filter((a: Atleta) => {
-            const isDeleted = deletedIds.includes(a.id) ||
-              (a.matricula && deletedIds.includes(a.matricula)) ||
-              (a.crachaToken && deletedIds.includes(a.crachaToken)) ||
-              (a.documentoNumero && a.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(a.documentoNumero));
-
-            if (isDeleted) {
+            if (deletedIds.includes(a.id)) {
+              idsAindaNaNuvem.add(a.id);
               JegdCloudSync.deleteAtleta(a.id, a.matricula, a.documentoNumero).catch(() => {});
               return false;
             }
@@ -345,85 +341,30 @@ export class JegdStorage {
             },
           }));
 
-        const mergedAtletas: Atleta[] = [...cloudValidos];
-
-        for (const localAtl of storedAtletas) {
-          // Ignora excluídos ou testes locais
-          const isLocalDeleted = deletedIds.includes(localAtl.id) ||
-            (localAtl.matricula && deletedIds.includes(localAtl.matricula)) ||
-            (localAtl.crachaToken && deletedIds.includes(localAtl.crachaToken)) ||
-            (localAtl.documentoNumero && localAtl.documentoNumero.toUpperCase() !== 'SEM DOCUMENTO' && deletedIds.includes(localAtl.documentoNumero));
-
-          if (isLocalDeleted) {
-            continue;
-          }
-
-          const idx = mergedAtletas.findIndex(a => a.id === localAtl.id);
-          if (idx >= 0) {
-            const cloudMods = mergedAtletas[idx].modalidadesInscritas || [];
-            const localMods = localAtl.modalidadesInscritas || [];
-            if (localMods.length > 0 && cloudMods.length === 0) {
-              mergedAtletas[idx].modalidadesInscritas = localMods;
-            }
-            if (mergedAtletas[idx].conferidoPeloCoordenador === undefined && localAtl.conferidoPeloCoordenador !== undefined) {
-              mergedAtletas[idx].conferidoPeloCoordenador = localAtl.conferidoPeloCoordenador;
-            }
-            if (!mergedAtletas[idx].observacaoCoordenador && localAtl.observacaoCoordenador) {
-              mergedAtletas[idx].observacaoCoordenador = localAtl.observacaoCoordenador;
-            }
-          } else {
-            // Atleta salvo localmente que ainda está sincronizando com a nuvem
-            mergedAtletas.push(localAtl);
-            JegdCloudSync.syncAtleta(localAtl).catch(() => {});
-          }
+        if (deletedIds.length > 0) {
+          const tombAtualizado = deletedIds.filter(id => idsAindaNaNuvem.has(id));
+          localStorage.setItem(STORAGE_KEYS.DELETED_ATLETAS_IDS, JSON.stringify(tombAtualizado));
         }
-        this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(mergedAtletas));
+
+        this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(cloudValidos));
         changed = true;
       }
       if (data.inscricoes && Array.isArray(data.inscricoes)) {
-        const storedInscData = localStorage.getItem(STORAGE_KEYS.INSCRICOES);
-        const storedInscricoes: InscricaoEquipe[] = storedInscData ? JSON.parse(storedInscData) : [];
         const atletasAtuaisRaw = localStorage.getItem(STORAGE_KEYS.ATLETAS);
         const atletasAtuais: Atleta[] = atletasAtuaisRaw ? JSON.parse(atletasAtuaisRaw) : [];
         const atletasValidosIds = new Set(atletasAtuais.map(a => a.id));
-        const deletedRawInsc = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
-        const deletedIdsInsc: string[] = deletedRawInsc ? JSON.parse(deletedRawInsc) : [];
 
-        const limparAtletasEquipe = (ids?: string[]) =>
-          Array.isArray(ids)
-            ? ids.filter(aId => !deletedIdsInsc.includes(aId) && (atletasValidosIds.size === 0 || atletasValidosIds.has(aId)))
-            : [];
-
-        const mergedInscricoes: InscricaoEquipe[] = (data.inscricoes as InscricaoEquipe[])
-          .map((i: InscricaoEquipe) => ({ ...i, atletaIds: limparAtletasEquipe(i.atletaIds) }))
+        // Fonte única da verdade: equipes vindas da nuvem, filtradas por atletas existentes e não vazias
+        const inscricoesValidas: InscricaoEquipe[] = (data.inscricoes as InscricaoEquipe[])
+          .map((i: InscricaoEquipe) => ({
+            ...i,
+            atletaIds: Array.isArray(i.atletaIds)
+              ? i.atletaIds.filter(aId => atletasValidosIds.has(aId))
+              : [],
+          }))
           .filter((i: InscricaoEquipe) => i.atletaIds.length > 0);
 
-        for (const localInsc of storedInscricoes) {
-          const localIdsLimpos = limparAtletasEquipe(localInsc.atletaIds);
-          if (localIdsLimpos.length === 0) continue;
-
-          const idx = mergedInscricoes.findIndex(i => i.id === localInsc.id);
-          if (idx >= 0) {
-            const cloudIds = mergedInscricoes[idx].atletaIds || [];
-            if (localIdsLimpos.length > cloudIds.length) {
-              mergedInscricoes[idx].atletaIds = Array.from(new Set([...cloudIds, ...localIdsLimpos]));
-            }
-            const localTime = localInsc.updatedAt ? new Date(localInsc.updatedAt).getTime() : 0;
-            const cloudTime = mergedInscricoes[idx].updatedAt ? new Date(mergedInscricoes[idx].updatedAt).getTime() : 0;
-            if (localTime > cloudTime) {
-              mergedInscricoes[idx].status = localInsc.status;
-              mergedInscricoes[idx].motivoRejeicao = localInsc.motivoRejeicao;
-              mergedInscricoes[idx].parecerComite = localInsc.parecerComite;
-              mergedInscricoes[idx].dataHomologacao = localInsc.dataHomologacao;
-              mergedInscricoes[idx].updatedAt = localInsc.updatedAt;
-            }
-          } else {
-            const inscLimpa = { ...localInsc, atletaIds: localIdsLimpos };
-            mergedInscricoes.push(inscLimpa);
-            JegdCloudSync.syncInscricao(inscLimpa).catch(() => {});
-          }
-        }
-        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(mergedInscricoes));
+        localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoesValidas));
         changed = true;
       }
       if (data.registros && Array.isArray(data.registros)) {
@@ -964,12 +905,11 @@ export class JegdStorage {
     const crachaReal = targetAtleta?.crachaToken;
     const docReal = targetAtleta?.documentoNumero;
 
-    // 1. Registra no tombstone para o polling nunca re-inserir
+    // 1. Registra apenas o ID exato no tombstone (nunca matrícula/crachá reutilizável)
     try {
       const deletedRaw = localStorage.getItem(STORAGE_KEYS.DELETED_ATLETAS_IDS);
       const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
-      const docValidoParaTomb = docReal && docReal.trim().toUpperCase() !== 'SEM DOCUMENTO' && docReal.trim().toUpperCase() !== 'SEM DOC' ? docReal : null;
-      const novosIds = [id, idReal, matriculaReal, crachaReal, docValidoParaTomb].filter((v): v is string => Boolean(v && v.trim()));
+      const novosIds = [id, idReal].filter((v): v is string => Boolean(v && v.trim()));
       let mudouTomb = false;
       for (const nid of novosIds) {
         if (!deletedIds.includes(nid)) {

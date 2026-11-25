@@ -153,10 +153,16 @@ export default function EscolaAtletasPage() {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       JegdStorage.sincronizarComNuvem().catch(() => { });
-    }, 180000);
+    }, 20000);
+
+    const handleFocus = () => {
+      JegdStorage.sincronizarComNuvem(true).catch(() => { });
+    };
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       window.removeEventListener('jegd-data-synced', handleSync);
+      window.removeEventListener('focus', handleFocus);
       clearInterval(interval);
     };
   }, []);

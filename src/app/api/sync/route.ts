@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export const preferredRegion = ['gru1'];
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
@@ -238,8 +239,8 @@ export async function GET(request: Request) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
-          'Vercel-CDN-Cache-Control': 'public, s-maxage=15, stale-while-revalidate=30',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
         },
       }
     );

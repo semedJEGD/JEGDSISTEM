@@ -173,14 +173,20 @@ export default function AdminDashboardPage() {
 
     window.addEventListener('jegd-data-synced', handleDataSynced);
 
-    // Polling econômico a cada 3 minutos (pausa automaticamente se a aba estiver em segundo plano)
+    // Sincronização em tempo real a cada 20s e ao voltar para a aba
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       JegdStorage.sincronizarComNuvem().catch(() => { });
-    }, 180000);
+    }, 20000);
+
+    const handleFocus = () => {
+      JegdStorage.sincronizarComNuvem(true).catch(() => { });
+    };
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       window.removeEventListener('jegd-data-synced', handleDataSynced);
+      window.removeEventListener('focus', handleFocus);
       clearInterval(interval);
     };
   }, []);

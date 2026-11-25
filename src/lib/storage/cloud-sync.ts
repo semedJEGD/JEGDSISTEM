@@ -170,7 +170,7 @@ export class JegdCloudSync {
     this.isSyncing = true;
     try {
       if (typeof window === 'undefined') return null;
-      const res = await fetch('/api/sync', {
+      const res = await fetch(`/api/sync?_t=${Date.now()}`, {
         cache: 'no-store'
       });
       if (!res.ok) return null;
