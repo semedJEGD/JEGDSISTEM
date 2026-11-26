@@ -270,39 +270,52 @@ export default function AdminDashboardPage() {
     setNovaEscolaEmail('');
   };
 
-  const toggleConferenciaAtleta = (atleta: Atleta) => {
+  const toggleConferenciaAtleta = async (atleta: Atleta) => {
     const novoStatus = !atleta.conferidoPeloCoordenador;
     JegdStorage.updateAtletaConferencia(atleta.id, novoStatus);
     const inscsDoAtleta = inscricoes.filter(
       (i) => i.escolaId === atleta.escolaId && i.atletaIds.includes(atleta.id)
     );
     const dataHomologacao = novoStatus ? new Date().toLocaleString('pt-BR') : undefined;
-    inscsDoAtleta.forEach((insc) => {
-      JegdStorage.saveInscricao({
-        ...insc,
-        status: novoStatus ? 'VALIDADA' : 'PENDENTE',
-        motivoRejeicao: undefined,
-        dataHomologacao,
-      });
-    });
+    carregarTodosDados();
+    const resultados = await Promise.all(
+      inscsDoAtleta.map((insc) =>
+        JegdStorage.saveInscricao({
+          ...insc,
+          status: novoStatus ? 'VALIDADA' : 'PENDENTE',
+          motivoRejeicao: undefined,
+          dataHomologacao,
+        })
+      )
+    );
+    const falha = resultados.find((r) => !r.ok);
+    if (falha) {
+      alert(`Atenção: não foi possível sincronizar a conferência com o servidor (${falha.error || 'erro de rede'}).`);
+    }
     carregarTodosDados();
   };
 
-  const aprovarInscricoesEAtletas = (inscricoesAlvo: InscricaoEquipe[], atletaIds: string[]) => {
+  const aprovarInscricoesEAtletas = async (inscricoesAlvo: InscricaoEquipe[], atletaIds: string[]) => {
     atletaIds.forEach((atletaId) => {
       JegdStorage.updateAtletaConferencia(atletaId, true);
     });
 
     const dataHomologacao = new Date().toLocaleString('pt-BR');
-    inscricoesAlvo.forEach((insc) => {
-      JegdStorage.saveInscricao({
-        ...insc,
-        status: 'VALIDADA',
-        motivoRejeicao: undefined,
-        parecerComite: insc.parecerComite || 'Equipe aprovada e homologada pelo Comitê Organizador do JEGDS 2026.',
-        dataHomologacao
-      });
-    });
+    const resultados = await Promise.all(
+      inscricoesAlvo.map((insc) =>
+        JegdStorage.saveInscricao({
+          ...insc,
+          status: 'VALIDADA',
+          motivoRejeicao: undefined,
+          parecerComite: insc.parecerComite || 'Equipe aprovada e homologada pelo Comitê Organizador do JEGDS 2026.',
+          dataHomologacao
+        })
+      )
+    );
+    const falha = resultados.find((r) => !r.ok);
+    if (falha) {
+      alert(`Atenção: falha ao salvar homologação no servidor (${falha.error || 'erro de rede'}). Tente novamente.`);
+    }
 
     carregarTodosDados();
   };

@@ -61,7 +61,20 @@ export class JegdStorage {
   private static isInitializing = false;
   private static hasInitialized = false;
   private static lastSyncTimestamp = 0;
+  private static pendingWrites = 0;
+  private static lastWriteFinishedAt = 0;
   private static readonly SYNC_COOLDOWN_MS = 5000;
+  private static readonly POST_WRITE_GRACE_MS = 4000;
+
+  private static async trackWrite<T>(fn: () => Promise<T>): Promise<T> {
+    this.pendingWrites++;
+    try {
+      return await fn();
+    } finally {
+      this.pendingWrites = Math.max(0, this.pendingWrites - 1);
+      this.lastWriteFinishedAt = Date.now();
+    }
+  }
 
   private static isClient(): boolean {
     return typeof window !== 'undefined';
@@ -267,11 +280,6 @@ export class JegdStorage {
       localStorage.setItem(STORAGE_KEYS.REGISTROS_CONTROLE, JSON.stringify([]));
     }
 
-    // Sanitização de segurança das travas do regulamento JEGDS 2026 (limpeza de excessos)
-    try {
-      this.sanitizarExcessoEquipes();
-    } catch {}
-
     this.hasInitialized = true;
 
     // Sincronização em tempo real com o banco de dados central (apenas 1x na inicialização)
@@ -287,7 +295,12 @@ export class JegdStorage {
    */
   public static async sincronizarComNuvem(force = false): Promise<boolean> {
     if (!this.isClient()) return false;
+    // Nunca sobrescreve o cache local enquanto há uma gravação em andamento no servidor
+    if (this.pendingWrites > 0) return false;
     const now = Date.now();
+    if (!force && this.lastWriteFinishedAt > 0 && now - this.lastWriteFinishedAt < this.POST_WRITE_GRACE_MS) {
+      return false;
+    }
     if (!force && this.lastSyncTimestamp > 0 && now - this.lastSyncTimestamp < this.SYNC_COOLDOWN_MS) {
       return false;
     }
@@ -295,6 +308,8 @@ export class JegdStorage {
     try {
       const data = await JegdCloudSync.carregarDadosCloud();
       if (!data) return false;
+      // Se uma escrita iniciou enquanto buscávamos a nuvem, aborta para não sobrescrever a edição do usuário
+      if (this.pendingWrites > 0) return false;
 
       let changed = false;
       if (data.municipios && Array.isArray(data.municipios) && data.municipios.length > 0) {
@@ -395,11 +410,6 @@ export class JegdStorage {
         localStorage.setItem(STORAGE_KEYS.USUARIOS, JSON.stringify(mergedUsuarios));
         changed = true;
       }
-
-      // Sanitiza qualquer excesso vindo de sincronização na nuvem
-      try {
-        this.sanitizarExcessoEquipes();
-      } catch {}
 
       if (changed && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('jegd-data-synced', { detail: data }));
@@ -551,7 +561,7 @@ export class JegdStorage {
     if (idx >= 0) list[idx] = escolaToSave;
     else list.push(escolaToSave);
     localStorage.setItem(STORAGE_KEYS.ESCOLAS, JSON.stringify(list));
-    JegdCloudSync.syncEscola(escolaToSave).catch(() => {});
+    this.trackWrite(() => JegdCloudSync.syncEscola(escolaToSave)).catch(() => {});
   }
 
   public static deleteEscola(id: string): void {
@@ -802,7 +812,7 @@ export class JegdStorage {
     else list.unshift(atletaToSave);
     this.safeSetItem(STORAGE_KEYS.ATLETAS, JSON.stringify(list));
 
-    const cloudRes = await JegdCloudSync.syncAtleta(atletaToSave);
+    const cloudRes = await this.trackWrite(() => JegdCloudSync.syncAtleta(atletaToSave));
     if (cloudRes.ok && cloudRes.data) {
       // Atualiza código/crachá caso o servidor tenha resolvido colisão de crachaToken
       const matriculaServidor = cloudRes.data.matricula || atletaToSave.matricula;
@@ -963,7 +973,7 @@ export class JegdStorage {
 
     // 4. Remove do banco de dados na nuvem (Neon PostgreSQL) passando múltiplos identificadores
     try {
-      await JegdCloudSync.deleteAtleta(idReal, matriculaReal, docReal);
+      await this.trackWrite(() => JegdCloudSync.deleteAtleta(idReal, matriculaReal, docReal));
     } catch {}
 
     // 5. Dispara evento para atualizar a interface imediatamente
@@ -1032,8 +1042,8 @@ export class JegdStorage {
     return list;
   }
 
-  public static saveInscricao(insc: InscricaoEquipe): void {
-    if (!this.isClient()) return;
+  public static async saveInscricao(insc: InscricaoEquipe): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isClient()) return { ok: false, error: 'Ambiente sem navegador' };
     const curMun = this.getCurrentMunicipio();
     const inscToSave: InscricaoEquipe = {
       ...insc,
@@ -1078,7 +1088,7 @@ export class JegdStorage {
       }
     } catch {}
 
-    JegdCloudSync.syncInscricao(inscToSave).catch(() => {});
+    return this.trackWrite(() => JegdCloudSync.syncInscricao(inscToSave));
   }
 
   /**
@@ -1297,10 +1307,7 @@ export class JegdStorage {
       localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(inscricoes));
 
       for (const idExcluido of inscricoesExcluidasIds) {
-        JegdCloudSync.deleteInscricao(idExcluido).catch(() => {});
-      }
-      for (const insc of inscricoes) {
-        JegdCloudSync.syncInscricao(insc).catch(() => {});
+        this.trackWrite(() => JegdCloudSync.deleteInscricao(idExcluido)).catch(() => {});
       }
     }
 
@@ -1436,19 +1443,15 @@ export class JegdStorage {
 
     todasInscricoes = todasInscricoes.filter(i => i.atletaIds.length > 0);
     this.safeSetItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(todasInscricoes));
-
-    // Sincroniza em tempo real as equipes da escola atualizadas com o banco de dados
-    const equipesParaSincronizar = todasInscricoes.filter(i => i.escolaId === escolaId);
-    for (const eq of equipesParaSincronizar) {
-      JegdCloudSync.syncInscricao(eq).catch(() => {});
-    }
+    // Nota: POST /api/atletas já sincroniza atomicamente as inscrições do atleta no banco central.
+    // Não reenviamos todas as equipes da escola aqui para evitar sobrescrever aprovações feitas em outros PCs.
   }
 
   public static deleteInscricao(id: string): void {
     if (!this.isClient()) return;
     const list = this.getInscricoes().filter(i => i.id !== id);
     localStorage.setItem(STORAGE_KEYS.INSCRICOES, JSON.stringify(list));
-    JegdCloudSync.deleteInscricao(id).catch(() => {});
+    this.trackWrite(() => JegdCloudSync.deleteInscricao(id)).catch(() => {});
   }
 
   // ==========================================

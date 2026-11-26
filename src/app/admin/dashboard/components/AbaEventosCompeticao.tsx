@@ -135,21 +135,38 @@ export function AbaEventosCompeticao({
   const [avisoMensagem, setAvisoMensagem] = useState('');
   const [avisoTipo, setAvisoTipo] = useState<'CHAMADA' | 'INFORMATIVO' | 'URGENTE' | 'VIDEO'>('CHAMADA');
 
-  const carregarDados = useCallback(async () => {
+  const carregarDados = useCallback(async (silencioso?: boolean | unknown) => {
+    const isSilencioso = silencioso === true;
     try {
-      setCarregando(true);
+      if (!isSilencioso) setCarregando(true);
       const data = await EventosApi.carregar(municipioId, { incluirAtletas: false, nocache: true });
       setBundle(data);
     } catch (err) {
       console.error('Erro ao carregar eventos:', err);
     } finally {
-      setCarregando(false);
+      if (!isSilencioso) setCarregando(false);
     }
   }, [municipioId]);
 
   useEffect(() => {
-    carregarDados();
-  }, [carregarDados]);
+    carregarDados(false);
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (salvando) return;
+      carregarDados(true);
+    }, 20000);
+
+    const handleFocus = () => {
+      if (!salvando) carregarDados(true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [carregarDados, salvando]);
 
   const escolasOrdenadas = useMemo(
     () => [...escolas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),

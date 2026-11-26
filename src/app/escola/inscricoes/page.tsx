@@ -672,7 +672,7 @@ export default function EscolaInscricoesPage() {
     setModalCadastroAtletaAberto(true);
   };
 
-  const handleSalvarAtletaModal = () => {
+  const handleSalvarAtletaModal = async () => {
     if (!escola) return;
     if (!nomeCompleto.trim() || !dataNascimento || (!semDocumento && !documentoNumero.trim())) {
       alert('Preencha os campos obrigatórios (Nome Completo, Data de Nascimento e Documento ou marque Sem Documento).');
@@ -726,7 +726,11 @@ export default function EscolaInscricoesPage() {
       createdAt: new Date().toISOString()
     };
 
-    JegdStorage.saveAtleta(novoAtleta);
+    const res = await JegdStorage.saveAtleta(novoAtleta);
+    if (!res.ok) {
+      alert(`Não foi possível salvar o aluno no servidor: ${res.error || 'verifique sua conexão e tente novamente.'}`);
+      return;
+    }
 
     const listaAtualizada = JegdStorage.getAtletas(escola.id);
     setTodosAtletas(listaAtualizada);

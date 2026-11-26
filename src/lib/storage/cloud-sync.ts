@@ -68,17 +68,21 @@ export class JegdCloudSync {
   /**
    * Sincroniza uma inscrição de equipe com o PostgreSQL
    */
-  static async syncInscricao(inscricao: any): Promise<boolean> {
+  static async syncInscricao(inscricao: any): Promise<{ ok: boolean; error?: string }> {
     try {
-      if (typeof window === 'undefined') return false;
+      if (typeof window === 'undefined') return { ok: false, error: 'Ambiente sem navegador' };
       const res = await fetch('/api/inscricoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inscricao)
       });
-      return res.ok;
-    } catch {
-      return false;
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        return { ok: false, error: json?.error || `Erro HTTP ${res.status} ao salvar inscrição` };
+      }
+      return { ok: true };
+    } catch (err: any) {
+      return { ok: false, error: err?.message || 'Falha de conexão ao salvar inscrição' };
     }
   }
 
