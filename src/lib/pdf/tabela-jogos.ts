@@ -566,7 +566,7 @@ export function gerarPdfChaveamentoVisual(
     const availH = canvasH - padTop - padBottom;
 
     // Guardar posições centrais dos cards de cada coluna para desenhar conectores
-    const cardCentros: Array<Array<{ rightX: number; leftX: number; midY: number }>> = [];
+    const cardCentros: Array<Array<{ rightX: number; leftX: number; midY: number; numeroJogo: number | null; escolaAId: string; escolaBId: string }>> = [];
 
     fasesMataMata.forEach((col, colIdx) => {
       const colX = canvasX + padX + colIdx * (colW + gapX);
@@ -587,7 +587,7 @@ export function gerarPdfChaveamentoVisual(
       const cardH = Math.min(34, Math.max(24, (areaColH - (count - 1) * 6) / count));
       const slotH = areaColH / count;
 
-      const centrosCol: Array<{ rightX: number; leftX: number; midY: number }> = [];
+      const centrosCol: Array<{ rightX: number; leftX: number; midY: number; numeroJogo: number | null; escolaAId: string; escolaBId: string }> = [];
 
       col.jogos.forEach((jogo, jIdx) => {
         const cardY = canvasY + padTop + jIdx * slotH + (slotH - cardH) / 2;
@@ -596,6 +596,9 @@ export function gerarPdfChaveamentoVisual(
           leftX: colX,
           rightX: colX + colW,
           midY: cardY + cardH / 2,
+          numeroJogo: jogo.numeroJogo ?? null,
+          escolaAId: jogo.escolaAId,
+          escolaBId: jogo.escolaBId,
         });
       });
 
@@ -619,7 +622,7 @@ export function gerarPdfChaveamentoVisual(
       }
     });
 
-    // Desenhar linhas conectoras ortogonais entre rodadas
+    // Desenhar linhas conectoras ortogonais entre rodadas (ligando cada jogo ao seu destino real)
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(0.45);
     for (let c = 0; c < cardCentros.length - 1; c++) {
@@ -629,24 +632,16 @@ export function gerarPdfChaveamentoVisual(
 
       const midX = atual[0].rightX + gapX / 2;
 
-      if (atual.length === prox.length * 2) {
-        for (let i = 0; i < prox.length; i++) {
-          const topCard = atual[i * 2];
-          const botCard = atual[i * 2 + 1];
-          const target = prox[i];
-          doc.line(topCard.rightX, topCard.midY, midX, topCard.midY);
-          doc.line(botCard.rightX, botCard.midY, midX, botCard.midY);
-          doc.line(midX, topCard.midY, midX, botCard.midY);
-          doc.line(midX, target.midY, target.leftX, target.midY);
-        }
-      } else {
-        atual.forEach((orig, idx) => {
-          const target = prox[Math.min(idx, prox.length - 1)];
-          doc.line(orig.rightX, orig.midY, midX, orig.midY);
-          doc.line(midX, orig.midY, midX, target.midY);
-          doc.line(midX, target.midY, target.leftX, target.midY);
-        });
-      }
+      atual.forEach((orig, idx) => {
+        const refTag = orig.numeroJogo ? `TBD_VENCEDOR_J${orig.numeroJogo}` : null;
+        const targetByRef = refTag
+          ? prox.find((t) => t.escolaAId === refTag || t.escolaBId === refTag)
+          : undefined;
+        const target = targetByRef || prox[Math.min(Math.floor(idx / 2), prox.length - 1)];
+        doc.line(orig.rightX, orig.midY, midX, orig.midY);
+        doc.line(midX, orig.midY, midX, target.midY);
+        doc.line(midX, target.midY, target.leftX, target.midY);
+      });
     }
   } else {
     // Fallback para Pontos Corridos (grade visual de cards 3 por linha)

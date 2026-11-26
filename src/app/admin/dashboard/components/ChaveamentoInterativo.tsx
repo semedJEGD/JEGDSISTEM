@@ -2266,17 +2266,44 @@ export function ChaveamentoInterativo({
                         </div>
                       </div>
 
-                      {/* Conectores gráficos entre fases */}
-                      {temProxima && (
-                        <div className="w-10 shrink-0 flex flex-col justify-around py-10">
-                          {Array.from({ length: Math.max(1, Math.ceil(col.jogos.length / 2)) }).map((_, cIdx) => (
-                            <div key={cIdx} className="flex-1 flex items-center">
-                              <div className="w-5 h-1/2 border-r-2 border-t-2 border-b-2 border-slate-300 rounded-r-lg" />
-                              <div className="w-5 border-t-2 border-slate-300" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {/* Conectores gráficos entre fases (alinhados aos confrontos reais: par ou linha direta) */}
+                      {temProxima && (() => {
+                        const proxCol = fasesMataMata[colIdx + 1];
+                        const numAlvos = Math.max(1, proxCol.jogos.length);
+                        const contarOrigensParaAlvo = (alvo: PartidaEventoItem, aIdx: number) => {
+                          const refs = [alvo.escolaAId, alvo.escolaBId].filter((id) =>
+                            typeof id === 'string' && /^TBD_VENCEDOR_J\d+$/i.test(id)
+                          );
+                          const matchAtual = refs.filter((ref) => {
+                            const num = parseInt(ref.replace(/\D/g, ''), 10);
+                            return col.jogos.some((j) => j.numeroJogo === num);
+                          });
+                          if (matchAtual.length > 0) return matchAtual.length;
+                          if (col.jogos.length === numAlvos * 2) return 2;
+                          return aIdx * 2 + 1 < col.jogos.length ? 2 : 1;
+                        };
+
+                        return (
+                          <div className="w-10 shrink-0 flex flex-col justify-around py-10">
+                            {proxCol.jogos.map((alvo, cIdx) => {
+                              const qtdOrigens = contarOrigensParaAlvo(alvo, cIdx);
+                              const ehPar = qtdOrigens >= 2;
+                              return (
+                                <div key={alvo.id || cIdx} className="flex-1 flex items-center">
+                                  {ehPar ? (
+                                    <>
+                                      <div className="w-5 h-1/2 border-r-2 border-t-2 border-b-2 border-slate-300 rounded-r-lg" />
+                                      <div className="w-5 border-t-2 border-slate-300" />
+                                    </>
+                                  ) : (
+                                    <div className="w-10 border-t-2 border-slate-300" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </React.Fragment>
                   );
                 })}
