@@ -820,44 +820,254 @@ export function PainelTabelasChaveamentoPublico({
               }
 
               if (ch.formato === 'SUICO_XADREZ' && est.rodadas) {
-                const classifXadrez = calcularClassificacaoXadrez(est as EstruturaXadrez);
+                const estruturaXadrez = est as EstruturaXadrez;
+                const classifXadrez = calcularClassificacaoXadrez(estruturaXadrez);
+                const jogadorPorId = new Map(
+                  (estruturaXadrez.jogadores || []).map((j) => [j.id, j])
+                );
+                const totalMesas = estruturaXadrez.rodadas.reduce((acc, r) => acc + r.mesas.length, 0);
+                const subXadrez = subAbaPorComp[ch.id] || 'CHAVEAMENTO';
+
                 return (
-                  <div key={ch.id} className="bg-white border border-[#DCE5DF] rounded-2xl overflow-hidden shadow-2xs">
-                    <div className="px-5 py-3.5 bg-[#0B4F35] text-white flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm sm:text-base font-bold flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-[#A7F3D0]" />
-                        <span>Xadrez – {ch.categoria} {sexoLabel}</span>
-                      </h3>
-                      <span className="text-[11px] font-semibold bg-white/15 px-3 py-1 rounded-full">
-                        {est.sistema} · {est.rodadas.length}/{est.totalRodadasPrevistas} rodadas
-                      </span>
+                  <div key={ch.id} className="space-y-4">
+                    <div className="bg-white border border-[#DCE5DF] rounded-2xl overflow-hidden shadow-2xs">
+                      <div className="px-5 py-3.5 bg-[#0B4F35] text-white flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm sm:text-base font-bold flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-[#A7F3D0]" />
+                          <span>Xadrez – {ch.categoria} {sexoLabel}</span>
+                        </h3>
+                        <span className="text-[11px] font-semibold bg-white/15 px-3 py-1 rounded-full">
+                          {estruturaXadrez.sistema} · {estruturaXadrez.rodadas.length}/{estruturaXadrez.totalRodadasPrevistas} rodadas
+                        </span>
+                      </div>
+
+                      {/* Sub-abas Xadrez: Confrontos & Rodadas | Classificação */}
+                      <div className="px-5 border-b border-[#E8EFEA] bg-white flex items-center gap-5 overflow-x-auto">
+                        <button
+                          type="button"
+                          onClick={() => setSubAbaPorComp((prev) => ({ ...prev, [ch.id]: 'CHAVEAMENTO' }))}
+                          className={`py-3 text-xs font-bold flex items-center gap-1.5 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                            subXadrez === 'CHAVEAMENTO'
+                              ? 'border-[#0B4F35] text-[#0B4F35]'
+                              : 'border-transparent text-slate-500 hover:text-[#17221D]'
+                          }`}
+                        >
+                          <Swords className="w-3.5 h-3.5" />
+                          <span>Jogos & Confrontos ({totalMesas})</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSubAbaPorComp((prev) => ({ ...prev, [ch.id]: 'CLASSIFICACAO' }))}
+                          className={`py-3 text-xs font-bold flex items-center gap-1.5 border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
+                            subXadrez === 'CLASSIFICACAO'
+                              ? 'border-[#0B4F35] text-[#0B4F35]'
+                              : 'border-transparent text-slate-500 hover:text-[#17221D]'
+                          }`}
+                        >
+                          <ListOrdered className="w-3.5 h-3.5" />
+                          <span>Classificação ({classifXadrez.length})</span>
+                        </button>
+                      </div>
+
+                      {/* CONFRONTOS POR RODADA */}
+                      {subXadrez === 'CHAVEAMENTO' && (
+                        <div className="p-4 sm:p-5 bg-[#F7F9F8] space-y-4">
+                          {estruturaXadrez.rodadas.map((rod) => {
+                            const decididas = rod.mesas.filter((m) => m.resultado !== 'PENDENTE').length;
+                            return (
+                              <div key={rod.numero} className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                  <span className="px-2.5 py-1 rounded-lg bg-[#E9EFEA] text-xs font-bold text-[#17221D]">
+                                    {rod.numero}ª Rodada
+                                  </span>
+                                  <span className="text-[11px] font-semibold text-slate-500">
+                                    {decididas}/{rod.mesas.length} mesa(s) concluída(s)
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {rod.mesas.map((m) => {
+                                    const escBrancas = jogadorPorId.get(m.brancasId)?.escolaSigla;
+                                    const escPretas = m.pretasId !== 'BYE' ? jogadorPorId.get(m.pretasId)?.escolaSigla : undefined;
+                                    const venceuBrancas = m.resultado === '1-0' || m.resultado === 'BYE';
+                                    const venceuPretas = m.resultado === '0-1';
+                                    const empate = m.resultado === '0.5-0.5';
+                                    const pendente = m.resultado === 'PENDENTE';
+
+                                    return (
+                                      <div
+                                        key={`${rod.numero}-${m.mesa}`}
+                                        className="bg-white rounded-xl border border-[#DCE5DF] overflow-hidden shadow-[0_1px_2px_rgba(11,79,53,0.05)]"
+                                      >
+                                        <div className="px-3 py-1.5 bg-[#F7F9F8] border-b border-[#E8EFEA] flex items-center justify-between text-[10px]">
+                                          <span className="font-mono font-bold text-[#0B4F35]">
+                                            Mesa {m.mesa}
+                                          </span>
+                                          <span
+                                            className={`font-bold uppercase ${
+                                              pendente ? 'text-slate-400' : 'text-[#0B4F35]'
+                                            }`}
+                                          >
+                                            {pendente
+                                              ? 'Agendada'
+                                              : m.resultado === 'BYE'
+                                              ? 'BYE (+1.0)'
+                                              : empate
+                                              ? 'Empate (½ - ½)'
+                                              : `Resultado: ${m.resultado}`}
+                                          </span>
+                                        </div>
+
+                                        {/* Brancas */}
+                                        <div
+                                          className={`flex items-stretch justify-between border-b border-[#EDF2EE] ${
+                                            venceuBrancas ? 'bg-[#F2FBF6]' : 'bg-white'
+                                          }`}
+                                        >
+                                          <div className="px-3 py-2 min-w-0 flex-1">
+                                            <p
+                                              className={`text-xs truncate ${
+                                                venceuBrancas
+                                                  ? 'font-black text-[#0B4F35]'
+                                                  : venceuPretas
+                                                  ? 'font-medium text-slate-400'
+                                                  : 'font-bold text-[#17221D]'
+                                              }`}
+                                            >
+                                              ♔ {m.brancasNome}
+                                            </p>
+                                            {escBrancas && (
+                                              <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                {escBrancas}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div
+                                            className={`w-11 flex items-center justify-center text-xs font-black tabular-nums border-l border-[#EDF2EE] shrink-0 ${
+                                              venceuBrancas
+                                                ? 'bg-[#D7F3E5] text-[#0B4F35]'
+                                                : 'bg-[#F8FAF9] text-[#17221D]'
+                                            }`}
+                                          >
+                                            {pendente ? '–' : venceuBrancas ? '1' : empate ? '½' : '0'}
+                                          </div>
+                                        </div>
+
+                                        {/* Pretas */}
+                                        <div
+                                          className={`flex items-stretch justify-between ${
+                                            venceuPretas ? 'bg-[#F2FBF6]' : 'bg-white'
+                                          }`}
+                                        >
+                                          <div className="px-3 py-2 min-w-0 flex-1">
+                                            <p
+                                              className={`text-xs truncate ${
+                                                m.pretasId === 'BYE'
+                                                  ? 'font-bold text-[#0B4F35] italic'
+                                                  : venceuPretas
+                                                  ? 'font-black text-[#0B4F35]'
+                                                  : venceuBrancas
+                                                  ? 'font-medium text-slate-400'
+                                                  : 'font-bold text-[#17221D]'
+                                              }`}
+                                            >
+                                              {m.pretasId === 'BYE' ? 'BYE (Folga)' : `♚ ${m.pretasNome}`}
+                                            </p>
+                                            {escPretas && (
+                                              <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                                {escPretas}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div
+                                            className={`w-11 flex items-center justify-center text-xs font-black tabular-nums border-l border-[#EDF2EE] shrink-0 ${
+                                              venceuPretas
+                                                ? 'bg-[#D7F3E5] text-[#0B4F35]'
+                                                : 'bg-[#F8FAF9] text-[#17221D]'
+                                            }`}
+                                          >
+                                            {pendente || m.pretasId === 'BYE' ? '–' : venceuPretas ? '1' : empate ? '½' : '0'}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* CLASSIFICAÇÃO NA SUB-ABA */}
+                      {subXadrez === 'CLASSIFICACAO' && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs sm:text-sm text-left">
+                            <thead className="bg-[#F9FBFA] text-slate-500 text-[11px] font-bold border-b border-[#E2EAE5]">
+                              <tr>
+                                <th className="py-2.5 px-4 w-12">#</th>
+                                <th className="py-2.5 px-4">Enxadrista</th>
+                                <th className="py-2.5 px-4">Escola</th>
+                                <th className="py-2.5 px-3 text-center">J</th>
+                                <th className="py-2.5 px-3 text-center text-[#0B4F35]">Pts</th>
+                                <th className="py-2.5 px-4 text-center">Buchholz</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#EDF2EE] tabular-nums">
+                              {classifXadrez.map((c, idx) => (
+                                <tr key={c.id} className={idx < 3 ? 'bg-[#F2FBF6]/70' : 'bg-white'}>
+                                  <td className="py-3 px-4 font-bold text-slate-500">{idx + 1}º</td>
+                                  <td className="py-3 px-4 font-bold text-[#17221D]">{c.nome}</td>
+                                  <td className="py-3 px-4 text-slate-600">{c.sigla}</td>
+                                  <td className="py-3 px-3 text-center text-slate-600">{c.jogos}</td>
+                                  <td className="py-3 px-3 text-center font-black text-[#0B4F35]">{c.pontos.toFixed(1)}</td>
+                                  <td className="py-3 px-4 text-center font-mono text-slate-600">{c.buchholz.toFixed(1)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs sm:text-sm text-left">
-                        <thead className="bg-[#F9FBFA] text-slate-500 text-[11px] font-bold border-b border-[#E2EAE5]">
-                          <tr>
-                            <th className="py-2.5 px-4 w-12">#</th>
-                            <th className="py-2.5 px-4">Enxadrista</th>
-                            <th className="py-2.5 px-4">Escola</th>
-                            <th className="py-2.5 px-3 text-center">J</th>
-                            <th className="py-2.5 px-3 text-center text-[#0B4F35]">Pts</th>
-                            <th className="py-2.5 px-4 text-center">Buchholz</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#EDF2EE] tabular-nums">
-                          {classifXadrez.map((c, idx) => (
-                            <tr key={c.id} className={idx < 3 ? 'bg-[#F2FBF6]/70' : 'bg-white'}>
-                              <td className="py-3 px-4 font-bold text-slate-500">{idx + 1}º</td>
-                              <td className="py-3 px-4 font-bold text-[#17221D]">{c.nome}</td>
-                              <td className="py-3 px-4 text-slate-600">{c.sigla}</td>
-                              <td className="py-3 px-3 text-center text-slate-600">{c.jogos}</td>
-                              <td className="py-3 px-3 text-center font-black text-[#0B4F35]">{c.pontos.toFixed(1)}</td>
-                              <td className="py-3 px-4 text-center font-mono text-slate-600">{c.buchholz.toFixed(1)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+
+                    {/* CLASSIFICAÇÃO LOGO ABAIXO DOS CONFRONTOS (QUANDO EM JOGOS & CONFRONTOS) */}
+                    {subXadrez === 'CHAVEAMENTO' && (
+                      <div className="bg-white border border-[#DCE5DF] rounded-2xl overflow-hidden shadow-2xs">
+                        <div className="px-5 py-2.5 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#0B4F35] flex items-center gap-1.5">
+                            <BarChart3 className="w-3.5 h-3.5" />
+                            <span>Classificação — Xadrez ({ch.categoria} {sexoLabel})</span>
+                          </span>
+                          <span className="text-[11px] text-slate-500">Critério: Pontos → Buchholz</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs sm:text-sm text-left">
+                            <thead className="bg-[#F9FBFA] text-slate-500 text-[11px] font-bold border-b border-[#E2EAE5]">
+                              <tr>
+                                <th className="py-2.5 px-4 w-12">#</th>
+                                <th className="py-2.5 px-4">Enxadrista</th>
+                                <th className="py-2.5 px-4">Escola</th>
+                                <th className="py-2.5 px-3 text-center">J</th>
+                                <th className="py-2.5 px-3 text-center text-[#0B4F35]">Pts</th>
+                                <th className="py-2.5 px-4 text-center">Buchholz</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#EDF2EE] tabular-nums">
+                              {classifXadrez.map((c, idx) => (
+                                <tr key={c.id} className={idx < 3 ? 'bg-[#F2FBF6]/70' : 'bg-white'}>
+                                  <td className="py-3 px-4 font-bold text-slate-500">{idx + 1}º</td>
+                                  <td className="py-3 px-4 font-bold text-[#17221D]">{c.nome}</td>
+                                  <td className="py-3 px-4 text-slate-600">{c.sigla}</td>
+                                  <td className="py-3 px-3 text-center text-slate-600">{c.jogos}</td>
+                                  <td className="py-3 px-3 text-center font-black text-[#0B4F35]">{c.pontos.toFixed(1)}</td>
+                                  <td className="py-3 px-4 text-center font-mono text-slate-600">{c.buchholz.toFixed(1)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               }
