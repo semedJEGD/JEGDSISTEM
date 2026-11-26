@@ -56,7 +56,7 @@ const MODALIDADES_OFICIAIS = [
 
 const MODALIDADES_PONTOS_CORRIDOS = ['futsal', 'futebol_campo'];
 
-type ModeloEscolha = 'MATA_MATA' | 'BERGER_UNICO' | 'GRUPOS_MATA_MATA';
+type ModeloEscolha = 'MATA_MATA' | 'BERGER_UNICO' | 'GRUPOS_MATA_MATA' | 'SUICO_XADREZ';
 
 interface PainelChaveamentoOficialProps {
   municipioId?: string;
@@ -206,7 +206,7 @@ export function PainelChaveamentoOficial({
           maxRaiasPorSerie: 8,
         }),
       };
-    } else if (norm === 'xadrez') {
+    } else if (norm === 'xadrez' && modelo === 'SUICO_XADREZ') {
       if (participantesAtivos.length < 2) {
         alert('Selecione pelo menos 2 enxadristas.');
         return;
@@ -224,7 +224,11 @@ export function PainelChaveamentoOficial({
       }
 
       const formatoColetivo: 'GRUPOS_MATA_MATA' | 'MATA_MATA' | 'BERGER_UNICO' | 'FINAL_DIRETA' | 'GRUPOS_TENIS_MESA' =
-        modelo === 'BERGER_UNICO'
+        norm === 'xadrez'
+          ? participantesAtivos.length === 2
+            ? 'FINAL_DIRETA'
+            : 'MATA_MATA'
+          : modelo === 'BERGER_UNICO'
           ? 'BERGER_UNICO'
           : norm === 'tenis_mesa'
           ? modelo === 'MATA_MATA'
@@ -1067,6 +1071,42 @@ export function PainelChaveamentoOficial({
               </div>
 
               {/* Linha 2: Modelo (seletor direto) */}
+              {modObj.codigo === 'xadrez' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setModelo('MATA_MATA')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      modelo !== 'SUICO_XADREZ'
+                        ? 'bg-emerald-50/70 border-[#00A878] text-[#0F2540]'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Trophy className="w-4 h-4 text-[#00A878] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Mata-Mata (Copinha)</p>
+                      <p className="text-[10px] text-slate-400">Eliminatória direta · Quem vence avança</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModelo('SUICO_XADREZ')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      modelo === 'SUICO_XADREZ'
+                        ? 'bg-emerald-50/70 border-[#00A878] text-[#0F2540]'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Table2 className="w-4 h-4 text-[#00A878] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold">Rodadas (Suíço / Berger)</p>
+                      <p className="text-[10px] text-slate-400">Sistema por pontos e Buchholz</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+
               {modObj.codigo !== 'atletismo' && modObj.codigo !== 'xadrez' && (
                 <div className={`grid grid-cols-1 ${permitePontosCorridos ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2`}>
                   <button

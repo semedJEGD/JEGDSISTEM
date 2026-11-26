@@ -173,7 +173,7 @@ export function ChaveamentoInterativo({
     () => normalizarCodigoModalidade(chaveamento.modalidadeCodigo),
     [chaveamento.modalidadeCodigo]
   );
-  const isQueimada = modNorm === 'queimada';
+  const isQueimada = modNorm === 'queimada' || modNorm === 'xadrez';
   const isTenisMesa = modNorm === 'tenis_mesa';
   const isVolei = modNorm.includes('volei');
   const usaSets = isTenisMesa || isVolei;
