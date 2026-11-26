@@ -212,10 +212,15 @@ export function gerarPdfChaveamentoOficial(
       y += 6;
     });
   }
-  // ---- MODO 3: COLETIVAS & TÊNIS DE MESA (GRUPOS + TABELA DE JOGOS) ----
+  // ---- MODO 3: COLETIVAS, XADREZ MATA-MATA & TÊNIS DE MESA (CONFRONTOS COMPLETOS) ----
   else {
     const grupos: GrupoChaveamento[] = Array.isArray(estrutura?.grupos) ? estrutura.grupos : [];
-    if (grupos.length > 0) {
+    const mostrarGrupos =
+      grupos.length > 0 &&
+      chaveamento.formato !== 'MATA_MATA' &&
+      chaveamento.formato !== 'FINAL_DIRETA';
+
+    if (mostrarGrupos) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(15, 23, 42);
@@ -244,48 +249,136 @@ export function gerarPdfChaveamentoOficial(
       y += 3;
     }
 
-    // Tabela de Jogos
+    // Tabela de Confrontos agrupada por Fase e ordenada por número do jogo
+    const partidasOrdenadas = [...partidas].sort((a, b) => (a.numeroJogo || 0) - (b.numeroJogo || 0));
+    const concluidos = partidasOrdenadas.filter((p) => p.status === 'ENCERRADO' || p.status === 'WO').length;
+
     ensureSpace(18);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(15, 23, 42);
-    doc.text(`TABELA OFICIAL DE CONFRONTOS (${partidas.length} JOGOS)`, margin, y + 4);
+    doc.text(
+      `TABELA OFICIAL DE CONFRONTOS (${partidasOrdenadas.length} JOGOS · ${concluidos} CONCLUÍDO(S))`,
+      margin,
+      y + 4
+    );
     y += 7;
 
-    doc.setFillColor(241, 245, 249);
-    doc.rect(margin, y, pageWidth - margin * 2, 6.5, 'F');
-    doc.setFontSize(7.5);
-    doc.setTextColor(30, 41, 59);
-    doc.text('JOGO', margin + 2, y + 4.5);
-    doc.text('DATA / HORA', margin + 15, y + 4.5);
-    doc.text('FASE / GRUPO', margin + 44, y + 4.5);
-    doc.text('CONFRONTO', margin + 78, y + 4.5);
-    doc.text('LOCAL', margin + 148, y + 4.5);
-    doc.text('PLACAR', margin + 169, y + 4.5);
-    y += 6.5;
+    const ORDEM_BLOCOS = ['GRUPOS', 'OITAVAS', 'QUARTAS', 'SEMIFINAL', 'TERCEIRO_LUGAR', 'FINAL'];
+    const fasesPresentes = Array.from(new Set(partidasOrdenadas.map((p) => p.fase || 'GRUPOS'))).sort((a, b) => {
+      const ia = ORDEM_BLOCOS.indexOf(a);
+      const ib = ORDEM_BLOCOS.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
 
-    doc.setFont('helvetica', 'normal');
-    for (const p of partidas) {
-      ensureSpace(8);
-      doc.setDrawColor(226, 232, 240);
-      doc.line(margin, y + 7, pageWidth - margin, y + 7);
-      doc.setFontSize(7.5);
-      doc.setTextColor(30, 41, 59);
-      doc.text(`#${p.numeroJogo || '-'}`, margin + 2, y + 4.8);
-      doc.text(`${formatarDataBR(p.dataEvento)} ${p.horario}`, margin + 15, y + 4.8);
-      const faseTxt = p.fase === 'GRUPOS' ? p.grupo || 'Grupos' : FASES_LABEL[p.fase] || p.fase;
-      doc.text(faseTxt.slice(0, 18), margin + 44, y + 4.8);
+    const desenharHeaderConfrontos = () => {
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, y, pageWidth - margin * 2, 6.5, 'F');
       doc.setFont('helvetica', 'bold');
-      const confronto = `${p.escolaASigla || p.escolaANome}  ×  ${p.escolaBSigla || p.escolaBNome}`;
-      doc.text(confronto.slice(0, 38), margin + 78, y + 4.8);
-      doc.setFont('helvetica', 'normal');
-      doc.text((p.local || '-').slice(0, 14), margin + 148, y + 4.8);
-      const placar =
-        p.status === 'ENCERRADO' || p.status === 'WO'
-          ? `${formatarPlacarComPenaltis(p.placarA, p.placarB, p.detalhesPlacar)}${p.status === 'WO' ? ' WO' : ''}`
+      doc.setFontSize(7.2);
+      doc.setTextColor(30, 41, 59);
+      doc.text('JOGO', margin + 2, y + 4.4);
+      doc.text('DATA / HORA / LOCAL', margin + 15, y + 4.4);
+      doc.text('CONFRONTO (JOGADOR / EQUIPE A  ×  JOGADOR / EQUIPE B)', margin + 54, y + 4.4);
+      doc.text('PLACAR / SITUAÇÃO', pageWidth - margin - 2, y + 4.4, { align: 'right' });
+      y += 6.5;
+    };
+
+    for (const fase of fasesPresentes) {
+      const jogosDaFase = partidasOrdenadas.filter((p) => (p.fase || 'GRUPOS') === fase);
+      if (jogosDaFase.length === 0) continue;
+
+      ensureSpace(22);
+      doc.setFillColor(232, 247, 241);
+      doc.rect(margin, y, pageWidth - margin * 2, 6.2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(11, 79, 53);
+      const labelFase = fase === 'FINAL' ? 'GRANDE FINAL' : (FASES_LABEL[fase] || fase).toUpperCase();
+      doc.text(`${labelFase} (${jogosDaFase.length} jogo(s))`, margin + 3, y + 4.3);
+      y += 6.5;
+
+      desenharHeaderConfrontos();
+
+      for (const p of jogosDaFase) {
+        const rowH = 11.5;
+        if (y + rowH > pageHeight - 16) {
+          doc.addPage();
+          y = 16;
+          desenharHeaderConfrontos();
+        }
+
+        const encerrado = p.status === 'ENCERRADO' || p.status === 'WO';
+        const venceuA =
+          encerrado && (p.vencedorEscolaId === p.escolaAId || (!p.vencedorEscolaId && p.placarA > p.placarB));
+        const venceuB =
+          encerrado && (p.vencedorEscolaId === p.escolaBId || (!p.vencedorEscolaId && p.placarB > p.placarA));
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.25);
+        doc.line(margin, y + rowH, pageWidth - margin, y + rowH);
+
+        // Número do Jogo
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 37, 64);
+        doc.text(`J${p.numeroJogo || '-'}`, margin + 2, y + 6.5);
+
+        // Data / Hora / Local
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`${formatarDataBR(p.dataEvento).slice(0, 5)} · ${p.horario}`, margin + 15, y + 4.6);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        const subMeta = [p.grupo, p.local].filter(Boolean).join(' · ') || '-';
+        doc.text(subMeta.slice(0, 24), margin + 15, y + 9.2);
+
+        // Confronto completo em 2 linhas (Jogador/Equipe A e Jogador/Equipe B — sem cortar!)
+        const nomeA = (p.escolaASigla || p.escolaANome || 'A definir').trim();
+        const nomeB = (p.escolaBSigla || p.escolaBNome || 'A definir').trim();
+
+        doc.setFont('helvetica', venceuA ? 'bold' : 'normal');
+        doc.setFontSize(7.5);
+        if (venceuA) doc.setTextColor(11, 79, 53);
+        else doc.setTextColor(15, 23, 42);
+        doc.text(`A: ${nomeA.slice(0, 56)}${venceuA ? '  [VENC.]' : ''}`, margin + 54, y + 4.6);
+
+        doc.setFont('helvetica', venceuB ? 'bold' : 'normal');
+        doc.setFontSize(7.5);
+        if (venceuB) doc.setTextColor(11, 79, 53);
+        else doc.setTextColor(15, 23, 42);
+        doc.text(`B: ${nomeB.slice(0, 56)}${venceuB ? '  [VENC.]' : ''}`, margin + 54, y + 9.4);
+
+        // Placar e Status
+        const placarStr = encerrado
+          ? `${formatarPlacarComPenaltis(p.placarA, p.placarB, p.detalhesPlacar)}${p.status === 'WO' ? ' (W.O.)' : ''}`
+          : p.status === 'AO_VIVO'
+          ? `${p.placarA} × ${p.placarB}`
           : '___ × ___';
-      doc.text(placar, margin + 169, y + 4.8);
-      y += 7;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.2);
+        doc.setTextColor(encerrado ? 11 : 15, encerrado ? 79 : 23, encerrado ? 53 : 42);
+        doc.text(placarStr, pageWidth - margin - 2, y + 5, { align: 'right' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.3);
+        doc.setTextColor(100, 116, 139);
+        const statusLabel =
+          p.status === 'ENCERRADO'
+            ? 'Encerrado'
+            : p.status === 'WO'
+            ? 'W.O.'
+            : p.status === 'AO_VIVO'
+            ? 'Ao Vivo'
+            : 'Agendado';
+        doc.text(statusLabel, pageWidth - margin - 2, y + 9.4, { align: 'right' });
+
+        y += rowH;
+      }
+      y += 4;
     }
   }
 
