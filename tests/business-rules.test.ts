@@ -166,18 +166,22 @@ assert(
   'Futsal com 11 atletas deve ser BLOQUEADO (máx 10)'
 );
 
-// Futebol de Campo min 11 máx 20
+// Futebol de Campo min 12 máx 22 por equipe (até 2 equipes = 44 atletas)
 assert(
-  JegdsRulesService.validarLimiteElenco('futebol_campo', 11).valido,
-  'Futebol com 11 atletas (mínimo) deve ser VÁLIDO'
+  JegdsRulesService.validarLimiteElenco('futebol_campo', 12).valido,
+  'Futebol com 12 atletas (mínimo) deve ser VÁLIDO'
 );
 assert(
-  JegdsRulesService.validarLimiteElenco('futebol_campo', 20).valido,
-  'Futebol com 20 atletas (máximo) deve ser VÁLIDO'
+  !JegdsRulesService.validarLimiteElenco('futebol_campo', 11).valido,
+  'Futebol com 11 atletas deve ser BLOQUEADO (mín 12)'
 );
 assert(
-  !JegdsRulesService.validarLimiteElenco('futebol_campo', 21).valido,
-  'Futebol com 21 atletas deve ser BLOQUEADO (máx 20)'
+  JegdsRulesService.validarLimiteElenco('futebol_campo', 22).valido,
+  'Futebol com 22 atletas (máximo por equipe) deve ser VÁLIDO'
+);
+assert(
+  !JegdsRulesService.validarLimiteElenco('futebol_campo', 23).valido,
+  'Futebol com 23 atletas na mesma equipe deve ser BLOQUEADO (máx 22)'
 );
 
 // Teste de Número Máximo de Equipes

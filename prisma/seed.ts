@@ -152,10 +152,10 @@ async function main() {
       tipo: 'COLETIVA',
       dataEvento: new Date('2026-12-12T08:00:00Z'),
       prazoInscricao: new Date('2026-12-05T23:59:59Z'),
-      minAtletas: 11,
-      maxAtletas: 20,
+      minAtletas: 12,
+      maxAtletas: 22,
       maxProvasPorAtleta: 1,
-      descricao: 'Apenas Masculino. Máximo 20 atletas no elenco.'
+      descricao: 'Até 2 equipes por escola (até 44 atletas no total). Min 12 e Max 22 atletas por equipe.'
     },
     {
       codigo: 'voleibol',

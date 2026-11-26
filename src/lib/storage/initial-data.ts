@@ -197,10 +197,10 @@ export const MODALIDADES_OFICIAIS_JEGDS: ModalidadeConfig[] = [
     prazoInscricao: '2026-12-05',
     categoriasPermitidas: ['MIRIM', 'INFANTIL', 'INFANTO', 'JUNIOR'],
     sexosPermitidos: ['MASCULINO', 'FEMININO'],
-    minAtletas: 11,
-    maxAtletas: 20,
+    minAtletas: 12,
+    maxAtletas: 22,
     maxProvasPorAtleta: 1,
-    descricao: 'Permitido até 2 equipes por escola nos naipes Masculino e Feminino. Elenco com Min 11 e Max 20 atletas por equipe.',
+    descricao: 'Permitido até 2 equipes por escola nos naipes Masculino e Feminino (até 44 atletas no total). Elenco com Min 12 e Max 22 atletas por equipe.',
     localPadrao: 'Estádio Municipal'
   },
   {

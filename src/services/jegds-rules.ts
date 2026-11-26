@@ -77,7 +77,8 @@ export const MODALIDADES_JEGDS: Record<ModalidadeCodigoJEGDS, ModalidadeInfo> = 
     tipo: 'COLETIVA',
     dataEvento: '2026-12-12',
     prazoInscricaoPadrao: '2026-12-05',
-    limiteMaxElenco: 20
+    limiteMinElenco: 12,
+    limiteMaxElenco: 22
   },
   voleibol: {
     codigo: 'voleibol',

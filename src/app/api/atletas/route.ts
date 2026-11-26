@@ -242,10 +242,9 @@ export async function POST(request: Request) {
 
         const provasArr = Array.isArray(modInsc.provas) ? modInsc.provas.filter(Boolean) : [];
         const provaStr = provasArr.length > 0 ? provasArr.join(',') : '';
-        const equipeId = `insc-${atleta.escolaId}-${modDb.codigo}-eq1`;
 
         // Busca inscrições existentes para (atletaId, modalidadeId) para atualizar in-place
-        // sem criar linhas duplicadas quando o usuário altera as provas de Atletismo!
+        // sem criar linhas duplicadas e preservando a equipe (Equipe A / Equipe B) já atribuída!
         const existentes = await prisma.inscricao.findMany({
           where: {
             atletaId: atleta.id,
@@ -253,6 +252,32 @@ export async function POST(request: Request) {
           },
           orderBy: { dataInscricao: 'desc' },
         });
+
+        const determinarEquipeId = async (): Promise<string> => {
+          const permiteDuasEquipes = modDb.codigo === 'futebol_campo' || modDb.codigo === 'futsal';
+          const maxPorEquipe = modDb.maxAtletas || (modDb.codigo === 'futebol_campo' ? 22 : 10);
+          const inscsMesmaCat = await prisma.inscricao.findMany({
+            where: {
+              escolaId: atleta.escolaId,
+              modalidadeId: modDb.id,
+              categoria: atleta.categoria,
+              sexo: atleta.sexo,
+              NOT: { atletaId: atleta.id },
+            },
+            select: { equipe: true },
+          });
+
+          const isEqB = (eq?: string | null) => Boolean(eq && /(-B|-eq2|__eq2|_2)$/i.test(eq));
+          const eq1ChaveExistente = inscsMesmaCat.find((r) => r.equipe && !isEqB(r.equipe))?.equipe;
+          const eq2ChaveExistente = inscsMesmaCat.find((r) => isEqB(r.equipe))?.equipe;
+          const qtdEq1 = inscsMesmaCat.filter((r) => !isEqB(r.equipe)).length;
+
+          const eq1Padrao = eq1ChaveExistente || `insc-${atleta.escolaId}-${modDb.codigo}-${atleta.categoria}-${atleta.sexo}-eq1`;
+          if (permiteDuasEquipes && qtdEq1 >= maxPorEquipe) {
+            return eq2ChaveExistente || `insc-${atleta.escolaId}-${modDb.codigo}-${atleta.categoria}-${atleta.sexo}-eq2`;
+          }
+          return eq1Padrao;
+        };
 
         if (existentes.length > 0) {
           const principal = existentes[0];
@@ -264,6 +289,13 @@ export async function POST(request: Request) {
               },
             });
           }
+          const mesmaOrigem =
+            principal.escolaId === atleta.escolaId &&
+            principal.categoria === atleta.categoria &&
+            principal.sexo === atleta.sexo &&
+            Boolean(principal.equipe);
+          const equipeFinal = mesmaOrigem ? principal.equipe! : await determinarEquipeId();
+
           await prisma.inscricao.update({
             where: { id: principal.id },
             data: {
@@ -272,10 +304,11 @@ export async function POST(request: Request) {
               categoria: atleta.categoria,
               sexo: atleta.sexo,
               prova: provaStr,
-              equipe: equipeId,
+              equipe: equipeFinal,
             },
           });
         } else {
+          const equipeFinal = await determinarEquipeId();
           await prisma.inscricao.create({
             data: {
               id: `insc-${Date.now()}-${atleta.id}-${modDb.codigo}`,
@@ -286,7 +319,7 @@ export async function POST(request: Request) {
               categoria: atleta.categoria,
               sexo: atleta.sexo,
               prova: provaStr,
-              equipe: equipeId,
+              equipe: equipeFinal,
               status: 'PENDENTE',
             },
           });
