@@ -133,11 +133,11 @@ export default function Navbar() {
               href={homeHref}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname === homeHref || pathname === '/'
-                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                  ? 'bg-[#0B4F35] text-white font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
-              <Home className={`w-3.5 h-3.5 ${pathname === homeHref || pathname === '/' ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <Home className={`w-3.5 h-3.5 ${pathname === homeHref || pathname === '/' ? 'text-[#A7F3D0]' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Início</span>
             </Link>
 
@@ -145,11 +145,11 @@ export default function Navbar() {
               href={`/eventos?m=${munSlug}`}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/eventos')
-                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                  ? 'bg-[#0B4F35] text-white font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
-              <Trophy className={`w-3.5 h-3.5 ${pathname.startsWith('/eventos') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <Trophy className={`w-3.5 h-3.5 ${pathname.startsWith('/eventos') ? 'text-[#A7F3D0]' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Eventos do Dia</span>
             </Link>
 
@@ -157,11 +157,11 @@ export default function Navbar() {
               href={`/modalidades?m=${munSlug}`}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/modalidades')
-                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                  ? 'bg-[#0B4F35] text-white font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
-              <Medal className={`w-3.5 h-3.5 ${pathname.startsWith('/modalidades') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <Medal className={`w-3.5 h-3.5 ${pathname.startsWith('/modalidades') ? 'text-[#A7F3D0]' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Modalidades</span>
             </Link>
 
@@ -169,11 +169,11 @@ export default function Navbar() {
               href={`/regulamento?m=${munSlug}`}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/regulamento')
-                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                  ? 'bg-[#0B4F35] text-white font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
-              <BookOpen className={`w-3.5 h-3.5 ${pathname.startsWith('/regulamento') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <BookOpen className={`w-3.5 h-3.5 ${pathname.startsWith('/regulamento') ? 'text-[#A7F3D0]' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Regulamento</span>
             </Link>
 
@@ -181,11 +181,11 @@ export default function Navbar() {
               href={`/validar?m=${munSlug}`}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 pathname.startsWith('/validar')
-                  ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/60'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border border-transparent'
+                  ? 'bg-[#0B4F35] text-white font-semibold shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               }`}
             >
-              <QrCode className={`w-3.5 h-3.5 ${pathname.startsWith('/validar') ? 'text-emerald-700' : 'text-slate-400'}`} aria-hidden="true" />
+              <QrCode className={`w-3.5 h-3.5 ${pathname.startsWith('/validar') ? 'text-[#A7F3D0]' : 'text-slate-400'}`} aria-hidden="true" />
               <span>Crachá</span>
             </Link>
 

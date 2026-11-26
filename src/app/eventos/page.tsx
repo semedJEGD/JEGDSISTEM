@@ -43,6 +43,7 @@ import {
   CardPodioJornalistico,
   parsePodioConteudo,
 } from '@/components/eventos/CardPodioJornalistico';
+import { PainelTabelasChaveamentoPublico } from '@/components/eventos/PainelTabelasChaveamentoPublico';
 
 type AbaPublica = 'COBERTURA' | 'ATLETAS_DIA' | 'JOGOS' | 'TABELAS' | 'ARTILHARIA' | 'MEDALHAS';
 
@@ -320,26 +321,39 @@ export default function EventosDoDiaPage() {
   return (
     <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 w-full">
       {/* ============================================================ */}
-      {/* TOPO SLIM E DIRETO (SEM CARD PESADO EMPURRANDO O CONTEÚDO) */}
+      {/* TOPO INSTITUCIONAL COM BREADCRUMB + DATA + AÇÕES             */}
       {/* ============================================================ */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#087A5B]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${partidasAoVivo.length > 0 ? 'bg-rose-600 animate-ping' : 'bg-[#00A878]'}`} />
-              <span>{partidasAoVivo.length > 0 ? `${partidasAoVivo.length} jogo(s) ao vivo agora` : `Cobertura Oficial • ${siglaEvento}`}</span>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B4F35]">
+            <span className={`w-2 h-2 rounded-full ${partidasAoVivo.length > 0 ? 'bg-rose-600 animate-ping' : 'bg-[#00A878]'}`} />
+            <span>
+              {partidasAoVivo.length > 0
+                ? `${partidasAoVivo.length} jogo(s) ao vivo agora`
+                : 'Cobertura Oficial'}
             </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-bold text-[#0B4F35]">{siglaEvento}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#17221D] tracking-tight">
             Eventos do Dia
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <div className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-[#DCE5DF] text-xs font-semibold text-[#17221D] shadow-2xs">
+            <span className="flex items-center gap-1.5">
+              <CalendarClock className="w-3.5 h-3.5 text-[#0B4F35]" />
+              <span className="capitalize">
+                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={() => carregar(false)}
-            className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-[#E2EAE5] text-slate-600 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="px-3 py-2 rounded-xl bg-white hover:bg-[#F7F9F8] border border-[#DCE5DF] text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
             title="Atualizar dados agora"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin' : ''}`} />
@@ -351,7 +365,7 @@ export default function EventosDoDiaPage() {
             <Link
               href="/eventos/telao"
               target="_blank"
-              className="px-4 py-2 rounded-xl bg-[#00A878] hover:bg-[#087A5B] text-white text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors"
+              className="px-4 py-2 rounded-xl bg-[#0B4F35] hover:bg-[#083D29] text-white text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors"
             >
               <Tv className="w-3.5 h-3.5" />
               <span>Modo Telão</span>
@@ -360,14 +374,16 @@ export default function EventosDoDiaPage() {
         </div>
       </div>
 
-      {/* AVISO URGENTE / CHAMADA DE QUADRA (SÓ QUANDO EXISTIR) */}
+      {/* AVISO OFICIAL / CHAMADA DE QUADRA (ESTILO INSTITUCIONAL VERDE SUAVE) */}
       {avisosAtivos.length > 0 && (
-        <div className="bg-amber-50/90 border border-amber-200 rounded-xl px-4 py-2.5 flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-amber-950">
-          <Megaphone className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+        <div className="bg-[#E8F7F1] border border-[#00A878]/25 rounded-xl px-4 py-3 flex items-start sm:items-center gap-3 text-xs sm:text-sm text-[#0B4F35]">
+          <Trophy className="w-4 h-4 text-[#0B4F35] shrink-0 mt-0.5 sm:mt-0" />
           <div className="space-y-0.5">
             {avisosAtivos.slice(0, 2).map((av) => (
               <p key={av.id}>
-                <strong className="font-bold uppercase">{av.titulo}:</strong> {av.mensagem}
+                <strong className="font-bold">{av.titulo}</strong>
+                <span className="mx-2 text-[#0B4F35]/35">|</span>
+                <span className="text-[#17221D]/85">{av.mensagem}</span>
               </p>
             ))}
           </div>
@@ -401,13 +417,13 @@ export default function EventosDoDiaPage() {
         </div>
       )}
 
-      {/* NAVEGAÇÃO LIMPA POR ABAS (SEM CONTADORES ZERO) */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-[#E2EAE5]">
+      {/* NAVEGAÇÃO HORIZONTAL EM BARRA INSTITUCIONAL LIMPA */}
+      <div className="bg-white border border-[#DCE5DF] rounded-2xl p-1.5 shadow-2xs flex items-center gap-1 overflow-x-auto">
         {(
           [
             { id: 'COBERTURA', label: 'Notícias & Cronograma', icon: Newspaper, count: 0 },
-            { id: 'ATLETAS_DIA', label: 'Atletas de Hoje', icon: Users, count: atletasDoDiaFiltrados.length },
-            { id: 'JOGOS', label: 'Jogos & Placares', icon: Trophy, count: bundle.partidas.length },
+            { id: 'ATLETAS_DIA', label: 'Atletas', icon: Users, count: atletasDoDiaFiltrados.length },
+            { id: 'JOGOS', label: 'Jogos e Placares', icon: Trophy, count: bundle.partidas.length },
             { id: 'TABELAS', label: 'Tabelas & Chaveamento', icon: CalendarClock, count: 0 },
             { id: 'ARTILHARIA', label: 'Artilharia', icon: Target, count: bundle.artilharia.length },
             { id: 'MEDALHAS', label: 'Quadro de Medalhas', icon: Medal, count: bundle.medalhas.length },
@@ -420,16 +436,20 @@ export default function EventosDoDiaPage() {
               key={tab.id}
               type="button"
               onClick={() => setAba(tab.id)}
-              className={`px-3.5 py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+              className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
                 ativo
-                  ? 'border-[#00A878] text-[#087A5B]'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
+                  ? 'bg-[#0B4F35] text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-[#17221D] hover:bg-[#F7F9F8]'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-4 h-4 ${ativo ? 'text-[#A7F3D0]' : 'text-[#0B4F35]/70'}`} />
               <span>{tab.label}</span>
               {tab.count > 0 && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${ativo ? 'bg-[#E8F7F1] text-[#087A5B]' : 'bg-slate-100 text-slate-500'}`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
+                    ativo ? 'bg-white/20 text-white' : 'bg-[#EEF3F0] text-[#0B4F35]'
+                  }`}
+                >
                   {tab.count}
                 </span>
               )}
@@ -1049,192 +1069,14 @@ export default function EventosDoDiaPage() {
       )}
 
       {/* ============================================================ */}
-      {/* ABA 3: TABELAS DE GRUPOS & CHAVEAMENTO */}
+      {/* ABA 3: TABELAS DE GRUPOS & CHAVEAMENTO (FIFA/NCAA)           */}
       {/* ============================================================ */}
       {aba === 'TABELAS' && (
-        <div className="space-y-8">
-          {classificacoes.length === 0 && mataMata.length === 0 && (!bundle.chaveamentos || bundle.chaveamentos.length === 0) ? (
-            <div className="bg-white border border-[#E2EAE5] rounded-2xl p-10 text-center text-sm text-slate-500">
-              As tabelas de classificação e chaveamentos aparecem automaticamente conforme os jogos são cadastrados.
-            </div>
-          ) : (
-            <>
-              {classificacoes.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {classificacoes.map((tab) => (
-                    <div key={tab.chave} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
-                      <div className="px-5 py-3.5 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-[#17221D]">
-                          {tab.modalidadeNome} • {tab.categoria} ({tab.sexo === 'FEMININO' ? 'F' : 'M'})
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-md bg-[#E8F7F1] text-[#087A5B] text-xs font-bold">
-                          {tab.grupo}
-                        </span>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left">
-                          <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
-                            <tr>
-                              <th className="py-2.5 px-3">#</th>
-                              <th className="py-2.5 px-3">Escola</th>
-                              <th className="py-2.5 px-2 text-center">J</th>
-                              <th className="py-2.5 px-2 text-center">V</th>
-                              <th className="py-2.5 px-2 text-center">E</th>
-                              <th className="py-2.5 px-2 text-center">D</th>
-                              <th className="py-2.5 px-2 text-center">SG</th>
-                              <th className="py-2.5 px-3 text-center text-[#087A5B]">PTS</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {tab.linhas.map((l, i) => (
-                              <tr key={l.escolaId} className={i < 2 ? 'bg-emerald-50/30' : ''}>
-                                <td className="py-2.5 px-3 font-bold text-slate-500">{i + 1}º</td>
-                                <td className="py-2.5 px-3 font-bold text-[#17221D]">{l.escolaSigla}</td>
-                                <td className="py-2.5 px-2 text-center">{l.jogos}</td>
-                                <td className="py-2.5 px-2 text-center font-semibold text-[#087A5B]">{l.vitorias}</td>
-                                <td className="py-2.5 px-2 text-center">{l.empates}</td>
-                                <td className="py-2.5 px-2 text-center">{l.derrotas}</td>
-                                <td className="py-2.5 px-2 text-center">{l.saldo}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-[#087A5B]">{l.pontos}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {mataMata.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-base font-black text-[#17221D]">Fases Eliminatórias</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {mataMata.map((p) => (
-                      <div key={p.id} className="bg-white border border-[#E2EAE5] rounded-2xl p-4 space-y-2 shadow-2xs">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-[#8B1D2C] uppercase">{FASES_LABEL[p.fase] || p.fase}</span>
-                          <span className="text-slate-400 font-semibold">{p.modalidadeNome} • {p.categoria}</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${p.vencedorEscolaId === p.escolaAId ? 'bg-[#E8F7F1] border-[#00A878]/30 font-black' : 'bg-[#F7F9F8] border-transparent font-semibold'}`}>
-                            <span className="text-xs truncate">{p.escolaASigla || p.escolaANome}</span>
-                            <span className="text-sm font-black">{p.status === 'AGENDADO' ? '-' : p.placarA}</span>
-                          </div>
-                          <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${p.vencedorEscolaId === p.escolaBId ? 'bg-[#E8F7F1] border-[#00A878]/30 font-black' : 'bg-[#F7F9F8] border-transparent font-semibold'}`}>
-                            <span className="text-xs truncate">{p.escolaBSigla || p.escolaBNome}</span>
-                            <span className="text-sm font-black">{p.status === 'AGENDADO' ? '-' : p.placarB}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Balizamento de Atletismo e Torneios de Xadrez publicados */}
-              {(bundle.chaveamentos || [])
-                .filter((c) => c.formato === 'BALIZAMENTO_ATLETISMO' || c.formato === 'SUICO_XADREZ')
-                .map((ch) => {
-                  let est: any = null;
-                  try {
-                    est = ch.estruturaJson ? JSON.parse(ch.estruturaJson) : null;
-                  } catch {
-                    est = null;
-                  }
-                  if (!est) return null;
-
-                  if (ch.formato === 'BALIZAMENTO_ATLETISMO' && Array.isArray(est.provas)) {
-                    return (
-                      <div key={ch.id} className="space-y-4">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <h3 className="text-base font-black text-[#17221D]">
-                            Balizamento Oficial • {ch.modalidadeNome} ({ch.categoria} • {ch.sexo})
-                          </h3>
-                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] font-bold">
-                            {ch.status} • Seed {ch.seed}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {(est.provas as ProvaAtletismoBalizamento[]).map((pr) => (
-                            <div key={pr.prova} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
-                              <div className="px-4 py-2.5 bg-[#F7F9F8] border-b border-[#E2EAE5] font-bold text-xs text-[#087A5B] uppercase">
-                                {pr.prova}
-                              </div>
-                              <div className="p-3 space-y-2.5">
-                                {pr.series.map((s) => (
-                                  <div key={s.numero} className="space-y-1">
-                                    <p className="text-[11px] font-bold text-slate-500">{s.nome}</p>
-                                    {s.raias.map((r) => (
-                                      <div key={r.raia} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
-                                        <span>
-                                          <strong className="text-[#087A5B] mr-1.5">R{r.raia}</strong>
-                                          <span className="font-semibold text-[#17221D]">{r.atletaNome}</span>{' '}
-                                          <span className="text-slate-400">({r.escolaSigla})</span>
-                                        </span>
-                                        <span className="font-mono font-bold text-slate-700">
-                                          {r.posicao ? `${r.posicao}º ` : ''}
-                                          {r.marca || '-'}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (ch.formato === 'SUICO_XADREZ' && est.rodadas) {
-                    const classifXadrez = calcularClassificacaoXadrez(est as EstruturaXadrez);
-                    return (
-                      <div key={ch.id} className="bg-white border border-[#E2EAE5] rounded-2xl overflow-hidden shadow-2xs">
-                        <div className="px-5 py-3.5 bg-[#F7F9F8] border-b border-[#E2EAE5] flex items-center justify-between flex-wrap gap-2">
-                          <h3 className="text-sm font-bold text-[#17221D]">
-                            Xadrez ({est.sistema}) • {ch.categoria} ({ch.sexo === 'FEMININO' ? 'F' : 'M'})
-                          </h3>
-                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#E8F7F1] text-[#087A5B] font-bold">
-                            {est.rodadas.length}/{est.totalRodadasPrevistas} rodadas • Critério Buchholz
-                          </span>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs text-left">
-                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
-                              <tr>
-                                <th className="py-2.5 px-3">#</th>
-                                <th className="py-2.5 px-3">Enxadrista</th>
-                                <th className="py-2.5 px-3">Escola</th>
-                                <th className="py-2.5 px-2 text-center">J</th>
-                                <th className="py-2.5 px-2 text-center text-[#087A5B]">PTS</th>
-                                <th className="py-2.5 px-3 text-center">Buchholz</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {classifXadrez.map((c, idx) => (
-                                <tr key={c.id} className={idx < 3 ? 'bg-emerald-50/30' : ''}>
-                                  <td className="py-2 px-3 font-bold text-slate-500">{idx + 1}º</td>
-                                  <td className="py-2 px-3 font-bold text-[#17221D]">{c.nome}</td>
-                                  <td className="py-2 px-3 text-slate-600">{c.sigla}</td>
-                                  <td className="py-2 px-2 text-center">{c.jogos}</td>
-                                  <td className="py-2 px-2 text-center font-black text-[#087A5B]">{c.pontos.toFixed(1)}</td>
-                                  <td className="py-2 px-3 text-center font-mono text-slate-600">{c.buchholz.toFixed(1)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })}
-            </>
-          )}
-        </div>
+        <PainelTabelasChaveamentoPublico
+          partidas={bundle.partidas}
+          classificacoes={classificacoes}
+          chaveamentos={bundle.chaveamentos || []}
+        />
       )}
 
       {/* ============================================================ */}
