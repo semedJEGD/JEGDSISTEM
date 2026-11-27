@@ -39,19 +39,21 @@ export class CrachaDobravelService {
     doc.setFillColor(...CORES_JEGD.borda);
     const cx = x + w / 2;
     // Cabeça
-    doc.circle(cx, y + h * 0.38, 2.8, 'F');
+    doc.circle(cx, y + h * 0.37, Math.min(w, h) * 0.17, 'F');
     // Ombros
-    doc.roundedRect(cx - 4.5, y + h * 0.55, 9, 5, 2, 2, 'F');
+    const ombroW = w * 0.56;
+    const ombroH = h * 0.25;
+    doc.roundedRect(cx - ombroW / 2, y + h * 0.54, ombroW, ombroH, 2.5, 2.5, 'F');
 
     doc.setTextColor(...CORES_JEGD.textoMuted);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(4.2);
-    doc.text('FOTO 3X4', cx, y + h - 2, { align: 'center' });
+    doc.setFontSize(5.4);
+    doc.text('FOTO 3X4', cx, y + h - 2.4, { align: 'center' });
   }
 
   /**
-   * Desenha o Novo Modelo Oficial do Crachá JEGDS 2026 Dobrável (Frente e Verso lado a lado)
-   * Dimensões desdobrado: 96mm x 76mm (Cada face mede 48mm x 76mm - Padrão Cartão / Porta-Crachá)
+   * Desenha o Modelo Oficial do Crachá JEGDS 2026 Dobrável (Frente e Verso lado a lado)
+   * Dimensões desdobrado: 132mm x 92mm (Cada face mede 66mm x 92mm - 4 crachás grandes por folha A4 paisagem)
    */
   public static async desenharCrachaDobravelOficial(
     doc: jsPDF,
@@ -64,13 +66,13 @@ export class CrachaDobravelService {
     logoBase64?: string | null,
     brasaoBase64?: string | null
   ): Promise<void> {
-    const wHalf = 48;
-    const h = 76;
-    const headerH = 14; // Altura idêntica na frente e no verso (Simetria de Dobra 100%)
+    const wHalf = 66;
+    const h = 92;
+    const headerH = 17; // Altura idêntica na frente e no verso (Simetria de Dobra 100%)
     const tokenCracha = atleta.crachaToken || `CR-${atleta.id.toUpperCase().slice(0, 8)}`;
 
     // -------------------------------------------------------------
-    // 1. FRENTE (LADO ESQUERDO: x até x + 48)
+    // 1. FRENTE (LADO ESQUERDO: x até x + 66)
     // -------------------------------------------------------------
     // Fundo Branco do Crachá
     doc.setFillColor(255, 255, 255);
@@ -82,191 +84,191 @@ export class CrachaDobravelService {
 
     // Linha dourada de detalhe na base do cabeçalho
     doc.setFillColor(...CORES_JEGD.destaqueOuro);
-    doc.rect(x, y + headerH - 0.7, wHalf, 0.7, 'F');
+    doc.rect(x, y + headerH - 0.9, wHalf, 0.9, 'F');
 
     // Tipografia do Cabeçalho da Frente
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.text('JEGDS 2026', x + 3.5, y + 6);
+    doc.setFontSize(11.5);
+    doc.text('JEGDS 2026', x + 4.5, y + 7.5);
 
-    doc.setFontSize(4.0);
+    doc.setFontSize(5.2);
     doc.setFont('helvetica', 'bold');
-    doc.text('GONÇALVES DIAS • MA • SEMED', x + 3.5, y + 10.2);
+    doc.text('GONÇALVES DIAS • MA • SEMED', x + 4.5, y + 12.8);
 
     // Logo Circular no Canto Direito do Cabeçalho
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', x + wHalf - 12.5, y + 1.5, 10.5, 10.5);
+        doc.addImage(logoBase64, 'PNG', x + wHalf - 15.5, y + 1.8, 13, 13);
       } catch {}
     }
 
     // Moldura e Foto 3x4 do Atleta (Centralizada)
-    const fotoW = 16.5;
-    const fotoH = 20.5;
+    const fotoW = 22;
+    const fotoH = 27;
     const fotoX = x + (wHalf - fotoW) / 2;
-    const fotoY = y + 15.5;
+    const fotoY = y + 19;
 
     doc.setDrawColor(...CORES_JEGD.secundaria);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(fotoX, fotoY, fotoW, fotoH, 1, 1, 'S');
+    doc.setLineWidth(0.45);
+    doc.roundedRect(fotoX, fotoY, fotoW, fotoH, 1.2, 1.2, 'S');
 
     if (atleta.documentos?.foto3x4) {
       try {
-        doc.addImage(atleta.documentos.foto3x4, 'JPEG', fotoX + 0.3, fotoY + 0.3, fotoW - 0.6, fotoH - 0.6);
+        doc.addImage(atleta.documentos.foto3x4, 'JPEG', fotoX + 0.4, fotoY + 0.4, fotoW - 0.8, fotoH - 0.8);
       } catch {
-        this.desenharPlaceholderFoto(doc, fotoX + 0.3, fotoY + 0.3, fotoW - 0.6, fotoH - 0.6);
+        this.desenharPlaceholderFoto(doc, fotoX + 0.4, fotoY + 0.4, fotoW - 0.8, fotoH - 0.8);
       }
     } else {
-      this.desenharPlaceholderFoto(doc, fotoX + 0.3, fotoY + 0.3, fotoW - 0.6, fotoH - 0.6);
+      this.desenharPlaceholderFoto(doc, fotoX + 0.4, fotoY + 0.4, fotoW - 0.8, fotoH - 0.8);
     }
 
     // Nome do Atleta (Tipografia Responsiva para Evitar Colisão)
     doc.setTextColor(...CORES_JEGD.escuro);
     doc.setFont('helvetica', 'bold');
     const nomeLimpo = atleta.nomeCompleto.toUpperCase();
-    ajustarFonte(doc, nomeLimpo, 44, 6.6, 4.8);
-    doc.text(nomeLimpo, x + wHalf / 2, y + 38.5, { align: 'center', maxWidth: 44 });
+    ajustarFonte(doc, nomeLimpo, 60, 8.8, 6.2);
+    doc.text(nomeLimpo, x + wHalf / 2, y + 49.8, { align: 'center', maxWidth: 60 });
 
     // Nome da Escola
     doc.setTextColor(...CORES_JEGD.textoMuted);
     doc.setFont('helvetica', 'bold');
     const nomeEscolaTratado = escola.nome.toUpperCase().startsWith('ESC') ? escola.nome.toUpperCase() : `ESC. ${escola.nome.toUpperCase()}`;
-    ajustarFonte(doc, nomeEscolaTratado, 44, 5.0, 3.8);
-    doc.text(nomeEscolaTratado, x + wHalf / 2, y + 42.5, { align: 'center', maxWidth: 44 });
+    ajustarFonte(doc, nomeEscolaTratado, 60, 6.6, 5.0);
+    doc.text(nomeEscolaTratado, x + wHalf / 2, y + 54.6, { align: 'center', maxWidth: 60 });
 
     // Pílula / Badge da Categoria & Sexo
-    const pillW = 25;
-    const pillH = 4.2;
+    const pillW = 36;
+    const pillH = 5.4;
     const pillX = x + (wHalf - pillW) / 2;
-    const pillY = y + 44.8;
+    const pillY = y + 57.2;
     doc.setFillColor(...CORES_JEGD.secundariaEscura);
-    doc.roundedRect(pillX, pillY, pillW, pillH, 1, 1, 'F');
+    doc.roundedRect(pillX, pillY, pillW, pillH, 1.2, 1.2, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(4.6);
+    doc.setFontSize(6.2);
     const catSexo = `${atleta.categoriaCalculada || 'LIVRE'} • ${atleta.sexo === 'FEMININO' ? 'FEM' : 'MASC'}`;
-    doc.text(catSexo, x + wHalf / 2, pillY + 3.0, { align: 'center' });
+    doc.text(catSexo, x + wHalf / 2, pillY + 3.8, { align: 'center' });
 
     // Modalidade(s)
     doc.setTextColor(...CORES_JEGD.secundariaEscura);
-    doc.setFontSize(3.6);
+    doc.setFontSize(4.6);
     doc.setFont('helvetica', 'bold');
-    doc.text('MODALIDADE', x + wHalf / 2, y + 51.5, { align: 'center' });
+    doc.text('MODALIDADE', x + wHalf / 2, y + 65.5, { align: 'center' });
 
     doc.setTextColor(...CORES_JEGD.grafite);
     doc.setFont('helvetica', 'bold');
     const modNome = modalidadeEspecifica || (atleta.modalidadesInscritas && atleta.modalidadesInscritas.length > 0 ? atleta.modalidadesInscritas.map(m => m.modalidadeNome).join(' / ') : 'DELEGAÇÃO ESCOLAR');
-    ajustarFonte(doc, modNome.toUpperCase(), 44, 5.0, 3.8);
-    doc.text(modNome.toUpperCase(), x + wHalf / 2, y + 54.8, { align: 'center', maxWidth: 44 });
+    ajustarFonte(doc, modNome.toUpperCase(), 60, 6.8, 5.0);
+    doc.text(modNome.toUpperCase(), x + wHalf / 2, y + 69.5, { align: 'center', maxWidth: 60 });
 
     // Provas de Atletismo (quando houver)
     const atletaProvas = atleta.modalidadesInscritas?.find(m => m.provas && m.provas.length > 0)?.provas;
     if (atletaProvas && atletaProvas.length > 0) {
       doc.setTextColor(...CORES_JEGD.destaqueOuro);
-      doc.setFontSize(3.8);
+      doc.setFontSize(4.8);
       doc.setFont('helvetica', 'bold');
-      doc.text(atletaProvas.join(' • ').toUpperCase(), x + wHalf / 2, y + 58.2, { align: 'center', maxWidth: 44 });
+      doc.text(atletaProvas.join(' • ').toUpperCase(), x + wHalf / 2, y + 73.2, { align: 'center', maxWidth: 60 });
     }
 
     // Grid Inferior: Nascimento e Documento (2 colunas)
     doc.setTextColor(...CORES_JEGD.textoMuted);
-    doc.setFontSize(3.4);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NASCIMENTO', x + 3.5, y + 61.2);
-    doc.text('DOCUMENTO / DOC', x + 25, y + 61.2);
-
-    doc.setTextColor(...CORES_JEGD.escuro);
     doc.setFontSize(4.4);
     doc.setFont('helvetica', 'bold');
+    doc.text('NASCIMENTO', x + 4.5, y + 76.2);
+    doc.text('DOCUMENTO / DOC', x + 33, y + 76.2);
+
+    doc.setTextColor(...CORES_JEGD.escuro);
+    doc.setFontSize(5.6);
+    doc.setFont('helvetica', 'bold');
     const dataNasc = new Date(atleta.dataNascimento).toLocaleDateString('pt-BR');
-    doc.text(dataNasc, x + 3.5, y + 64.5);
+    doc.text(dataNasc, x + 4.5, y + 80.0);
 
     const docStr = (atleta.semDocumento || atleta.documentoTipo === 'SEM_DOCUMENTO' || atleta.documentoNumero === 'SEM DOCUMENTO')
       ? 'EM REGULARIZAÇÃO'
       : `${atleta.documentoTipo}: ${atleta.documentoNumero}`;
-    doc.setFontSize(3.8);
-    doc.text(docStr.slice(0, 18), x + 25, y + 64.5);
+    doc.setFontSize(5.0);
+    doc.text(docStr.slice(0, 22), x + 33, y + 80.0);
 
     // Rodapé da Frente
     doc.setFillColor(...CORES_JEGD.fundoCinza);
-    doc.rect(x, y + 67.5, wHalf, 8.5, 'F');
+    doc.rect(x, y + 82.2, wHalf, 9.8, 'F');
     doc.setDrawColor(...CORES_JEGD.bordaSuave);
     doc.setLineWidth(0.25);
-    doc.line(x, y + 67.5, x + wHalf, y + 67.5);
+    doc.line(x, y + 82.2, x + wHalf, y + 82.2);
 
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.setFontSize(4.6);
+    doc.setFontSize(6.0);
     doc.setFont('helvetica', 'bold');
-    doc.text(`ID: ${tokenCracha}`, x + wHalf / 2, y + 71.2, { align: 'center' });
+    doc.text(`ID: ${tokenCracha}`, x + wHalf / 2, y + 86.4, { align: 'center' });
 
     doc.setTextColor(...CORES_JEGD.textoMuted);
-    doc.setFontSize(3.4);
+    doc.setFontSize(4.4);
     doc.setFont('helvetica', 'normal');
-    doc.text('ESTUDANTE-ATLETA • USO OBRIGATÓRIO', x + wHalf / 2, y + 74.2, { align: 'center' });
+    doc.text('ESTUDANTE-ATLETA • USO OBRIGATÓRIO', x + wHalf / 2, y + 90.0, { align: 'center' });
 
     // -------------------------------------------------------------
-    // 2. VERSO (LADO DIREITO: x + 48 até x + 96)
+    // 2. VERSO (LADO DIREITO: x + 66 até x + 132)
     // -------------------------------------------------------------
     const vX = x + wHalf;
     doc.setFillColor(255, 255, 255);
     doc.rect(vX, y, wHalf, h, 'F');
 
-    // Cabeçalho Carmim / Vinho do Verso (EXATA MESMA ALTURA: 14mm)
+    // Cabeçalho Carmim / Vinho do Verso (EXATA MESMA ALTURA: 17mm)
     doc.setFillColor(...CORES_JEGD.primaria);
     doc.rect(vX, y, wHalf, headerH, 'F');
 
     // Linha dourada de detalhe
     doc.setFillColor(...CORES_JEGD.destaqueOuro);
-    doc.rect(vX, y + headerH - 0.7, wHalf, 0.7, 'F');
+    doc.rect(vX, y + headerH - 0.9, wHalf, 0.9, 'F');
 
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.text('JEGDS 2026', vX + wHalf / 2, y + 6.2, { align: 'center' });
+    doc.setFontSize(10.0);
+    doc.text('JEGDS 2026', vX + wHalf / 2, y + 7.6, { align: 'center' });
 
-    doc.setFontSize(3.8);
+    doc.setFontSize(5.0);
     doc.setFont('helvetica', 'bold');
-    doc.text('JOGOS ESCOLARES DE GONÇALVES DIAS', vX + wHalf / 2, y + 10.2, { align: 'center' });
+    doc.text('JOGOS ESCOLARES DE GONÇALVES DIAS', vX + wHalf / 2, y + 12.8, { align: 'center' });
 
     // Título do Bloco de Logística
     doc.setTextColor(...CORES_JEGD.secundariaEscura);
-    doc.setFontSize(4.4);
+    doc.setFontSize(5.8);
     doc.setFont('helvetica', 'bold');
-    doc.text('CONTROLE LOGÍSTICO & ACESSO', vX + wHalf / 2, y + 18, { align: 'center' });
+    doc.text('CONTROLE LOGÍSTICO & ACESSO', vX + wHalf / 2, y + 21.8, { align: 'center' });
 
     // Card 1: Hidratação
     doc.setFillColor(...CORES_JEGD.fundoCinza);
-    doc.roundedRect(vX + 4, y + 20, 40, 5.2, 1, 1, 'F');
+    doc.roundedRect(vX + 5, y + 24, 56, 6.6, 1.2, 1.2, 'F');
     doc.setDrawColor(...CORES_JEGD.bordaSuave);
-    doc.setLineWidth(0.2);
-    doc.roundedRect(vX + 4, y + 20, 40, 5.2, 1, 1, 'S');
+    doc.setLineWidth(0.25);
+    doc.roundedRect(vX + 5, y + 24, 56, 6.6, 1.2, 1.2, 'S');
 
     doc.setDrawColor(...CORES_JEGD.secundaria);
-    doc.rect(vX + 6.2, y + 21.1, 3, 3, 'S');
+    doc.rect(vX + 7.8, y + 25.4, 3.8, 3.8, 'S');
     doc.setTextColor(...CORES_JEGD.grafite);
-    doc.setFontSize(4.2);
+    doc.setFontSize(5.4);
     doc.setFont('helvetica', 'bold');
-    doc.text('Água & Hidratação durante os jogos', vX + 11.2, y + 23.6);
+    doc.text('Água & Hidratação durante os jogos', vX + 14, y + 28.5);
 
     // Card 2: Lanche e Refeições
     doc.setFillColor(...CORES_JEGD.fundoCinza);
-    doc.roundedRect(vX + 4, y + 26.2, 40, 5.2, 1, 1, 'F');
+    doc.roundedRect(vX + 5, y + 31.8, 56, 6.6, 1.2, 1.2, 'F');
     doc.setDrawColor(...CORES_JEGD.bordaSuave);
-    doc.setLineWidth(0.2);
-    doc.roundedRect(vX + 4, y + 26.2, 40, 5.2, 1, 1, 'S');
+    doc.setLineWidth(0.25);
+    doc.roundedRect(vX + 5, y + 31.8, 56, 6.6, 1.2, 1.2, 'S');
 
     doc.setDrawColor(...CORES_JEGD.secundaria);
-    doc.rect(vX + 6.2, y + 27.3, 3, 3, 'S');
+    doc.rect(vX + 7.8, y + 33.2, 3.8, 3.8, 'S');
     doc.setTextColor(...CORES_JEGD.grafite);
-    doc.setFontSize(4.2);
+    doc.setFontSize(5.4);
     doc.setFont('helvetica', 'bold');
-    doc.text('Lanche & Alimentação da Delegação', vX + 11.2, y + 29.8);
+    doc.text('Lanche & Alimentação da Delegação', vX + 14, y + 36.3);
 
     // QR Code Oficial de Validação (URL Pública para Smartphones e Validador Oficial)
-    const qrSize = 14.5;
+    const qrSize = 20;
     const qrX = vX + (wHalf - qrSize) / 2;
-    const qrY = y + 32.5;
+    const qrY = y + 39.8;
 
     const originUrl = typeof window !== 'undefined' && window.location?.origin
       ? window.location.origin
@@ -276,7 +278,7 @@ export class CrachaDobravelService {
     try {
       const qrDataUrl = await QRCode.toDataURL(payloadValidacao, {
         margin: 0,
-        width: 120,
+        width: 160,
         errorCorrectionLevel: 'M'
       });
       doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
@@ -284,63 +286,63 @@ export class CrachaDobravelService {
 
     // Token do QR Code para leitura manual da mesa
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.setFontSize(4.0);
+    doc.setFontSize(5.4);
     doc.setFont('helvetica', 'bold');
-    doc.text(`VALIDAÇÃO: ${tokenCracha}`, vX + wHalf / 2, y + 49.5, { align: 'center' });
+    doc.text(`VALIDAÇÃO: ${tokenCracha}`, vX + wHalf / 2, y + 62.6, { align: 'center' });
 
     // Instruções de Uso
     doc.setTextColor(...CORES_JEGD.textoMuted);
-    doc.setFontSize(3.3);
+    doc.setFontSize(4.4);
     doc.setFont('helvetica', 'normal');
-    doc.text('Crachá pessoal e intransferível.', vX + wHalf / 2, y + 53.0, { align: 'center' });
-    doc.text('Apresentação obrigatória na entrada de quadra.', vX + wHalf / 2, y + 55.5, { align: 'center' });
+    doc.text('Crachá pessoal e intransferível.', vX + wHalf / 2, y + 66.4, { align: 'center' });
+    doc.text('Apresentação obrigatória na entrada de quadra.', vX + wHalf / 2, y + 69.4, { align: 'center' });
 
     // Faixa Escura SEMED / Prefeitura
     doc.setFillColor(...CORES_JEGD.escuro);
-    doc.rect(vX, y + 58, wHalf, 4.5, 'F');
+    doc.rect(vX, y + 71.5, wHalf, 5.5, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(3.8);
+    doc.setFontSize(5.0);
     doc.setFont('helvetica', 'bold');
-    doc.text('SEMED • PREFEITURA DE GONÇALVES DIAS', vX + wHalf / 2, y + 61.2, { align: 'center' });
+    doc.text('SEMED • PREFEITURA DE GONÇALVES DIAS', vX + wHalf / 2, y + 75.3, { align: 'center' });
 
     // Rodapé Institucional: Prefeitura & SEMED
     doc.setFillColor(255, 255, 255);
-    doc.rect(vX, y + 62.5, wHalf, 13.5, 'F');
+    doc.rect(vX, y + 77, wHalf, 15, 'F');
     doc.setDrawColor(...CORES_JEGD.bordaSuave);
-    doc.setLineWidth(0.2);
-    doc.line(vX, y + 62.5, vX + wHalf, y + 62.5);
+    doc.setLineWidth(0.25);
+    doc.line(vX, y + 77, vX + wHalf, y + 77);
 
     // Lado Esquerdo: Prefeitura
     doc.setTextColor(185, 28, 28); // red-700
-    doc.setFontSize(3.8);
+    doc.setFontSize(5.0);
     doc.setFont('helvetica', 'bold');
-    doc.text('PREFEITURA', vX + 12, y + 66.5, { align: 'center' });
+    doc.text('PREFEITURA', vX + 16.5, y + 81.5, { align: 'center' });
 
-    doc.setFontSize(4.4);
+    doc.setFontSize(5.8);
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.text('GONÇALVES DIAS', vX + 12, y + 70.0, { align: 'center' });
+    doc.text('GONÇALVES DIAS', vX + 16.5, y + 85.5, { align: 'center' });
 
     doc.setTextColor(...CORES_JEGD.textoMuted);
-    doc.setFontSize(2.8);
+    doc.setFontSize(3.8);
     doc.setFont('helvetica', 'normal');
-    doc.text('Cuidando da nossa gente', vX + 12, y + 73.0, { align: 'center' });
+    doc.text('Cuidando da nossa gente', vX + 16.5, y + 89.2, { align: 'center' });
 
     // Linha Divisória Central
     doc.setDrawColor(...CORES_JEGD.bordaSuave);
-    doc.setLineWidth(0.2);
-    doc.line(vX + 24, y + 64, vX + 24, y + 74);
+    doc.setLineWidth(0.25);
+    doc.line(vX + 33, y + 79, vX + 33, y + 90);
 
     // Lado Direito: SEMED
     doc.setTextColor(...CORES_JEGD.escuro);
-    doc.setFontSize(4.2);
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('SEMED', vX + 36, y + 66.5, { align: 'center' });
+    doc.text('SEMED', vX + 49.5, y + 81.5, { align: 'center' });
 
     doc.setTextColor(...CORES_JEGD.textoMuted);
-    doc.setFontSize(2.8);
+    doc.setFontSize(3.8);
     doc.setFont('helvetica', 'normal');
-    doc.text('Secretaria Municipal', vX + 36, y + 69.8, { align: 'center' });
-    doc.text('de Educação', vX + 36, y + 72.8, { align: 'center' });
+    doc.text('Secretaria Municipal', vX + 49.5, y + 85.3, { align: 'center' });
+    doc.text('de Educação', vX + 49.5, y + 88.8, { align: 'center' });
 
     // -------------------------------------------------------------
     // 3. CONTORNO EXTERNO E LINHA CENTRAL DE DOBRA PERFEITA
@@ -390,10 +392,10 @@ export class CrachaDobravelService {
   ): Promise<void> {
     const doc = criarDocumentoA4('portrait');
     const pageWidth = doc.internal.pageSize.getWidth();
-    const crachaWidth = 96;
-    const crachaHeight = 76;
+    const crachaWidth = 132;
+    const crachaHeight = 92;
     const centerX = (pageWidth - crachaWidth) / 2;
-    const centerY = 40;
+    const centerY = 42;
 
     const logoBase64 = await this.getLogoBase64();
     const brasaoBase64 = await this.getBrasaoBase64();
@@ -445,7 +447,7 @@ export class CrachaDobravelService {
   }
 
   /**
-   * Gera Crachás Oficiais em Lote por Escola (Otimizado: 6 Crachás Dobráveis por Folha A4 com Simetria Perfeita)
+   * Gera Crachás Oficiais em Lote por Escola (4 Crachás Dobráveis Grandes por Folha A4 Paisagem)
    */
   public static async gerarCrachasEmLote(
     escola: Escola,
@@ -453,12 +455,13 @@ export class CrachaDobravelService {
     modalidadeNome?: string,
     categoria?: string
   ): Promise<void> {
-    const doc = criarDocumentoA4('portrait');
-    // Margens perfeitamente simétricas: 7mm esquerda + 96mm + 4mm vão + 96mm + 7mm direita = 210mm
-    const colXs = [7, 107];
-    // Linhas perfeitamente balanceadas: 16mm topo + 76 + 9mm vão + 76 + 9mm vão + 76 = 262mm (sobra 35mm para rodapé)
-    const rowYs = [16, 101, 186];
-    const porPagina = 6;
+    const doc = criarDocumentoA4('landscape');
+    // A4 Paisagem (297mm x 210mm) — 2 colunas x 2 linhas (4 crachás de 132mm x 92mm):
+    // Largura: 12.5mm + 132mm + 8mm vão + 132mm + 12.5mm = 297mm
+    const colXs = [12.5, 152.5];
+    // Altura: 7mm topo + 92mm + 8mm vão + 92mm + 11mm rodapé = 210mm
+    const rowYs = [7, 107];
+    const porPagina = 4;
 
     const logoBase64 = await this.getLogoBase64();
     const brasaoBase64 = await this.getBrasaoBase64();
@@ -501,15 +504,15 @@ export class CrachaDobravelService {
         doc.setTextColor(...CORES_JEGD.textoMuted);
         doc.text(
           `JEGDS 2026 • Lote de Crachás: ${escola.nome} (${escola.sigla}) • Página ${pageIndex + 1} de ${totalPaginas}`,
-          105,
-          285,
+          148.5,
+          203.5,
           { align: 'center' }
         );
         doc.setFontSize(6.0);
         doc.text(
           'Instrução: Recorte pelas cruzes de corte e dobre na linha central tracejada para plastificar ou colocar no porta-crachá.',
-          105,
-          289,
+          148.5,
+          207.2,
           { align: 'center' }
         );
       }
@@ -532,10 +535,11 @@ export class CrachaDobravelService {
       categoria?: string;
     }
   ): Promise<void> {
-    const doc = criarDocumentoA4('portrait');
-    const colXs = [7, 107];
-    const rowYs = [16, 101, 186];
-    const porPagina = 6;
+    const doc = criarDocumentoA4('landscape');
+    // A4 Paisagem (297mm x 210mm) — 2 colunas x 2 linhas (4 crachás de 132mm x 92mm)
+    const colXs = [12.5, 152.5];
+    const rowYs = [7, 107];
+    const porPagina = 4;
 
     const logoBase64 = await this.getLogoBase64();
     const brasaoBase64 = await this.getBrasaoBase64();
@@ -603,15 +607,15 @@ export class CrachaDobravelService {
         doc.setTextColor(...CORES_JEGD.textoMuted);
         doc.text(
           `JEGDS 2026 • ${tituloRodape} • Página ${pageIndex + 1} de ${totalPaginas}`,
-          105,
-          285,
+          148.5,
+          203.5,
           { align: 'center' }
         );
         doc.setFontSize(6.0);
         doc.text(
           'Instrução: Recorte pelas cruzes de corte e dobre na linha central tracejada para plastificar ou colocar no porta-crachá.',
-          105,
-          289,
+          148.5,
+          207.2,
           { align: 'center' }
         );
       }

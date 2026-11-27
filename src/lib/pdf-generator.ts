@@ -129,7 +129,7 @@ export class JegdPdfGenerator {
   }
 
   /**
-   * Gera Crachás Oficiais em Lote por Escola (Otimizado: 6 Crachás Dobráveis por Folha A4)
+   * Gera Crachás Oficiais em Lote por Escola (4 Crachás Dobráveis Grandes por Folha A4 Paisagem)
    */
   public static async gerarCrachasEmLote(
     escola: Escola,

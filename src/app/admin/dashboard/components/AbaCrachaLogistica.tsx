@@ -559,7 +559,7 @@ export function AbaCrachaLogistica({
                     Impressão de Crachás por Modalidade
                   </h4>
                   <p className="text-[11px] text-[#68756E]">
-                    Gere lotes separados por esporte (6 crachás dobráveis por folha A4). Use os filtros abaixo para refinar por categoria, naipe ou escola.
+                    Gere lotes separados por esporte (4 crachás dobráveis grandes por folha A4). Use os filtros abaixo para refinar por categoria, naipe ou escola.
                   </p>
                 </div>
               </div>
@@ -637,7 +637,7 @@ export function AbaCrachaLogistica({
           {/* Grid de Cards por Modalidade */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {modalidadesComAtletas.map(({ modalidade, etapaInfo, atletas: atletasMod, totalEscolas, porCat }) => {
-              const totalFolhas = Math.ceil(atletasMod.length / 6);
+              const totalFolhas = Math.ceil(atletasMod.length / 4);
               const isGerando = gerandoModCodigo === modalidade.codigo;
 
               return (
