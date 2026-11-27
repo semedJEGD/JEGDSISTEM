@@ -141,13 +141,19 @@ export class JegdPdfGenerator {
   }
 
   /**
-   * Gera Todos os Crachás de Todas as Escolas
+   * Gera Todos os Crachás de Todas as Escolas (ou filtrados por modalidade/categoria)
    */
   public static async gerarTodosCrachasGeral(
     escolas: Escola[],
-    atletas: Atleta[]
+    atletas: Atleta[],
+    opcoes?: {
+      tituloLote?: string;
+      nomeArquivo?: string;
+      modalidadeNome?: string;
+      categoria?: string;
+    }
   ): Promise<void> {
-    return CrachaDobravelService.gerarTodosCrachasGeral(escolas, atletas);
+    return CrachaDobravelService.gerarTodosCrachasGeral(escolas, atletas, opcoes);
   }
 
   /**

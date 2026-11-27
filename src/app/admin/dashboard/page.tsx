@@ -1200,6 +1200,10 @@ export default function AdminDashboardPage() {
       {/* ABA 4: LOGÍSTICA & VALIDAÇÃO DE CRACHÁS */}
       {abaAtiva === 'CRACHA_LOGISTICA' && (
         <AbaCrachaLogistica
+          atletas={atletas}
+          escolas={escolas}
+          modalidades={modalidades}
+          inscricoes={inscricoes}
           onGerarTodosCrachas={handleGerarTodosCrachas}
           gerandoPdf={gerandoPdf}
         />

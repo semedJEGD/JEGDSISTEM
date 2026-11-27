@@ -520,11 +520,17 @@ export class CrachaDobravelService {
   }
 
   /**
-   * Gera Todos os Crachás de Todas as Escolas
+   * Gera Todos os Crachás de Todas as Escolas (ou filtrados por modalidade/categoria)
    */
   public static async gerarTodosCrachasGeral(
     escolas: Escola[],
-    atletas: Atleta[]
+    atletas: Atleta[],
+    opcoes?: {
+      tituloLote?: string;
+      nomeArquivo?: string;
+      modalidadeNome?: string;
+      categoria?: string;
+    }
   ): Promise<void> {
     const doc = criarDocumentoA4('portrait');
     const colXs = [7, 107];
@@ -549,6 +555,7 @@ export class CrachaDobravelService {
     });
 
     const totalPaginas = Math.ceil(atletasOrdenados.length / porPagina);
+    const tituloRodape = opcoes?.tituloLote || 'Lote Geral de Todos os Atletas';
 
     for (let i = 0; i < atletasOrdenados.length; i++) {
       const atleta = atletasOrdenados[i];
@@ -578,14 +585,24 @@ export class CrachaDobravelService {
       const x = colXs[col];
       const y = rowYs[row];
 
-      await this.desenharCrachaDobravelOficial(doc, x, y, atleta, escola, undefined, undefined, logoBase64, brasaoBase64);
+      await this.desenharCrachaDobravelOficial(
+        doc,
+        x,
+        y,
+        atleta,
+        escola,
+        opcoes?.modalidadeNome,
+        opcoes?.categoria,
+        logoBase64,
+        brasaoBase64
+      );
 
       if (slotIndex === porPagina - 1 || i === atletasOrdenados.length - 1) {
         doc.setFontSize(7.0);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...CORES_JEGD.textoMuted);
         doc.text(
-          `JEGDS 2026 • Lote Geral de Todos os Atletas • Página ${pageIndex + 1} de ${totalPaginas}`,
+          `JEGDS 2026 • ${tituloRodape} • Página ${pageIndex + 1} de ${totalPaginas}`,
           105,
           285,
           { align: 'center' }
@@ -600,6 +617,6 @@ export class CrachaDobravelService {
       }
     }
 
-    abrirPdfNovaGuia(doc, 'Crachas_GERAL_TODOS_ATLETAS_JEGDS_2026.pdf');
+    abrirPdfNovaGuia(doc, opcoes?.nomeArquivo || 'Crachas_GERAL_TODOS_ATLETAS_JEGDS_2026.pdf');
   }
 }
